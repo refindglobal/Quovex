@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── USERS ────────────────────────────────────────────────────────────
+    // A user can read/write only their own profile document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Sessions subcollection — own data only
+      match /sessions/{sessionId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Flashcard decks subcollection — own data only
+      match /flashcard_decks/{deckId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Friends list — own data only
+      match /friends/{friendId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // ─── NOTES ────────────────────────────────────────────────────────────
+    // Notes are keyed by noteId but contain a userId field
+    // A user can only access notes where userId == their uid
+    match /notes/{noteId} {
+      allow read, write: if request.auth != null
+        && (resource == null || resource.data.userId == request.auth.uid)
+        && (request.resource == null || request.resource.data.userId == request.auth.uid);
+    }
+
+    // ─── STUDY PLANS ──────────────────────────────────────────────────────
+    match /study_plans/{planId} {
+      allow read, write: if request.auth != null
+        && (resource == null || resource.data.userId == request.auth.uid)
+        && (request.resource == null || request.resource.data.userId == request.auth.uid);
+
+      match /tasks/{taskId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+
+    // ─── STUDY ROOMS ──────────────────────────────────────────────────────
+    // Public rooms: all authenticated users can read
+    // Only the room creator (or system) can write room metadata
+    match /study_rooms/{roomId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null
+        && (resource.data.createdBy == request.auth.uid
+            || resource.data.createdBy == "system");
+
+      // Participants: authenticated users can join/leave
+      match /participants/{participantId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == participantId;
+      }
+    }
+
+    // ─── LEADERBOARD ──────────────────────────────────────────────────────
+    // All authenticated users can read; only own entry can be written
+    match /leaderboard/{entryId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    // ─── CONFIG (ADMIN ONLY) ──────────────────────────────────────────────
+    // Feature flags, exam catalog, AI key usage — read-only for users
+    // Only Firebase Admin SDK (Cloud Functions) can write
+    match /config/{document} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only Admin SDK via Cloud Functions
+    }
+
+  }
+}

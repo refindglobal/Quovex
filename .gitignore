@@ -1,0 +1,38 @@
+# Android build files
+*.iml
+.gradle/
+/local.properties
+local.properties
+/.idea/
+.DS_Store
+/build/
+build/
+app/build/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+/captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.hprof
+
+# Secrets & Private configs
+secrets.properties
+*.env
+.env
+.env.*
+
+# Node / Cloud Functions
+node_modules/
+firebase_backend/functions/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+firebase-debug.log*
+firestore-debug.log*
+
+# Legacy archive
+legacy_archive/

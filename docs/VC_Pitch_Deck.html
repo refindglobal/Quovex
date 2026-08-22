@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quovex Investment Memo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f4f5;
+            color: #18181b;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page {
+            background-color: white;
+            width: 210mm;
+            min-height: 297mm;
+            margin: 10mm auto;
+            padding: 20mm;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        /* WATERMARK */
+        .page::before {
+            content: "QUOVEX CONFIDENTIAL";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 80px;
+            font-weight: 800;
+            color: rgba(0, 200, 150, 0.05); /* Very faint Emerald Green */
+            white-space: nowrap;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Content must sit above the watermark */
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            color: #00C896; /* Brand Emerald */
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #27272a;
+            font-size: 28px;
+            border-bottom: 2px solid #00C896;
+            padding-bottom: 5px;
+            margin-top: 40px;
+        }
+
+        h3 {
+            color: #3f3f46;
+            font-size: 20px;
+        }
+
+        p, li {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #52525b;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        .highlight {
+            background-color: rgba(0, 200, 150, 0.1);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #00C896;
+        }
+
+        .cover-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            height: 257mm; /* Total height minus padding */
+        }
+
+        .cover-page h1 {
+            font-size: 64px;
+            margin: 0;
+        }
+
+        .cover-page p.subtitle {
+            font-size: 24px;
+            color: #71717a;
+            margin-top: 10px;
+        }
+
+        .date {
+            margin-top: 50px;
+            font-weight: 600;
+            color: #a1a1aa;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #e4e4e7;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #fafafa;
+            color: #27272a;
+        }
+
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #e4e4e7;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                margin: 0;
+            }
+            .page {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE 1: Cover -->
+    <div class="page">
+        <div class="content cover-page">
+            <h1>QUOVEX</h1>
+            <p class="subtitle">Investment Memo & Strategic Overview</p>
+            <br><br><br>
+            <p><strong>The Ultimate AI Study Ecosystem</strong></p>
+            <p>Confidential & Proprietary</p>
+            <p class="date">August 2026</p>
+        </div>
+    </div>
+
+    <!-- PAGE 2: The Pitch & Problem -->
+    <div class="page">
+        <div class="content">
+            <h2>1. Executive Summary</h2>
+            <p><strong>Quovex</strong> is an Android-first educational technology platform designed for high-performance students (JEE, NEET, SAT, University). We replace a fragmented array of student tools (Anki, Forest, ChatGPT, CamScanner) with a single, unified <span class="highlight">Study Ecosystem</span> driven by a sophisticated AI proxy engine.</p>
+            <p>By forcing extreme focus through OS-level app blocking and automating the ingestion of study material, Quovex ensures students don't just "plan" to study—they actually execute.</p>
+
+            <h2>2. The Problem</h2>
+            <p>Currently, a competitive exam aspirant's workflow is deeply fragmented:</p>
+            <ul>
+                <li><strong>Ingestion:</strong> Students use <em>CamScanner</em> to digitize physical notes or <em>YouTube</em> for lectures.</li>
+                <li><strong>Comprehension:</strong> They copy-paste text into <em>ChatGPT</em> to understand complex topics.</li>
+                <li><strong>Retention:</strong> They spend hours manually typing questions into <em>Anki</em> for spaced-repetition flashcards.</li>
+                <li><strong>Execution:</strong> They use <em>Forest</em> or <em>Pomodoro</em> timers, which fail to actively prevent them from opening Instagram.</li>
+            </ul>
+            <p>This context-switching leads to severe procrastination, wasted time, and loss of focus. The modern student spends more time <em>preparing</em> to study than actually studying.</p>
+        </div>
+    </div>
+
+    <!-- PAGE 3: Solution & Moat -->
+    <div class="page">
+        <div class="content">
+            <h2>3. The Quovex Solution (The Ecosystem)</h2>
+            <p>Quovex eliminates context-switching by creating a self-sustaining habit loop natively on Android:</p>
+            <ul>
+                <li><strong>Zero-Friction Input:</strong> Students scan physical notes using ML Kit (on-device OCR) or paste a YouTube URL.</li>
+                <li><strong>Instant AI Processing:</strong> The AI instantly summarizes the material and automatically generates a <strong>Smart Flashcard Deck</strong> (SM-2 algorithm).</li>
+                <li><strong>Forced Execution:</strong> To study the flashcards, the student starts a Quovex Timer Session. Our Android Accessibility Service instantly <strong>blocks</strong> social media apps until the session is complete.</li>
+                <li><strong>Social Validation:</strong> Session data feeds into real-time Study Rooms and competitive leaderboards, driving them to study more the next day.</li>
+            </ul>
+
+            <h2>4. Our Technological Moat</h2>
+            <p>AI products are notoriously expensive to scale. Quovex has engineered a <span class="highlight">Zero-Cost AI Proxy</span> using Firebase Cloud Functions (Gen 2).</p>
+            <ul>
+                <li><strong>Smart Routing:</strong> The Android app never talks to an AI provider directly. Requests hit our Firebase Gateway, which dynamically routes the prompt to either <strong>Groq (Llama 3)</strong> for speed, or <strong>Cerebras</strong> for massive context windows.</li>
+                <li><strong>Key Rotation Engine:</strong> The backend securely holds 8+ free-tier API keys. It uses a Round-Robin algorithm to distribute loads and instantly fail-over if a key hits a Rate Limit (429 Error).</li>
+                <li><strong>Unit Economics:</strong> Because we leverage free-tier OSS models (via Groq/Cerebras) and Firebase's generous 2 Million free invocations per month, our <strong>Cost Per Query is effectively $0.00</strong> during the MVP scaling phase.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- PAGE 4: Monetization & Architecture -->
+    <div class="page">
+        <div class="content">
+            <h2>5. Monetization Strategy</h2>
+            <p>Quovex uses a Freemium model optimized for developing markets (India, LATAM, SEA) while capturing high ARPU in Tier 1 markets.</p>
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>Free Tier</th>
+                    <th>Quovex Premium ($4.99/mo)</th>
+                </tr>
+                <tr>
+                    <td>AI Queries</td>
+                    <td>10 per day</td>
+                    <td>Unlimited</td>
+                </tr>
+                <tr>
+                    <td>Ads</td>
+                    <td>AdMob Banners + Interstitials</td>
+                    <td>100% Ad-Free</td>
+                </tr>
+                <tr>
+                    <td>Study Rooms</td>
+                    <td>Join Public Rooms Only</td>
+                    <td>Create Private Peer Rooms</td>
+                </tr>
+                <tr>
+                    <td>Analytics</td>
+                    <td>Basic 7-day stats</td>
+                    <td>Deep learning insights & heatmaps</td>
+                </tr>
+            </table>
+
+            <h2>6. System Architecture Flow</h2>
+            <p>Below is the proprietary data flow mapping the Jetpack Compose Android client to our Local Room Database, Firebase Cloud Platform, and External AI APIs.</p>
+            
+            <!-- Reference the SVG we created earlier -->
+            <img src="./screens_backend_flow.svg" alt="Quovex Architecture Diagram" style="width: 100%; border: 2px solid #00C896; padding: 10px; background: #0A0F0D;">
+            
+            <p style="text-align: center; font-size: 12px; color: #a1a1aa; margin-top: 5px;">Figure 1: Quovex Multi-Tier Architecture Diagram</p>
+        </div>
+    </div>
+
+</body>
+</html>

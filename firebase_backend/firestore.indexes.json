@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "timestamp", "order": "DESCENDING" },
+        { "fieldPath": "durationMinutes", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "study_rooms",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "targetExam", "order": "ASCENDING" },
+        { "fieldPath": "activeMembers", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "leaderboard",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "weekKey", "order": "DESCENDING" },
+        { "fieldPath": "totalStudyMinutes", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
