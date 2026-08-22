@@ -4,7 +4,11 @@ import com.quovex.domain.model.ActiveSessionState
 import com.quovex.domain.model.DeckItem
 import com.quovex.domain.model.DeckStats
 import com.quovex.domain.model.FlashcardItem
+import com.quovex.domain.model.LearningMaterial
 import com.quovex.domain.model.NoteItem
+import com.quovex.domain.model.QuizMistake
+import com.quovex.domain.model.QuizQuestion
+import com.quovex.domain.model.QuizResult
 import com.quovex.domain.model.RecentActivityItem
 import com.quovex.domain.repository.QuovexRepository
 import kotlinx.coroutines.flow.Flow
@@ -21,29 +25,63 @@ class FakeQuovexRepository : QuovexRepository {
     var weeklyMap: Map<Int, Int> = emptyMap()
     val activeSessionFlow = MutableStateFlow(ActiveSessionState())
 
-    // Test fixtures for notes
+    // Test fixtures for materials & notes
+    val materialsMap = mutableMapOf<Long, LearningMaterial>()
     val notesMap = mutableMapOf<Long, NoteItem>()
     var nextNoteId: Long = 1L
 
-    override fun getNotes(): Flow<List<NoteItem>> = flowOf(notesMap.values.toList().sortedByDescending { it.updatedAt })
+    // Learning Materials
+    override fun getMaterials(): Flow<List<LearningMaterial>> =
+        flowOf(materialsMap.values.toList().sortedByDescending { it.updatedAt })
+
+    override fun getMaterialsBySubject(subject: String): Flow<List<LearningMaterial>> =
+        flowOf(materialsMap.values.filter { it.subject.equals(subject, ignoreCase = true) }.sortedByDescending { it.updatedAt })
+
+    override suspend fun getMaterialById(id: Long): LearningMaterial? = materialsMap[id]
+
+    override suspend fun insertMaterial(material: LearningMaterial): Long {
+        val id = if (material.id == 0L) nextNoteId++ else material.id
+        materialsMap[id] = material.copy(id = id)
+        return id
+    }
+
+    override suspend fun updateMaterial(material: LearningMaterial): Int {
+        materialsMap[material.id] = material
+        return 1
+    }
+
+    override suspend fun deleteMaterial(id: Long): Int {
+        return if (materialsMap.remove(id) != null) 1 else 0
+    }
+
+    override fun getDistinctMaterialSubjects(): Flow<List<String>> =
+        flowOf(materialsMap.values.map { it.subject }.distinct().sorted())
+
+    // Legacy Notes
+    override fun getNotes(): Flow<List<NoteItem>> =
+        flowOf(notesMap.values.toList().sortedByDescending { it.updatedAt })
+
     override fun getNotesBySubject(subject: String): Flow<List<NoteItem>> =
         flowOf(notesMap.values.filter { it.subject.equals(subject, ignoreCase = true) }.sortedByDescending { it.updatedAt })
 
     override suspend fun getNoteById(id: Long): NoteItem? = notesMap[id]
+
     override suspend fun insertNote(note: NoteItem): Long {
         val id = if (note.id == 0L) nextNoteId++ else note.id
         notesMap[id] = note.copy(id = id)
         return id
     }
+
     override suspend fun updateNote(note: NoteItem): Int {
         notesMap[note.id] = note
         return 1
     }
+
     override suspend fun deleteNote(id: Long): Int {
         return if (notesMap.remove(id) != null) 1 else 0
     }
 
-    // Test fixtures for deck stats & flashcards
+    // Decks
     var decksList: List<DeckItem> = emptyList()
     var deckStatsList: List<DeckStats> = emptyList()
     val deckStatsMap = mutableMapOf<Int, DeckStats>()
@@ -58,7 +96,9 @@ class FakeQuovexRepository : QuovexRepository {
     override fun getDecks(): Flow<List<DeckItem>> = flowOf(decksList)
     override suspend fun getDeckById(deckId: Long): DeckItem? =
         decksList.find { it.id.toLong() == deckId } ?: mostRecentDeck
-    override suspend fun insertDeck(title: String, subject: String): Long = 1L
+    override suspend fun getDeckByMaterialId(materialId: Long): DeckItem? =
+        decksList.find { it.id.toLong() == materialId }
+    override suspend fun insertDeck(title: String, subject: String, sourceMaterialId: Long?): Long = 1L
     override suspend fun getMostRecentDeck(): DeckItem? = mostRecentDeck
     override suspend fun getDeckDueCount(deckId: Int, currentTimeMillis: Long): Int = deckDueCount
 
@@ -91,8 +131,42 @@ class FakeQuovexRepository : QuovexRepository {
     }
 
     override suspend fun insertFlashcard(deckId: Int, frontContent: String, backContent: String): Long = 1L
+    override suspend fun insertFlashcards(deckId: Int, cards: List<Pair<String, String>>): List<Long> = cards.indices.map { it.toLong() + 1 }
     override suspend fun getTotalDueFlashcardsCount(currentTimeMillis: Long): Int = totalDueFlashcards
+    override suspend fun createRemedialFlashcard(mistake: QuizMistake, deckId: Int): Long = 100L
 
+    // Quiz
+    val quizQuestionsMap = mutableMapOf<Long, List<QuizQuestion>>()
+    val quizResultsMap = mutableMapOf<Long, List<QuizResult>>()
+    val quizMistakesList = mutableListOf<QuizMistake>()
+
+    override suspend fun saveQuizQuestions(questions: List<QuizQuestion>): List<Long> {
+        val materialId = questions.firstOrNull()?.materialId ?: 0L
+        quizQuestionsMap[materialId] = questions
+        return questions.indices.map { it.toLong() + 1 }
+    }
+
+    override fun getQuizQuestionsForMaterial(materialId: Long): Flow<List<QuizQuestion>> =
+        flowOf(quizQuestionsMap[materialId] ?: emptyList())
+
+    override suspend fun getQuizQuestionsList(materialId: Long): List<QuizQuestion> =
+        quizQuestionsMap[materialId] ?: emptyList()
+
+    override suspend fun recordQuizResult(result: QuizResult): Long {
+        val list = quizResultsMap[result.materialId]?.toMutableList() ?: mutableListOf()
+        list.add(result)
+        quizResultsMap[result.materialId] = list
+        quizMistakesList.addAll(result.mistakes)
+        return 1L
+    }
+
+    override fun getQuizResultsForMaterial(materialId: Long): Flow<List<QuizResult>> =
+        flowOf(quizResultsMap[materialId] ?: emptyList())
+
+    override suspend fun getRecentMistakes(limit: Int): List<QuizMistake> =
+        quizMistakesList.takeLast(limit)
+
+    // Sessions
     override fun getRecentSessions(limit: Int): Flow<List<RecentActivityItem>> = flowOf(emptyList())
     override suspend fun getRecentSessionsList(limit: Int): List<RecentActivityItem> = emptyList()
     override suspend fun recordSession(
@@ -100,7 +174,8 @@ class FakeQuovexRepository : QuovexRepository {
         endTime: Long,
         durationMinutes: Int,
         focusScore: Int,
-        appBlockViolations: Int
+        appBlockViolations: Int,
+        subject: String
     ): Long = 1L
     override suspend fun getTodayFocusSeconds(): Long = todaySeconds
     override suspend fun getTotalXp(): Long = 500L

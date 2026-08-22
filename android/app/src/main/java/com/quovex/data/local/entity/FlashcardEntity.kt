@@ -31,5 +31,11 @@ data class FlashcardEntity(
     val easeFactor: Float = 2.5f,
     val intervalDays: Int = 0,
     val repetitions: Int = 0,
-    val nextReviewDate: Long = System.currentTimeMillis()
+    val nextReviewDate: Long = System.currentTimeMillis(),
+
+    // Extended fields for Learning Transformation System
+    val tags: String? = null,
+    val formulaLatex: String? = null,
+    val isRemedial: Boolean = false,
+    val difficulty: Int = 3
 )

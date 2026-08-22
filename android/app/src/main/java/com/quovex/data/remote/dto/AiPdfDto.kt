@@ -17,12 +17,12 @@ data class GatewayPdfExtractRequest(
  * Contains AI-generated structured summary of the PDF content.
  */
 data class GatewayPdfExtractResponse(
-    @SerializedName("success") val success: Boolean,
-    @SerializedName("summary") val summary: String?,
-    @SerializedName("keyPoints") val keyPoints: List<String>?,
-    @SerializedName("flashcards") val flashcards: List<GeneratedFlashcardDto>?,
-    @SerializedName("wordCount") val wordCount: Int?,
-    @SerializedName("provider") val provider: String?,
-    @SerializedName("model") val model: String?,
-    @SerializedName("error") val error: String?
+    @SerializedName("success") val success: Boolean = false,
+    @SerializedName("summary") val summary: String? = null,
+    @SerializedName("keyPoints") val keyPoints: List<String>? = null,
+    @SerializedName("flashcards") val flashcards: List<GeneratedFlashcardDto>? = null,
+    @SerializedName("wordCount") val wordCount: Int? = null,
+    @SerializedName("provider") val provider: String? = null,
+    @SerializedName("model") val model: String? = null,
+    @SerializedName("error") val error: String? = null
 )

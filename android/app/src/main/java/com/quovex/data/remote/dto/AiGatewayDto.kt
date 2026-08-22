@@ -5,6 +5,9 @@ import com.google.gson.annotations.SerializedName
 data class GatewayChatRequest(
     @SerializedName("message") val message: String,
     @SerializedName("subject") val subject: String = "General",
+    @SerializedName("topic") val topic: String = "",
+    @SerializedName("materialSummary") val materialSummary: String? = null,
+    @SerializedName("recentMistakes") val recentMistakes: List<String> = emptyList(),
     @SerializedName("history") val history: List<ChatMessageDto> = emptyList()
 )
 

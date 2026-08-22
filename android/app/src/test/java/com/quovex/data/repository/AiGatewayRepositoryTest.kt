@@ -6,8 +6,16 @@ import com.quovex.data.remote.FirebaseAuthService
 import com.quovex.data.remote.dto.AiSummaryResult
 import com.quovex.data.remote.dto.GatewayChatRequest
 import com.quovex.data.remote.dto.GatewayChatResponse
+import com.quovex.data.remote.dto.GatewayClassifyRequest
+import com.quovex.data.remote.dto.GatewayClassifyResponse
+import com.quovex.data.remote.dto.GatewayPdfExtractRequest
+import com.quovex.data.remote.dto.GatewayPdfExtractResponse
 import com.quovex.data.remote.dto.GatewayPlanRequest
 import com.quovex.data.remote.dto.GatewayPlanResponse
+import com.quovex.data.remote.dto.GatewayQuizDataDto
+import com.quovex.data.remote.dto.GatewayQuizQuestionDto
+import com.quovex.data.remote.dto.GatewayQuizRequest
+import com.quovex.data.remote.dto.GatewayQuizResponse
 import com.quovex.data.remote.dto.GatewayQuoteResponse
 import com.quovex.data.remote.dto.GatewaySummarizeRequest
 import com.quovex.data.remote.dto.GatewaySummarizeResponse
@@ -45,6 +53,22 @@ class AiGatewayRepositoryTest {
             }
         }
 
+        override suspend fun classify(authHeader: String, request: GatewayClassifyRequest): Response<GatewayClassifyResponse> {
+            val code = shouldFailWithCode
+            return if (code != null) {
+                Response.error(code, okhttp3.ResponseBody.create(null, "Error $code"))
+            } else {
+                Response.success(
+                    GatewayClassifyResponse(
+                        success = true,
+                        subject = "Physics",
+                        topic = "Mechanics",
+                        confidence = 0.9f
+                    )
+                )
+            }
+        }
+
         override suspend fun summarize(authHeader: String, request: GatewaySummarizeRequest): Response<GatewaySummarizeResponse> {
             val code = shouldFailWithCode
             return if (code != null) {
@@ -56,6 +80,31 @@ class AiGatewayRepositoryTest {
                         data = AiSummaryResult(
                             summary = "Generated summary",
                             keyPoints = listOf("Point 1", "Point 2")
+                        )
+                    )
+                )
+            }
+        }
+
+        override suspend fun generateQuiz(authHeader: String, request: GatewayQuizRequest): Response<GatewayQuizResponse> {
+            val code = shouldFailWithCode
+            return if (code != null) {
+                Response.error(code, okhttp3.ResponseBody.create(null, "Error $code"))
+            } else {
+                Response.success(
+                    GatewayQuizResponse(
+                        success = true,
+                        data = GatewayQuizDataDto(
+                            questions = listOf(
+                                GatewayQuizQuestionDto(
+                                    id = 1,
+                                    question = "What is F?",
+                                    options = listOf("Force", "Frequency"),
+                                    correctIndex = 0,
+                                    explanation = "F is Force",
+                                    relatedConcept = "Newton"
+                                )
+                            )
                         )
                     )
                 )
@@ -90,6 +139,10 @@ class AiGatewayRepositoryTest {
                     )
                 )
             }
+        }
+
+        override suspend fun extractPdf(authHeader: String, request: GatewayPdfExtractRequest): Response<GatewayPdfExtractResponse> {
+            return Response.success(GatewayPdfExtractResponse(success = true))
         }
 
         override suspend fun generatePlan(authHeader: String, request: GatewayPlanRequest): Response<GatewayPlanResponse> {
@@ -169,5 +222,31 @@ class AiGatewayRepositoryTest {
         val data = result.getOrThrow()
         assertEquals("Generated summary", data.summary)
         assertEquals(2, data.keyPoints.size)
+    }
+
+    @Test
+    fun `classifyMaterial returns subject inference on success`() = runTest {
+        val fakeAuth = FakeAuthService(loggedIn = true, token = "test_valid_jwt")
+        val fakeApi = FakeAiApiService()
+        val repo = AiGatewayRepositoryImpl(fakeApi, fakeAuth)
+
+        val result = repo.classifyMaterial("Sample physics snippet")
+        assertTrue(result.isSuccess)
+        val inference = result.getOrThrow()
+        assertEquals("Physics", inference.subject)
+        assertEquals("Mechanics", inference.topic)
+    }
+
+    @Test
+    fun `generateQuiz returns list of quiz questions on success`() = runTest {
+        val fakeAuth = FakeAuthService(loggedIn = true, token = "test_valid_jwt")
+        val fakeApi = FakeAiApiService()
+        val repo = AiGatewayRepositoryImpl(fakeApi, fakeAuth)
+
+        val result = repo.generateQuiz("Physics", "Mechanics", "Medium", listOf("Point 1"))
+        assertTrue(result.isSuccess)
+        val questions = result.getOrThrow()
+        assertEquals(1, questions.size)
+        assertEquals("What is F?", questions[0].question)
     }
 }

@@ -25,5 +25,16 @@ data class NoteEntity(
     val keyPointsJson: String? = null,
     val flashcardCount: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+
+    // Extended fields for Learning Transformation System
+    val topic: String? = null,
+    val summary: String? = null,
+    val formulasJson: String? = null,
+    val inferredSubject: String? = null,
+    val inferredTopic: String? = null,
+    val inferredConfidence: Float = 0f,
+    val flashcardDeckId: Int? = null,
+    val quizGenerated: Boolean = false,
+    val syncStatus: String = "PENDING_SYNC"
 )

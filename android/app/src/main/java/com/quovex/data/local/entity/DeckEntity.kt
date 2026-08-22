@@ -11,5 +11,6 @@ data class DeckEntity(
     val subject: String,
     val createdAt: Long = System.currentTimeMillis(),
     val totalCards: Int = 0,
-    val xpValue: Int = 100 // Default XP reward for completing the deck
+    val xpValue: Int = 100, // Default XP reward for completing the deck
+    val sourceMaterialId: Long? = null
 )

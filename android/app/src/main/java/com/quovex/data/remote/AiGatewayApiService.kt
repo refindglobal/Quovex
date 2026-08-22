@@ -2,12 +2,16 @@ package com.quovex.data.remote
 
 import com.quovex.data.remote.dto.GatewayChatRequest
 import com.quovex.data.remote.dto.GatewayChatResponse
+import com.quovex.data.remote.dto.GatewayClassifyRequest
+import com.quovex.data.remote.dto.GatewayClassifyResponse
 import com.quovex.data.remote.dto.GatewayDoubtRequest
 import com.quovex.data.remote.dto.GatewayDoubtResponse
 import com.quovex.data.remote.dto.GatewayPdfExtractRequest
 import com.quovex.data.remote.dto.GatewayPdfExtractResponse
 import com.quovex.data.remote.dto.GatewayPlanRequest
 import com.quovex.data.remote.dto.GatewayPlanResponse
+import com.quovex.data.remote.dto.GatewayQuizRequest
+import com.quovex.data.remote.dto.GatewayQuizResponse
 import com.quovex.data.remote.dto.GatewayQuoteResponse
 import com.quovex.data.remote.dto.GatewaySummarizeRequest
 import com.quovex.data.remote.dto.GatewaySummarizeResponse
@@ -28,11 +32,23 @@ interface AiGatewayApiService {
         @Body request: GatewayChatRequest
     ): Response<GatewayChatResponse>
 
+    @POST("ai/classify")
+    suspend fun classify(
+        @Header("Authorization") authHeader: String,
+        @Body request: GatewayClassifyRequest
+    ): Response<GatewayClassifyResponse>
+
     @POST("ai/summarize")
     suspend fun summarize(
         @Header("Authorization") authHeader: String,
         @Body request: GatewaySummarizeRequest
     ): Response<GatewaySummarizeResponse>
+
+    @POST("ai/quiz/generate")
+    suspend fun generateQuiz(
+        @Header("Authorization") authHeader: String,
+        @Body request: GatewayQuizRequest
+    ): Response<GatewayQuizResponse>
 
     @POST("ai/doubt/image")
     suspend fun solveImageDoubt(
@@ -49,7 +65,6 @@ interface AiGatewayApiService {
     /**
      * POST /notes/extract-pdf
      * Triggers server-side PDF text extraction + AI summarization.
-     * Android must upload the PDF to Firebase Storage first, then pass the storageRef here.
      */
     @POST("notes/extract-pdf")
     suspend fun extractPdf(

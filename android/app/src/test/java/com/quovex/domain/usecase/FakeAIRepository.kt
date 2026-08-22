@@ -1,10 +1,12 @@
 package com.quovex.domain.usecase
 
-import com.quovex.data.remote.dto.GeneratedFlashcardDto
 import com.quovex.data.remote.dto.AiSummaryResult
 import com.quovex.data.remote.dto.ChatMessageDto
+import com.quovex.data.remote.dto.GeneratedFlashcardDto
 import com.quovex.domain.model.DomainImageInput
 import com.quovex.domain.model.ImageDoubtSolution
+import com.quovex.domain.model.QuizQuestion
+import com.quovex.domain.model.SubjectInference
 import com.quovex.domain.repository.AIRepository
 
 class FakeAIRepository : AIRepository {
@@ -31,9 +33,35 @@ class FakeAIRepository : AIRepository {
         Pair("Photosynthesis Overview", "Photosynthesis is a biological process used by plants to convert light energy.")
     )
 
+    var classifyResult: Result<SubjectInference> = Result.success(
+        SubjectInference(
+            subject = "Physics",
+            topic = "Newton's Laws of Motion",
+            subtopic = "Laws of Motion",
+            examRelevance = listOf("JEE", "NEET"),
+            confidence = 0.95f
+        )
+    )
+
+    var quizResult: Result<List<QuizQuestion>> = Result.success(
+        listOf(
+            QuizQuestion(
+                id = 1,
+                materialId = 0,
+                question = "What is F in F=ma?",
+                options = listOf("Force", "Frequency", "Friction", "Flux"),
+                correctIndex = 0,
+                explanation = "F stands for Force.",
+                relatedConcept = "Newton's Second Law"
+            )
+        )
+    )
+
     var shouldFailSummarize: Boolean = false
     var shouldFailDoubt: Boolean = false
     var shouldFailUrl: Boolean = false
+    var shouldFailClassify: Boolean = false
+    var shouldFailQuiz: Boolean = false
 
     override suspend fun sendChatMessage(
         message: String,
@@ -41,12 +69,39 @@ class FakeAIRepository : AIRepository {
         history: List<ChatMessageDto>
     ): Result<String> = Result.success("Echo: $message")
 
+    override suspend fun sendTutorMessage(
+        message: String,
+        subject: String,
+        topic: String,
+        materialSummary: String?,
+        recentMistakes: List<String>,
+        history: List<ChatMessageDto>
+    ): Result<String> = Result.success("Tutor response for $subject: $message")
+
+    override suspend fun classifyMaterial(
+        textSample: String,
+        filename: String?
+    ): Result<SubjectInference> {
+        if (shouldFailClassify) return Result.failure(Exception("Classification failed"))
+        return classifyResult
+    }
+
     override suspend fun summarizeNote(
         rawText: String,
         subject: String
     ): Result<AiSummaryResult> {
         if (shouldFailSummarize) return Result.failure(Exception("AI Gateway Summarization error"))
         return summarizeResult
+    }
+
+    override suspend fun generateQuiz(
+        subject: String,
+        topic: String,
+        difficulty: String,
+        keyPoints: List<String>
+    ): Result<List<QuizQuestion>> {
+        if (shouldFailQuiz) return Result.failure(Exception("Quiz generation failed"))
+        return quizResult
     }
 
     override suspend fun solveImageDoubt(

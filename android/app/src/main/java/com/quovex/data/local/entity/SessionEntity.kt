@@ -17,5 +17,6 @@ data class SessionEntity(
     val focusScore: Int, // 0-100 score based on distractions
     val appBlockViolations: Int,
     val isMultiplayer: Boolean = false,
-    val roomId: String? = null // Firebase Room ID if it was a multiplayer session
+    val roomId: String? = null, // Firebase Room ID if it was a multiplayer session
+    val subject: String = ""
 )

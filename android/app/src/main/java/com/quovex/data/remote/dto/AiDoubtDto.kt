@@ -3,7 +3,8 @@ package com.quovex.data.remote.dto
 import com.google.gson.annotations.SerializedName
 
 data class GatewayDoubtRequest(
-    @SerializedName("imageUrl") val imageUrl: String,
+    @SerializedName("imageUrl") val imageUrl: String = "",
+    @SerializedName("base64Image") val base64Image: String? = null,
     @SerializedName("subject") val subject: String = "General",
     @SerializedName("questionText") val questionText: String = ""
 )

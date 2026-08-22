@@ -1,15 +1,21 @@
 package com.quovex.data.repository
 
-import com.quovex.data.remote.FirebaseAuthService
 import com.quovex.data.remote.AiGatewayApiService
+import com.quovex.data.remote.FirebaseAuthService
 import com.quovex.data.remote.dto.AiSummaryResult
 import com.quovex.data.remote.dto.ChatMessageDto
 import com.quovex.data.remote.dto.GatewayChatRequest
+import com.quovex.data.remote.dto.GatewayClassifyRequest
+import com.quovex.data.remote.dto.GatewayDoubtRequest
 import com.quovex.data.remote.dto.GatewayPlanRequest
+import com.quovex.data.remote.dto.GatewayQuizRequest
 import com.quovex.data.remote.dto.GatewaySummarizeRequest
+import com.quovex.data.remote.dto.GatewayUrlExtractRequest
 import com.quovex.domain.model.AiError
 import com.quovex.domain.model.DomainImageInput
 import com.quovex.domain.model.ImageDoubtSolution
+import com.quovex.domain.model.QuizQuestion
+import com.quovex.domain.model.SubjectInference
 import com.quovex.domain.repository.AIRepository
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -49,6 +55,24 @@ class AiGatewayRepositoryImpl @Inject constructor(
         subject: String,
         history: List<ChatMessageDto>
     ): Result<String> {
+        return sendTutorMessage(
+            message = message,
+            subject = subject,
+            topic = "",
+            materialSummary = null,
+            recentMistakes = emptyList(),
+            history = history
+        )
+    }
+
+    override suspend fun sendTutorMessage(
+        message: String,
+        subject: String,
+        topic: String,
+        materialSummary: String?,
+        recentMistakes: List<String>,
+        history: List<ChatMessageDto>
+    ): Result<String> {
         return try {
             val authHeader = getAuthHeader()
             val response = apiService.chat(
@@ -56,6 +80,9 @@ class AiGatewayRepositoryImpl @Inject constructor(
                 request = GatewayChatRequest(
                     message = message,
                     subject = subject,
+                    topic = topic,
+                    materialSummary = materialSummary,
+                    recentMistakes = recentMistakes,
                     history = history
                 )
             )
@@ -75,6 +102,43 @@ class AiGatewayRepositoryImpl @Inject constructor(
                     else -> AiError.UnknownAIError("Gateway error (HTTP ${response.code()})")
                 }
                 Result.failure(error)
+            }
+        } catch (e: Throwable) {
+            Result.failure(mapException(e))
+        }
+    }
+
+    override suspend fun classifyMaterial(
+        textSample: String,
+        filename: String?
+    ): Result<SubjectInference> {
+        return try {
+            val authHeader = getAuthHeader()
+            val response = apiService.classify(
+                authHeader = authHeader,
+                request = GatewayClassifyRequest(
+                    textSample = textSample,
+                    filename = filename
+                )
+            )
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.success) {
+                    Result.success(
+                        SubjectInference(
+                            subject = body.subject,
+                            topic = body.topic,
+                            subtopic = body.subtopic,
+                            examRelevance = body.examRelevance,
+                            confidence = body.confidence
+                        )
+                    )
+                } else {
+                    Result.failure(AiError.InvalidResponseError(body?.error ?: "Failed to classify material"))
+                }
+            } else {
+                Result.failure(AiError.UnknownAIError("Classification error (HTTP ${response.code()})"))
             }
         } catch (e: Throwable) {
             Result.failure(mapException(e))
@@ -116,6 +180,50 @@ class AiGatewayRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun generateQuiz(
+        subject: String,
+        topic: String,
+        difficulty: String,
+        keyPoints: List<String>
+    ): Result<List<QuizQuestion>> {
+        return try {
+            val authHeader = getAuthHeader()
+            val response = apiService.generateQuiz(
+                authHeader = authHeader,
+                request = GatewayQuizRequest(
+                    subject = subject,
+                    topic = topic,
+                    difficulty = difficulty,
+                    keyPoints = keyPoints
+                )
+            )
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.success && body.data != null) {
+                    val questions = body.data.questions.map { dto ->
+                        QuizQuestion(
+                            id = dto.id.toLong(),
+                            materialId = 0,
+                            question = dto.question,
+                            options = dto.options,
+                            correctIndex = dto.correctIndex,
+                            explanation = dto.explanation,
+                            relatedConcept = dto.relatedConcept.ifBlank { topic }
+                        )
+                    }
+                    Result.success(questions)
+                } else {
+                    Result.failure(AiError.InvalidResponseError(body?.error ?: "Failed to generate quiz questions"))
+                }
+            } else {
+                Result.failure(AiError.UnknownAIError("Quiz generation error (HTTP ${response.code()})"))
+            }
+        } catch (e: Throwable) {
+            Result.failure(mapException(e))
+        }
+    }
+
     override suspend fun solveImageDoubt(
         imageInput: DomainImageInput,
         subject: String,
@@ -128,8 +236,9 @@ class AiGatewayRepositoryImpl @Inject constructor(
 
             val response = apiService.solveImageDoubt(
                 authHeader = authHeader,
-                request = com.quovex.data.remote.dto.GatewayDoubtRequest(
+                request = GatewayDoubtRequest(
                     imageUrl = dataUri,
+                    base64Image = base64,
                     subject = subject,
                     questionText = questionText
                 )
@@ -167,7 +276,7 @@ class AiGatewayRepositoryImpl @Inject constructor(
             val authHeader = getAuthHeader()
             val response = apiService.extractUrlContent(
                 authHeader = authHeader,
-                request = com.quovex.data.remote.dto.GatewayUrlExtractRequest(url = url)
+                request = GatewayUrlExtractRequest(url = url)
             )
 
             if (response.isSuccessful) {
