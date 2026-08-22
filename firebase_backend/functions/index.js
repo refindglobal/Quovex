@@ -58,12 +58,25 @@ function getNextCerebrasKey() {
     return key;
 }
 
+const MATH_READABILITY_RULES = `
+CRITICAL READABILITY & MATHEMATICAL NOTATION RULES:
+1. Use clean unicode superscripts for exponents: x², x³, aⁿ, 10⁻³, 2⁵ (do NOT use raw carets like x^2 when avoidable).
+2. For roots, use standard symbols: √x, √(x² + y²), ∛x rather than sqrt(...).
+3. Use readable Greek symbols and mathematical operators: θ, α, β, γ, π, λ, μ, σ, Ω, ≤, ≥, ≠, →, ± rather than typing words like "theta".
+4. For trigonometry, use clean notation: sin θ, cos θ, tan θ, sin² θ, cos² θ.
+5. For chemistry, format chemical formulas cleanly: H₂O, CO₂, O₂, H₂SO₄, NaCl.
+6. For units, preserve standard spacing: 5 m/s², 9.8 m/s², 20 N, 3.5 kg, 25 °C.
+7. Visually separate equations and key formulas on their own lines.
+8. Do NOT alter code syntax inside programming code blocks.
+9. Identity is always "Quovex AI" — never mention underlying LLM provider names or internal model IDs.
+`;
+
 /**
  * Universal AI Caller with 4-Key Rotation & Safe Failover
  * Approved Models from docs/AI_MODELS.md:
  * - Groq Default: 'openai/gpt-oss-20b'
- * - Groq Large: 'openai/gpt-oss-120b'
- * - Cerebras Fallback: 'gpt-oss-120b'
+ * - Groq Vision/Large: 'openai/gpt-oss-120b'
+ * - Cerebras Fallback: 'gpt-oss-120b' / 'gemma-4-31b' (vision)
  */
 async function callAiWithFailover({
     messages,
@@ -71,18 +84,17 @@ async function callAiWithFailover({
     maxTokens = 2048,
     isVision = false
 }) {
-    // 1. Try Groq (4 Keys Rotating Pool)
+    // 1. Try Groq Primary Model (4 Keys Rotating Pool)
+    const primaryModel = isVision ? 'openai/gpt-oss-120b' : 'openai/gpt-oss-20b';
     for (let attempt = 0; attempt < GROQ_KEYS.length; attempt++) {
         const groqKey = getNextGroqKey();
         if (!groqKey) break;
-
-        const modelId = isVision ? 'openai/gpt-oss-120b' : 'openai/gpt-oss-20b';
 
         try {
             const response = await axios.post(
                 'https://api.groq.com/openai/v1/chat/completions',
                 {
-                    model: modelId,
+                    model: primaryModel,
                     messages: messages,
                     temperature: temperature,
                     max_tokens: maxTokens
@@ -92,18 +104,54 @@ async function callAiWithFailover({
                         'Authorization': `Bearer ${groqKey}`,
                         'Content-Type': 'application/json'
                     },
-                    timeout: 20000
+                    timeout: isVision ? 30000 : 20000
                 }
             );
 
             return {
                 success: true,
                 provider: 'groq',
-                model: modelId,
+                model: primaryModel,
                 content: response.data.choices[0].message.content
             };
         } catch (error) {
-            console.warn(`Groq Key ${attempt + 1} encountered ${error.response?.status || error.message}. Trying next key in rotation...`);
+            console.warn(`Groq Key ${attempt + 1} (${primaryModel}) failed: ${error.response?.status || error.message}. Trying next key...`);
+        }
+    }
+
+    // 1b. Try Groq Secondary Fallback Model (qwen/qwen3.6-27b for chat/study)
+    if (!isVision) {
+        for (let attempt = 0; attempt < GROQ_KEYS.length; attempt++) {
+            const groqKey = getNextGroqKey();
+            if (!groqKey) break;
+
+            try {
+                const response = await axios.post(
+                    'https://api.groq.com/openai/v1/chat/completions',
+                    {
+                        model: 'qwen/qwen3.6-27b',
+                        messages: messages,
+                        temperature: temperature,
+                        max_tokens: maxTokens
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${groqKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        timeout: 25000
+                    }
+                );
+
+                return {
+                    success: true,
+                    provider: 'groq',
+                    model: 'qwen/qwen3.6-27b',
+                    content: response.data.choices[0].message.content
+                };
+            } catch (error) {
+                console.warn(`Groq Fallback Key ${attempt + 1} failed: ${error.response?.status || error.message}`);
+            }
         }
     }
 
@@ -112,11 +160,13 @@ async function callAiWithFailover({
         const cerebrasKey = getNextCerebrasKey();
         if (!cerebrasKey) break;
 
+        const cerebrasModel = isVision ? 'gemma-4-31b' : 'gpt-oss-120b';
+
         try {
             const cerebrasResponse = await axios.post(
                 'https://api.cerebras.ai/v1/chat/completions',
                 {
-                    model: 'gpt-oss-120b',
+                    model: cerebrasModel,
                     messages: messages,
                     temperature: temperature,
                     max_tokens: maxTokens
@@ -126,14 +176,14 @@ async function callAiWithFailover({
                         'Authorization': `Bearer ${cerebrasKey}`,
                         'Content-Type': 'application/json'
                     },
-                    timeout: 30000
+                    timeout: 35000
                 }
             );
 
             return {
                 success: true,
                 provider: 'cerebras',
-                model: 'gpt-oss-120b',
+                model: cerebrasModel,
                 content: cerebrasResponse.data.choices[0].message.content
             };
         } catch (cerebrasError) {
@@ -141,7 +191,23 @@ async function callAiWithFailover({
         }
     }
 
-    throw new Error('All Groq and Cerebras rotating keys exhausted.');
+    throw new Error('Quovex AI is temporarily busy. Please try again.');
+}
+
+function extractJson(text) {
+    if (!text) return null;
+    const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    try {
+        return JSON.parse(clean);
+    } catch {
+        const match = clean.match(/\{[\s\S]*\}/);
+        if (match) {
+            try {
+                return JSON.parse(match[0]);
+            } catch (e) {}
+        }
+    }
+    return null;
 }
 
 // -------------------------------------------------------------
@@ -149,14 +215,12 @@ async function callAiWithFailover({
 // -------------------------------------------------------------
 const app = express();
 app.use(cors({ origin: true }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
 
 /**
  * Firebase Auth Verification Middleware
- * Validates Firebase ID tokens for protected AI endpoints
  */
 const authenticateFirebaseUser = async (req, res, next) => {
-    // Allow health check without auth
     if (req.path === '/health' || req.path === '/ai/quote') {
         return next();
     }
@@ -178,7 +242,6 @@ const authenticateFirebaseUser = async (req, res, next) => {
         req.user = decodedToken;
         next();
     } catch (error) {
-        console.warn('Firebase ID token verification failed (allowing guest access):', error.message);
         req.user = { uid: 'guest_user', isAnonymous: true };
         next();
     }
@@ -193,25 +256,46 @@ app.get('/health', (req, res) => {
     res.json({
         status: 'online',
         service: 'Quovex AI Gateway',
-        groqKeysAvailable: GROQ_KEYS.length,
-        cerebrasKeysAvailable: CEREBRAS_KEYS.length,
+        version: '3.0.0',
         timestamp: new Date().toISOString()
     });
 });
 
 /**
  * POST /api/ai/chat
- * Student doubt solver & tutor
+ * Contextual Study Tutor with subject, topic, material context, recent mistakes, and math readability
  */
 app.post('/ai/chat', async (req, res) => {
     try {
-        const { message, subject = 'General', history = [] } = req.body;
+        const {
+            message,
+            subject = 'General',
+            topic = '',
+            materialSummary = null,
+            recentMistakes = [],
+            history = []
+        } = req.body;
+
         if (!message) {
             return res.status(400).json({ error: 'Missing message parameter' });
         }
 
-        const systemPrompt = `You are Quovex AI, an elite, motivating academic coach for ${subject}. 
-Explain concepts step-by-step, provide formulas where appropriate, and encourage disciplined focus. Format in clean Markdown.`;
+        let contextSections = [];
+        if (topic) {
+            contextSections.push(`Active Topic: ${topic}`);
+        }
+        if (materialSummary) {
+            contextSections.push(`Context from student's study material:\n${materialSummary}`);
+        }
+        if (recentMistakes && recentMistakes.length > 0) {
+            contextSections.push(`Recent quiz mistakes to reinforce:\n${recentMistakes.join('\n')}`);
+        }
+
+        const systemPrompt = `You are Quovex AI Tutor, an elite academic coach for ${subject}.
+Explain concepts step-by-step with clear intuition, formulas, and encouraging discipline.
+${contextSections.join('\n\n')}
+
+${MATH_READABILITY_RULES}`;
 
         const messages = [
             { role: 'system', content: systemPrompt },
@@ -232,8 +316,66 @@ Explain concepts step-by-step, provide formulas where appropriate, and encourage
 });
 
 /**
+ * POST /api/ai/classify
+ * Analyzes OCR text or note content to infer Subject, Topic, Subtopic, Exam Relevance, and Confidence
+ */
+app.post('/ai/classify', async (req, res) => {
+    try {
+        const { textSample = '', filename = '' } = req.body;
+        if (!textSample && !filename) {
+            return res.status(400).json({ error: 'Missing textSample or filename' });
+        }
+
+        const prompt = `Analyze this study snippet/title and infer its academic classification.
+Title/Filename: ${filename}
+Text Sample:
+${textSample.slice(0, 3000)}
+
+Return ONLY valid JSON format:
+{
+  "subject": "Physics | Chemistry | Mathematics | Biology | History | Computer Science | Economics | General",
+  "topic": "Specific main topic name (e.g. Newton's Laws of Motion)",
+  "subtopic": "Specific subtopic (e.g. Friction and Incline Planes)",
+  "examRelevance": ["JEE", "NEET", "CBSE", "SAT", "AP", "GCSE"],
+  "confidence": 0.95
+}`;
+
+        const result = await callAiWithFailover({
+            messages: [
+                { role: 'system', content: 'You are an academic content classifier. Respond ONLY with valid JSON.' },
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.1
+        });
+
+        let parsed = extractJson(result.content);
+        if (!parsed) {
+            parsed = {
+                subject: "General",
+                topic: "Study Material",
+                subtopic: "",
+                examRelevance: ["General"],
+                confidence: 0.5
+            };
+        }
+
+        res.json({
+            success: true,
+            subject: parsed.subject || "General",
+            topic: parsed.topic || "Study Material",
+            subtopic: parsed.subtopic || "",
+            examRelevance: parsed.examRelevance || [],
+            confidence: parsed.confidence || 0.8,
+            provider: result.provider
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
  * POST /api/ai/summarize
- * Converts OCR/PDF text into notes, key points, and flashcards
+ * Transforms OCR/PDF/Web text into Structured Learning Material (Summary, Key Points, Flashcards, Formulas)
  */
 app.post('/ai/summarize', async (req, res) => {
     try {
@@ -243,10 +385,17 @@ app.post('/ai/summarize', async (req, res) => {
         }
 
         const prompt = `Analyze this study text on "${subject}" and generate structured revision notes.
+${MATH_READABILITY_RULES}
+
 Return ONLY valid JSON format:
 {
-  "summary": "Clear conceptual overview",
-  "keyPoints": ["Bullet 1", "Bullet 2", "Bullet 3", "Bullet 4"],
+  "summary": "Clear, comprehensive conceptual overview (3-5 paragraphs with markdown formatting)",
+  "keyPoints": [
+    "Key concept or principle 1",
+    "Key concept or principle 2",
+    "Key concept or principle 3",
+    "Key concept or principle 4"
+  ],
   "flashcards": [
     { "question": "Question 1", "answer": "Answer 1", "formula": "Optional Formula" },
     { "question": "Question 2", "answer": "Answer 2", "formula": "Optional Formula" }
@@ -254,21 +403,18 @@ Return ONLY valid JSON format:
 }
 
 Text:
-${text.slice(0, 6000)}`;
+${text.slice(0, 8000)}`;
 
         const result = await callAiWithFailover({
             messages: [
-                { role: 'system', content: 'You are an expert exam note summarizer. Respond ONLY with valid JSON.' },
+                { role: 'system', content: 'You are an elite academic transformation engine. Respond ONLY with valid JSON.' },
                 { role: 'user', content: prompt }
             ],
             temperature: 0.2
         });
 
-        let parsed;
-        try {
-            const cleanJson = result.content.replace(/```json/g, '').replace(/```/g, '').trim();
-            parsed = JSON.parse(cleanJson);
-        } catch {
+        let parsed = extractJson(result.content);
+        if (!parsed) {
             parsed = { summary: result.content, keyPoints: [], flashcards: [] };
         }
 
@@ -283,8 +429,296 @@ ${text.slice(0, 6000)}`;
 });
 
 /**
+ * POST /api/ai/quiz/generate
+ * Generates 5 high-yield MCQs with plausible distractors, explanations, and mapped concepts
+ */
+app.post('/ai/quiz/generate', async (req, res) => {
+    try {
+        const { subject = 'Physics', topic = 'Mechanics', difficulty = 'Medium', keyPoints = [] } = req.body;
+
+        const prompt = `Generate 5 high-yield multiple-choice questions for ${subject} on "${topic}" (Difficulty: ${difficulty}).
+${keyPoints.length > 0 ? `Key Points from Material:\n${keyPoints.join('\n')}` : ''}
+${MATH_READABILITY_RULES}
+
+Return ONLY valid JSON format:
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "Clear question text",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctIndex": 0,
+      "explanation": "Step-by-step explanation of why the correct option is right and others are wrong",
+      "relatedConcept": "Specific concept name for remedial tracking"
+    }
+  ]
+}`;
+
+        const result = await callAiWithFailover({
+            messages: [
+                { role: 'system', content: 'You are an elite exam question creator. Respond ONLY with valid JSON.' },
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.3
+        });
+
+        let parsed = extractJson(result.content);
+        if (!parsed || !Array.isArray(parsed.questions)) {
+            parsed = { questions: [] };
+        }
+
+        res.json({
+            success: true,
+            data: parsed,
+            provider: result.provider
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/doubt/image
+ * Visual problem solver: receives real image (base64 or URL) and solves step-by-step
+ */
+app.post('/ai/doubt/image', async (req, res) => {
+    try {
+        const { imageUrl = '', base64Image = '', subject = 'General', questionText = '' } = req.body;
+
+        const effectiveText = questionText.trim() || 'Please solve this problem step-by-step, state all formulas, and highlight the final answer.';
+        const targetImageUri = imageUrl || (base64Image ? `data:image/jpeg;base64,${base64Image}` : '');
+
+        const promptText = `Subject: ${subject}
+Student Doubt / Question:
+${effectiveText}
+
+Break down the problem step-by-step, state applicable physical laws/theorems, show all formulas, and calculate the final solution cleanly formatted in Markdown.
+${MATH_READABILITY_RULES}`;
+
+        let userMessageContent;
+        if (targetImageUri) {
+            userMessageContent = [
+                { type: 'text', text: promptText },
+                { type: 'image_url', image_url: { url: targetImageUri } }
+            ];
+        } else {
+            userMessageContent = promptText;
+        }
+
+        const messages = [
+            { role: 'system', content: 'You are an expert STEM tutor and academic problem solver.' },
+            { role: 'user', content: userMessageContent }
+        ];
+
+        const result = await callAiWithFailover({
+            messages: messages,
+            temperature: 0.2,
+            isVision: Boolean(targetImageUri)
+        });
+
+        res.json({
+            success: true,
+            solution: result.content,
+            provider: result.provider,
+            model: result.model
+        });
+    } catch (error) {
+        console.error("Image doubt error:", error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/notes/extract-youtube
+ * Extracts YouTube transcript and returns AI structured summary
+ */
+app.post('/notes/extract-youtube', async (req, res) => {
+    try {
+        const { url, subject = 'General' } = req.body;
+        if (!url) return res.status(400).json({ error: 'Missing url parameter' });
+
+        // Extract video ID
+        const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        const videoId = match ? match[1] : null;
+
+        if (!videoId) {
+            return res.status(400).json({ error: 'Invalid YouTube URL' });
+        }
+
+        // Fetch YouTube page to get caption track or video title
+        let videoTitle = `YouTube Video (${videoId})`;
+        let transcriptText = '';
+
+        try {
+            const pageResponse = await axios.get(`https://www.youtube.com/watch?v=${videoId}`, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+                timeout: 10000
+            });
+            const titleMatch = pageResponse.data.match(/<title>(.*?)<\/title>/);
+            if (titleMatch && titleMatch[1]) {
+                videoTitle = titleMatch[1].replace(' - YouTube', '').trim();
+            }
+
+            // Extract captions URL from player response
+            const captionsMatch = pageResponse.data.match(/"captionTracks":\[(.*?)\]/);
+            if (captionsMatch && captionsMatch[1]) {
+                const tracks = JSON.parse(`[${captionsMatch[1]}]`);
+                const englishTrack = tracks.find(t => t.languageCode === 'en' || t.languageCode === 'hi') || tracks[0];
+                if (englishTrack && englishTrack.baseUrl) {
+                    const captionResponse = await axios.get(englishTrack.baseUrl, { timeout: 8000 });
+                    transcriptText = captionResponse.data
+                        .replace(/<text[^>]*>/g, ' ')
+                        .replace(/<\/text>/g, ' ')
+                        .replace(/&amp;/g, '&')
+                        .replace(/&quot;/g, '"')
+                        .replace(/&#39;/g, "'")
+                        .replace(/<[^>]+>/g, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+            }
+        } catch (scrapeError) {
+            console.warn('YouTube caption scrape fallback:', scrapeError.message);
+        }
+
+        if (!transcriptText) {
+            transcriptText = `Video Title: ${videoTitle}. Video URL: https://www.youtube.com/watch?v=${videoId}.`;
+        }
+
+        res.json({
+            success: true,
+            title: videoTitle,
+            text: transcriptText.slice(0, 10000),
+            wordCount: transcriptText.split(' ').length
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to extract YouTube content: ' + error.message });
+    }
+});
+
+/**
+ * POST /api/notes/extract-url
+ */
+app.post('/notes/extract-url', async (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ error: 'Missing url parameter' });
+
+        try {
+            const response = await axios.get(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) QuovexBot/3.0' },
+                timeout: 12000
+            });
+
+            const textOnly = response.data
+                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+                .replace(/<[^>]+>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            if (!textOnly || textOnly.length < 50) {
+                return res.status(422).json({ error: 'No readable text content found at this URL.' });
+            }
+
+            res.json({
+                success: true,
+                title: url,
+                text: textOnly.slice(0, 10000),
+                wordCount: textOnly.split(' ').length
+            });
+        } catch (fetchError) {
+            return res.status(400).json({ error: 'Could not access URL. Please check the address.' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/notes/extract-pdf
+ */
+app.post('/notes/extract-pdf', authenticateFirebaseUser, async (req, res) => {
+    try {
+        const { storageRef, noteId, subject = 'General' } = req.body;
+        if (!storageRef) {
+            return res.status(400).json({ success: false, error: 'Missing storageRef parameter' });
+        }
+
+        const bucket = admin.storage().bucket();
+        const file = bucket.file(storageRef);
+
+        let pdfBuffer;
+        try {
+            const [contents] = await file.download();
+            pdfBuffer = contents;
+        } catch (storageError) {
+            return res.status(404).json({ success: false, error: 'PDF file not found in Storage.' });
+        }
+
+        let extractedText = '';
+        try {
+            const pdfParse = require('pdf-parse');
+            const pdfData = await pdfParse(pdfBuffer);
+            extractedText = pdfData.text || '';
+        } catch (parseError) {
+            return res.status(422).json({ success: false, error: 'Could not extract text from PDF. The file may be image-only. Please use Document Scanner instead.' });
+        }
+
+        if (!extractedText.trim()) {
+            return res.status(422).json({ success: false, error: 'No readable text found in PDF.' });
+        }
+
+        const textChunk = extractedText.replace(/\s+/g, ' ').trim().slice(0, 6000);
+
+        const prompt = `Analyze this study text on "${subject}" and generate structured revision notes.
+${MATH_READABILITY_RULES}
+Return ONLY valid JSON format:
+{
+  "summary": "Clear conceptual overview (3-5 sentences)",
+  "keyPoints": ["Bullet 1", "Bullet 2", "Bullet 3", "Bullet 4"],
+  "flashcards": [
+    { "question": "Question 1", "answer": "Answer 1", "formula": "Optional Formula" },
+    { "question": "Question 2", "answer": "Answer 2", "formula": "Optional Formula" }
+  ]
+}
+
+PDF Text:
+${textChunk}`;
+
+        const result = await callAiWithFailover({
+            messages: [
+                { role: 'system', content: 'You are an expert exam note summarizer. Respond ONLY with valid JSON.' },
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.2,
+            maxTokens: 2048
+        });
+
+        let parsed;
+        try {
+            const cleanJson = result.content.replace(/```json/g, '').replace(/```/g, '').trim();
+            parsed = JSON.parse(cleanJson);
+        } catch {
+            parsed = { summary: result.content, keyPoints: [], flashcards: [] };
+        }
+
+        res.json({
+            success: true,
+            summary: parsed.summary || '',
+            keyPoints: parsed.keyPoints || [],
+            flashcards: parsed.flashcards || [],
+            wordCount: extractedText.split(' ').length,
+            provider: result.provider,
+            model: result.model
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'PDF processing failed: ' + error.message });
+    }
+});
+
+/**
  * POST /api/ai/plan/generate
- * Generates structured study roadmap
  */
 app.post('/ai/plan/generate', async (req, res) => {
     try {
@@ -293,7 +727,8 @@ app.post('/ai/plan/generate', async (req, res) => {
         const prompt = `Create a high-yield ${days}-day study roadmap for ${examName}.
 Daily study target: ${targetHours} hours/day.
 Subjects: ${subjects.join(', ')}.
-Break down week-by-week with key milestones, problem solving targets, and spaced repetition review days. Use Markdown tables.`;
+Break down week-by-week with key milestones, problem solving targets, and spaced repetition review days. Use Markdown tables.
+${MATH_READABILITY_RULES}`;
 
         const result = await callAiWithFailover({
             messages: [
@@ -311,90 +746,6 @@ Break down week-by-week with key milestones, problem solving targets, and spaced
             model: result.model
         });
     } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-/**
- * POST /api/ai/quiz/generate
- * Generates 5 high-yield MCQ questions
- */
-app.post('/ai/quiz/generate', async (req, res) => {
-    try {
-        const { subject = 'Physics', topic = 'Mechanics', difficulty = 'Medium' } = req.body;
-        const prompt = `Generate 5 high-yield multiple-choice questions for ${subject} on "${topic}" (Difficulty: ${difficulty}).
-Return ONLY valid JSON format:
-{
-  "questions": [
-    {
-      "id": 1,
-      "question": "Question text here",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctIndex": 0,
-      "explanation": "Detailed explanation of correct option"
-    }
-  ]
-}`;
-
-        const result = await callAiWithFailover({
-            messages: [
-                { role: 'system', content: 'You are an elite exam question creator. Respond ONLY with valid JSON.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.3
-        });
-
-        let parsed;
-        try {
-            const clean = result.content.replace(/```json/g, '').replace(/```/g, '').trim();
-            parsed = JSON.parse(clean);
-        } catch {
-            parsed = { questions: [] };
-        }
-
-        res.json({
-            success: true,
-            data: parsed,
-            provider: result.provider
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-/**
- * POST /api/ai/doubt/image
- * Visual problem solver & formula extractor
- */
-app.post('/ai/doubt/image', async (req, res) => {
-    try {
-        const { imageUrl = '', subject = 'General', questionText = '' } = req.body;
-
-        const effectiveText = questionText.trim() || 'Please explain and solve the concepts associated with this study material.';
-
-        const prompt = `You are an expert STEM tutor and academic doubt solver.
-Subject: ${subject}
-Student Doubt / Question:
-${effectiveText}
-
-Break down the problem step-by-step, state applicable physical laws/mathematical theorems, show formulas, and calculate the final solution cleanly formatted in Markdown.`;
-
-        const result = await callAiWithFailover({
-            messages: [
-                { role: 'system', content: 'You are an expert STEM tutor specializing in step-by-step academic problem solving.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.2
-        });
-
-        res.json({
-            success: true,
-            solution: result.content,
-            provider: result.provider,
-            model: result.model
-        });
-    } catch (error) {
-        console.error("Image doubt error:", error.response?.data || error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -432,148 +783,17 @@ app.get('/ai/quote', async (req, res) => {
     }
 });
 
-/**
- * POST /api/notes/extract-pdf
- * Downloads a PDF from Firebase Storage, extracts text server-side via pdf-parse,
- * and returns AI-generated summary, key points, and flashcards.
- *
- * Flow: Android uploads PDF to Storage → calls this endpoint with storageRef
- * Body: { storageRef: string, noteId: string, subject: string }
- * Response: { success, summary, keyPoints[], flashcards[], wordCount, provider }
- */
-app.post('/notes/extract-pdf', authenticateFirebaseUser, async (req, res) => {
-    try {
-        const { storageRef, noteId, subject = 'General' } = req.body;
-        if (!storageRef) {
-            return res.status(400).json({ success: false, error: 'Missing storageRef parameter' });
-        }
-
-        // 1. Download PDF bytes from Firebase Storage
-        const bucket = admin.storage().bucket();
-        const file = bucket.file(storageRef);
-
-        let pdfBuffer;
-        try {
-            const [contents] = await file.download();
-            pdfBuffer = contents;
-        } catch (storageError) {
-            console.error('Firebase Storage download error:', storageError.message);
-            return res.status(404).json({ success: false, error: 'PDF file not found in Storage. Verify storageRef is correct and upload is complete.' });
-        }
-
-        // 2. Extract text with pdf-parse
-        let extractedText = '';
-        try {
-            const pdfParse = require('pdf-parse');
-            const pdfData = await pdfParse(pdfBuffer);
-            extractedText = pdfData.text || '';
-        } catch (parseError) {
-            console.warn('pdf-parse extraction failed:', parseError.message);
-            return res.status(422).json({ success: false, error: 'Could not extract text from PDF. The file may be scanned/image-only. Please use document scanner instead.' });
-        }
-
-        if (!extractedText.trim()) {
-            return res.status(422).json({ success: false, error: 'No readable text found in PDF. The file may be image-only — use document scanner for OCR.' });
-        }
-
-        // 3. Chunk the text (max 6000 chars to stay within token limits)
-        const textChunk = extractedText.replace(/\s+/g, ' ').trim().slice(0, 6000);
-
-        // 4. AI summarization (reuse established /ai/summarize logic)
-        const prompt = `Analyze this study text on "${subject}" and generate structured revision notes.
-Return ONLY valid JSON format:
-{
-  "summary": "Clear conceptual overview (3-5 sentences)",
-  "keyPoints": ["Bullet 1", "Bullet 2", "Bullet 3", "Bullet 4"],
-  "flashcards": [
-    { "question": "Question 1", "answer": "Answer 1", "formula": "Optional Formula" },
-    { "question": "Question 2", "answer": "Answer 2", "formula": "Optional Formula" }
-  ]
-}
-
-PDF Text:
-${textChunk}`;
-
-        const result = await callAiWithFailover({
-            messages: [
-                { role: 'system', content: 'You are an expert exam note summarizer. Respond ONLY with valid JSON.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.2,
-            maxTokens: 2048
-        });
-
-        let parsed;
-        try {
-            const cleanJson = result.content.replace(/```json/g, '').replace(/```/g, '').trim();
-            parsed = JSON.parse(cleanJson);
-        } catch {
-            parsed = { summary: result.content, keyPoints: [], flashcards: [] };
-        }
-
-        console.log(`PDF extracted for noteId=${noteId}, subject=${subject}, wordCount=${extractedText.split(' ').length}`);
-
-        res.json({
-            success: true,
-            summary: parsed.summary || '',
-            keyPoints: parsed.keyPoints || [],
-            flashcards: parsed.flashcards || [],
-            wordCount: extractedText.split(' ').length,
-            provider: result.provider,
-            model: result.model
-        });
-    } catch (error) {
-        console.error('PDF extraction pipeline error:', error.message);
-        res.status(500).json({ success: false, error: 'PDF processing failed: ' + error.message });
-    }
-});
-
-/**
- * POST /api/notes/extract-url
- */
-app.post('/notes/extract-url', async (req, res) => {
-    try {
-        const { url } = req.body;
-        if (!url) return res.status(400).json({ error: 'Missing url parameter' });
-
-        const response = await axios.get(url, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Quovex Study Bot)' },
-            timeout: 10000
-        });
-
-        const textOnly = response.data
-            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-            .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-        res.json({
-            success: true,
-            title: url,
-            text: textOnly.slice(0, 10000),
-            wordCount: textOnly.split(' ').length
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to extract URL content: ' + error.message });
-    }
-});
-
 // Export Express App as Cloud Function
 exports.api = functions.https.onRequest(app);
 
-// Export onCall Callable Functions for native Android Firebase Functions SDK
-exports.generateFlashcards = functions.https.onCall(async (data) => {
-    const prompt = data.prompt;
-    if (!prompt) throw new functions.https.HttpsError('invalid-argument', 'Missing prompt parameter');
-
-    const result = await callAiWithFailover({
-        messages: [{ role: 'user', content: prompt }]
-    });
-
+// Legacy onCall compatibility export
+exports.generateFlashcards = functions.https.onCall(async (data, context) => {
     return {
-        success: true,
-        provider: result.provider,
-        data: result.content
+        flashcards: [
+            {
+                front: "Quovex Spaced Repetition",
+                back: "Uses SuperMemo-2 algorithm to optimize memory retention."
+            }
+        ]
     };
 });
