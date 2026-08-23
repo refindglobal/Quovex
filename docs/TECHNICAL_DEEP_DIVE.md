@@ -1048,3 +1048,44 @@ Browse: Class (9-12) → Subject (Physics) → Book → Chapter (Laws of Motion)
   → Connects to Spaced Repetition Flashcards, Quizzes, and Quovex AI Tutor
 ```
 
+### 15.4 Quovex Originals Native Student Experience Architecture
+```
+KnowledgeHubScreen
+    │ (Tap Originals Banner)
+    ▼
+OriginalsBrowserScreen (OriginalsViewModel)
+    ├── Filter Chips: Subject (Physics, Math, Chemistry, Biology)
+    ├── Filter Chips: Curriculum (CBSE, JEE, NEET, AP, IB)
+    ├── Real-time Search Text Field
+    └── Book Card List (Title, Subject, Class, Chapters, Target Time)
+            │ (Select Book Card)
+            ▼
+    OriginalBookDetailScreen
+        ├── Overview & Learning Objectives
+        ├── Prerequisites & Difficulty
+        └── Table of Contents (Chapter Directory)
+                │ (Select Chapter / Start Reading)
+                ▼
+        OriginalChapterReaderScreen
+            ├── Section Navigation Bar (§ 1.1, § 1.2...)
+            ├── Conceptual Explanation (QuovexMathText LaTeX/Unicode rendering)
+            ├── Visual Analogy Callout Box
+            ├── Step-by-Step Worked Problems (Formulas + Step Reasoning)
+            ├── Real-World Engineering / Scientific Case Studies
+            ├── Common Student Misconceptions & Traps (Cautionary Red Callouts)
+            ├── Key Takeaway Summary Bullets
+            └── Action Bar:
+                  ├── "Ask Quovex AI" → Launches Contextual AI Chat
+                  ├── "Cards (N)" → PrepareOriginalChapterStudyAidsUseCase → Launches SM-2 Flashcard Player
+                  └── "Quiz (N)" → PrepareOriginalChapterStudyAidsUseCase → Launches Practice Quiz
+```
+
+### 15.5 Phase 11 — Real Production Study Aids Ingestion Pipeline
+To eliminate mock data and avoid engine duplication, `PrepareOriginalChapterStudyAidsUseCase` bridges published Originals chapters directly into the student's local Room database:
+1. **Material Record Generation**: Creates/finds a `NoteItem` entry corresponding to `"${book.title}: Ch ${chapter.chapterNumber} - ${chapter.title}"`.
+2. **Flashcards Persistence**: Creates a `DeckItem` linked to `sourceMaterialId` and inserts all `OriginalFlashcard` items into Room DB.
+3. **Quiz Ingestion**: Ingests all `OriginalQuizQuestion` items into Room DB with options, correct answer indices, and pedagogical explanations.
+4. **Zero-Mock Execution**: Passes dynamic `materialId` and `deckId` to `QuovexNavGraph`, launching standard `QuizScreen` and `FlashcardPlayerScreen` with zero simulated data.
+
+
+

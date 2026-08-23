@@ -1,0 +1,58 @@
+name: Quovex Production CI Verification
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  admin-verification:
+    name: Next.js Admin & Security Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'quovex-admin/package-lock.json'
+
+      - name: Install Admin Dependencies
+        working-directory: quovex-admin
+        run: npm ci
+
+      - name: Run Next.js Admin Test Suite (Security, Invariants, Demand, Zero-Mock)
+        working-directory: quovex-admin
+        run: npm test
+
+      - name: Run Next.js Production Build
+        working-directory: quovex-admin
+        run: npm run build
+
+  android-verification:
+    name: Android Native Unit Tests & Assembly
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Run Android Unit Tests
+        working-directory: android
+        run: ./gradlew testDebugUnitTest --continue
+
+      - name: Assemble Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug

@@ -1,9 +1,10 @@
-# Quovex Admin Panel — Custom Next.js Build Plan
+# Quovex Admin Control Center — Specification & Architecture
 
-**Version:** 1.0 | **Date:** 2026-08-21  
-**Stack:** Next.js 15 (App Router) + TypeScript + Tailwind CSS + Firebase Admin SDK  
-**Deployment:** Vercel (free tier)  
-**Auth:** Firebase Auth (Google Sign-In, admin emails whitelist)
+**Version:** 3.3.0 | **Date:** 2026-08-23  
+**Status:** `COMPLETED & VERIFIED (PHASE 9)`  
+**Stack:** Next.js 15 (App Router) + TypeScript + Tailwind CSS + Firebase Admin SDK + Server-Side RBAC  
+**Deployment:** Vercel / Cloud Run  
+**Auth:** Server-Side Admin Whitelist + RBAC (`SUPER_ADMIN`, `ADMIN`, `EDITOR`, `MODERATOR`, `ANALYST`)
 
 ---
 

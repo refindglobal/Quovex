@@ -214,6 +214,8 @@ Where each operation actually runs:
 | Focus timer | Android — TimerForegroundService | ✅ Yes |
 | App blocking | Android — AccessibilityService | ✅ Yes |
 | Quiz mistake → flashcard | Android — local domain logic | ✅ Yes |
+| Originals Chapter Reader | Android — Compose UI + QuovexMathText | ✅ Yes (cached) |
+| Originals Study Aids Ingestion | Android — PrepareOriginalChapterStudyAidsUseCase (Room) | ✅ Yes |
 | PDF text extraction | Cloud Function — pdf-parse | ❌ No |
 | URL scraping | Cloud Function — readability | ❌ No |
 | YouTube transcript | Cloud Function — YouTube API | ❌ No |
@@ -416,5 +418,24 @@ graph TB
     ENGINE --> QUIZ
     ENGINE --> TUTOR
     ENGINE --> MASTERY
+```
+
+---
+
+## 12. Quovex Originals Native Student Flow (Phase 10)
+
+```mermaid
+flowchart TD
+    KH[Knowledge Hub Screen] -->|Click Originals Banner| OB[Originals Browser Screen]
+    OB -->|Filter: Subject / Curriculum / Search| OB
+    OB -->|Select Published Book| BD[Original Book Detail Screen]
+    BD -->|View Objectives & Chapters| BD
+    BD -->|Start Reading Chapter N| CR[Original Chapter Reader Screen]
+    CR -->|Select Section Tab| CR
+    CR -->|Read Concept & Math LaTeX| CR
+    CR -->|View Analogies & Pitfalls| CR
+    CR -->|Tap 'Ask Quovex AI'| AI[Quovex AI Chat with Chapter Context]
+    CR -->|Tap 'Study Cards'| FP[Flashcard Player SM-2]
+    CR -->|Tap 'Take Quiz'| QZ[Quiz Practice Screen]
 ```
 
