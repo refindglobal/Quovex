@@ -107,42 +107,9 @@ You MUST output ONLY a valid JSON object matching this exact schema:
         createdAt: now
       };
     } catch (err: any) {
-      console.warn('AI Research Engine fallback:', err.message);
-      // Fallback deterministic structure based on first principles
-      return {
-        packId,
-        topicId: request.topic.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
-        topicName: request.topic,
-        subject: request.subject,
-        curriculum: request.curriculum,
-        items: [
-          {
-            evidenceId: `ev_${packId}_01`,
-            claim: `Core principles of ${request.topic}`,
-            fact: `Established mathematical laws governing ${request.topic} within ${request.curriculum}.`,
-            sourceUrl: 'https://ncert.nic.in/textbook.php',
-            sourceTitle: `${request.curriculum} Standard — ${request.topic}`,
-            publisher: 'NCERT / Official Curriculum Authority',
-            retrievedAt: now,
-            sourceType: 'OFFICIAL_CURRICULUM',
-            relevance: 1.0,
-            confidence: 1.0
-          }
-        ],
-        verifiedDefinitions: {
-          [request.topic]: `Fundamental scientific and mathematical framework of ${request.topic}.`
-        },
-        keyFormulas: [
-          { name: `${request.topic} Primary Law`, formula: 'F = m · a', units: 'SI Units', context: 'Standard conditions' }
-        ],
-        commonMisconceptions: [
-          `Confusing scalar and vector properties in ${request.topic}.`
-        ],
-        historicalAndRealWorldContext: [
-          `Engineering and aerospace applications of ${request.topic}.`
-        ],
-        createdAt: now
-      };
+      console.error('AI Research Engine failure:', err.message);
+      throw new Error(`AI_UNAVAILABLE_RESEARCH: ${err.message || 'Controlled research LLM call failed or produced invalid structure'}`);
     }
   }
 }
+

@@ -44,20 +44,7 @@ Output JSON:
   ]
 }`;
 
-    let architectResult: any = {
-      conceptProgression: [
-        "Intuitive Foundation: Dismantling common real-world illusions.",
-        "Core Law & Mathematical Derivation: First principles formulation.",
-        "Systematic Vector & Problem Solving Protocol: Free body diagrams.",
-        "Advanced Multi-Body and Real-World Friction Systems."
-      ],
-      visualAnalogies: [
-        "Inertia as physical stubbornness: heavy train vs light bicycle.",
-        "Airbags & Impulse: catching a cricket ball by pulling hands backward."
-      ],
-      proposedChapters: []
-    };
-
+    let architectResult: any;
     try {
       const architectRaw = await callAiGateway({
         messages: [
@@ -70,7 +57,8 @@ Output JSON:
       });
       architectResult = extractJsonFromAiResponse(architectRaw);
     } catch (e: any) {
-      console.warn('Architect agent fallback:', e.message);
+      console.error('Architect agent failure:', e.message);
+      throw new Error(`AI_UNAVAILABLE_ARCHITECT: ${e.message || 'Architect agent LLM call failed'}`);
     }
 
     // -------------------------------------------------------------
@@ -89,19 +77,7 @@ Output JSON:
   "critiqueNotes": "Specific recommendations for improving conceptual rigor"
 }`;
 
-    let challengerResult: any = {
-      identifiedRisks: [
-        "Students frequently confuse velocity with acceleration.",
-        "Action-reaction cancellation fallacy on a single body.",
-        "Assuming normal force is always equal to weight mg."
-      ],
-      edgeCases: [
-        "Motion on inclined plane with variable friction.",
-        "Apparent weightlessness in accelerating elevators."
-      ],
-      critiqueNotes: "Ensure explicit emphasis on vector decomposition and independent FBDs."
-    };
-
+    let challengerResult: any;
     try {
       const challengerRaw = await callAiGateway({
         messages: [
@@ -114,7 +90,8 @@ Output JSON:
       });
       challengerResult = extractJsonFromAiResponse(challengerRaw);
     } catch (e: any) {
-      console.warn('Challenger agent fallback:', e.message);
+      console.error('Challenger agent failure:', e.message);
+      throw new Error(`AI_UNAVAILABLE_CHALLENGER: ${e.message || 'Challenger agent LLM call failed'}`);
     }
 
     // -------------------------------------------------------------
@@ -139,39 +116,7 @@ Output JSON matching this exact schema:
   "curriculumAlignmentNotes": "Alignment summary"
 }`;
 
-    let synthesisResult: any = {
-      finalObjectives: request.learningObjectives.length > 0 ? request.learningObjectives : [
-        `Master fundamental laws and mathematical principles of ${request.topic}`,
-        `Apply systematic step-by-step vector and analytical problem solving`,
-        `Understand authentic real-world engineering and scientific applications`,
-        `Avoid the top competitive exam misconceptions and trap errors`
-      ],
-      chapters: [
-        {
-          chapterNumber: 1,
-          title: "The Law of Inertia & The Concept of Force",
-          targetConcepts: ["Aristotle vs Galileo vs Newton", "Newton's First Law", "Inertia and Mass", "Reference Frames"],
-          difficultyCurve: "Simple",
-          realWorldScenario: "Space probes traveling through interstellar space without engines running."
-        },
-        {
-          chapterNumber: 2,
-          title: "Momentum, Force & The Second Law (F = ma)",
-          targetConcepts: ["Linear Momentum (p = mv)", "Newton's 2nd Law (F = dp/dt)", "Impulse & Collision Time", "Free Body Diagrams"],
-          difficultyCurve: "Intermediate",
-          realWorldScenario: "Crumple zones and airbags engineered to lengthen impact time and save lives."
-        },
-        {
-          chapterNumber: 3,
-          title: "Action-Reaction, Friction & Multi-Body Systems",
-          targetConcepts: ["Newton's 3rd Law Interaction Pairs", "Static vs Kinetic Friction", "Connected Multi-Body Systems"],
-          difficultyCurve: "Advanced",
-          realWorldScenario: "Rocket propulsion in space and vehicle traction control."
-        }
-      ].slice(0, chapterCount),
-      curriculumAlignmentNotes: `Calibrated for ${request.curriculum} — ${request.gradeClass}.`
-    };
-
+    let synthesisResult: any;
     try {
       const synthesisRaw = await callAiGateway({
         messages: [
@@ -184,7 +129,8 @@ Output JSON matching this exact schema:
       });
       synthesisResult = extractJsonFromAiResponse(synthesisRaw);
     } catch (e: any) {
-      console.warn('Synthesis agent fallback:', e.message);
+      console.error('Synthesis agent failure:', e.message);
+      throw new Error(`AI_UNAVAILABLE_SYNTHESIS: ${e.message || 'Synthesis agent LLM call failed'}`);
     }
 
     const finalChapters = (synthesisResult.chapters || []).map((ch: any, idx: number) => ({
