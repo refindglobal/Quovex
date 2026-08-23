@@ -80,9 +80,16 @@ export class ContentPipeline {
       console.error(`Pipeline worker failed for job ${jobId}:`, err);
       const currentJob = studioStore.jobs.get(jobId);
       if (currentJob) {
-        currentJob.status = 'FAILED';
+        const isAiUnavailable = err?.message?.includes('AI_UNAVAILABLE') || err?.message?.includes('AI');
+        currentJob.status = isAiUnavailable ? 'FAILED_AI_UNAVAILABLE' : 'FAILED';
+        currentJob.stage = isAiUnavailable ? 'FAILED_AI_UNAVAILABLE' : currentJob.stage;
         currentJob.error = err.message || 'Unknown pipeline failure';
         currentJob.updatedAt = Date.now();
+        currentJob.stageLogs.push({
+          stage: isAiUnavailable ? 'FAILED_AI_UNAVAILABLE' : currentJob.stage,
+          timestamp: Date.now(),
+          message: `CRITICAL PIPELINE HALT: ${err.message || 'Unknown error'}. Blocked from reaching review or published state.`
+        });
       }
     });
 

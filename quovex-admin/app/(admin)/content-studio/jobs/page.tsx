@@ -95,14 +95,19 @@ export default function GenerationJobsPage() {
                 {jobs.map((job) => {
                   const isSelected = selectedJob?.jobId === job.jobId;
                   const isComplete = job.status === 'READY_FOR_REVIEW';
-                  const isFailed = job.status === 'FAILED';
+                  const isFailed = job.status === 'FAILED' || job.status === 'FAILED_AI_UNAVAILABLE' || (job.stage as string) === 'FAILED_AI_UNAVAILABLE';
+                  const isAiUnavailable = job.status === 'FAILED_AI_UNAVAILABLE' || (job.stage as string) === 'FAILED_AI_UNAVAILABLE';
 
                   return (
                     <div
                       key={job.jobId}
                       onClick={() => setSelectedJob(job)}
                       className={`p-4 transition-colors cursor-pointer space-y-2 ${
-                        isSelected ? 'bg-primary/10 border-l-2 border-primary' : 'hover:bg-[#151D19]'
+                        isSelected
+                          ? isFailed
+                            ? 'bg-red-500/10 border-l-2 border-red-500'
+                            : 'bg-primary/10 border-l-2 border-primary'
+                          : 'hover:bg-[#151D19]'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -113,19 +118,23 @@ export default function GenerationJobsPage() {
                               isComplete
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                 : isFailed
-                                ? 'bg-destructive/10 text-destructive border border-destructive/20'
+                                ? 'bg-red-500/15 text-red-400 border border-red-500/30'
                                 : 'bg-primary/10 text-primary border border-primary/20 animate-pulse'
                             }`}
                           >
-                            {job.stage}
+                            {isAiUnavailable ? 'FAILED: AI UNAVAILABLE' : isFailed ? 'FAILED' : job.stage}
                           </span>
                         </div>
-                        <span className="text-xs font-bold text-primary">{job.progressPercentage}%</span>
+                        <span className={`text-xs font-bold ${isFailed ? 'text-red-400' : 'text-primary'}`}>
+                          {job.progressPercentage}%
+                        </span>
                       </div>
 
                       <div className="w-full bg-[#0C120F] h-1.5 rounded-full overflow-hidden">
                         <div
-                          className="bg-primary h-full transition-all duration-300 rounded-full"
+                          className={`h-full transition-all duration-300 rounded-full ${
+                            isFailed ? 'bg-red-500' : 'bg-primary'
+                          }`}
                           style={{ width: `${job.progressPercentage}%` }}
                         />
                       </div>
@@ -164,7 +173,27 @@ export default function GenerationJobsPage() {
                         <span>Open Draft Editor</span>
                       </Link>
                     )}
+
+                    {(selectedJob.status === 'FAILED' || selectedJob.status === 'FAILED_AI_UNAVAILABLE' || (selectedJob.stage as string) === 'FAILED_AI_UNAVAILABLE') && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>Generation Halted — AI Failure</span>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Failure Alert Banner */}
+                  {(selectedJob.status === 'FAILED' || selectedJob.status === 'FAILED_AI_UNAVAILABLE' || (selectedJob.stage as string) === 'FAILED_AI_UNAVAILABLE') && (
+                    <div className="p-4 rounded-lg bg-red-950/30 border border-red-800/40 space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-red-400">
+                        <AlertTriangle className="w-4 h-4 text-red-400" />
+                        <span>AI Provider Unavailable — Generation Halted</span>
+                      </div>
+                      <p className="text-xs text-red-300/80 leading-relaxed">
+                        {selectedJob.error || 'Server-side LLM call failed or produced invalid structure. The pipeline was halted to prevent publishing unverified or template filler content.'}
+                      </p>
+                    </div>
+                  )}
 
                   {/* 16-Stage Visual Timeline */}
                   <div className="space-y-2">

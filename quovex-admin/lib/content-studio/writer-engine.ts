@@ -293,80 +293,8 @@ Output ONLY a valid JSON object matching this exact schema:
         quizQuestions
       };
     } catch (err: any) {
-      console.warn(`AI Chapter ${chapterNumber} writer fallback:`, err.message);
-      // Fallback deterministic structure based on first principles
-      return {
-        chapterNumber,
-        title,
-        summary: `Chapter ${chapterNumber} provides rigorous study of ${title} within ${subject}.`,
-        learningObjectives: concepts,
-        sections: [
-          {
-            id: `sec_${chapterNumber}_1`,
-            sectionNumber: `${chapterNumber}.1`,
-            title: `Foundations of ${title}`,
-            conceptualExplanation: `Detailed conceptual breakdown of ${title} based on first principles.`,
-            visualAnalogy: `Physical mental model for ${title}.`,
-            workedExamples: [
-              {
-                id: `ex_${chapterNumber}_1_1`,
-                problemStatement: `Calculate the primary parameters for a body governed by ${title}.`,
-                stepByStepSolution: [
-                  { stepNumber: 1, explanation: 'State the given initial conditions and boundary constraints.' },
-                  { stepNumber: 2, explanation: 'Apply governing equation of motion: F = m · a.', mathFormula: 'F_net = m · a' }
-                ],
-                keyTakeaway: 'Always evaluate net external forces independently on each body.',
-                difficulty: difficultyCurve
-              }
-            ],
-            realWorldExamples: [
-              {
-                id: `rw_${chapterNumber}_1_1`,
-                domain: 'TECHNOLOGY',
-                title: `Aerospace Dynamics in ${title}`,
-                narrative: `Modern aerospace guidance systems utilize high-frequency vector feedback based on ${title}.`,
-                physicsOrConceptPrinciple: `Governing dynamic laws applied to real-time trajectory optimization.`
-              }
-            ],
-            commonMistakes: [
-              {
-                id: `cm_${chapterNumber}_1_1`,
-                misconception: 'Confusing scalar and vector properties.',
-                whyStudentsMakeIt: 'Treating vectors as simple scalar numbers.',
-                correctUnderstanding: 'Forces must be resolved along orthogonal axes.',
-                quickCheck: 'Check if direction matters.'
-              }
-            ],
-            summaryPoints: [`Section ${chapterNumber}.1 key takeaway.`]
-          }
-        ],
-        quickRevisionBulletPoints: [`Summary point for Chapter ${chapterNumber}.`],
-        flashcards: [
-          {
-            id: `fc_${chapterNumber}_1`,
-            frontPrompt: `State the fundamental principle of ${title}.`,
-            backAnswer: `Core mathematical law governing ${title}.`,
-            conceptTag: title,
-            difficultyRating: 2
-          }
-        ],
-        quizQuestions: [
-          {
-            id: `q_${chapterNumber}_1`,
-            question: `Which statement correctly describes ${title}?`,
-            options: [
-              'Correct scientific definition as established by standard physics',
-              'Opposite secondary effect',
-              'Alternative unrelated phenomenon',
-              'None of the above'
-            ],
-            correctIndex: 0,
-            pedagogicalExplanation: `Directly derived from the fundamental equations of ${title}.`,
-            distractorExplanations: ['Incorrect distractor analysis.'],
-            formulaReference: 'F = m · a'
-          }
-        ]
-      };
+      console.error(`AI Chapter ${chapterNumber} writer failure:`, err.message);
+      throw new Error(`AI_UNAVAILABLE_CHAPTER_${chapterNumber}: ${err.message || 'Server-side LLM call failed or produced invalid structure'}`);
     }
   }
 
@@ -423,42 +351,9 @@ Output ONLY a valid JSON object matching this exact schema:
         summaryPoints: sec.summaryPoints || [`Summary of Section ${sectionNumber}.`]
       };
     } catch (e: any) {
-      console.warn('Section regeneration AI fallback:', e.message);
-      return {
-        id: `sec_${chapterNumber}_${sectionNumber.replace('.', '_')}_revised`,
-        sectionNumber,
-        title: `${topic} — Revised Analysis`,
-        conceptualExplanation: `Revised pedagogical breakdown of ${topic}.`,
-        visualAnalogy: `Mental model for ${topic}.`,
-        workedExamples: [
-          {
-            id: `ex_rev_${Date.now()}`,
-            problemStatement: `Revised problem on ${topic}.`,
-            stepByStepSolution: [{ stepNumber: 1, explanation: 'Solve step 1.', mathFormula: 'F = m · a' }],
-            keyTakeaway: 'Key takeaway.',
-            difficulty: 'Advanced'
-          }
-        ],
-        realWorldExamples: [
-          {
-            id: `rw_rev_${Date.now()}`,
-            domain: 'TECHNOLOGY',
-            title: `Application of ${topic}`,
-            narrative: `Real world application of ${topic}.`,
-            physicsOrConceptPrinciple: `Governing dynamic laws.`
-          }
-        ],
-        commonMistakes: [
-          {
-            id: `cm_rev_${Date.now()}`,
-            misconception: 'Common student trap.',
-            whyStudentsMakeIt: 'Intuition failure.',
-            correctUnderstanding: 'Rigorous calculation.',
-            quickCheck: 'Quick check rule.'
-          }
-        ],
-        summaryPoints: [`Revised summary of Section ${sectionNumber}.`]
-      };
+      console.error('Section regeneration AI failure:', e.message);
+      throw new Error(`AI_UNAVAILABLE_SECTION_REGEN: ${e.message || 'AI section generation failed'}`);
     }
   }
 }
+

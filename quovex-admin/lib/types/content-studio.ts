@@ -16,7 +16,7 @@ export type ApprovalStatus =
   | 'UNPUBLISHED'
   | 'ARCHIVED';
 
-export type JobStatus = 'REQUESTED' | 'GENERATING' | 'READY_FOR_REVIEW' | 'FAILED' | 'CANCELLED';
+export type JobStatus = 'REQUESTED' | 'GENERATING' | 'READY_FOR_REVIEW' | 'FAILED' | 'FAILED_AI_UNAVAILABLE' | 'CANCELLED';
 
 export type GenerationStage =
   | 'DEMAND_ANALYSIS'
@@ -34,6 +34,7 @@ export type GenerationStage =
   | 'CURRICULUM_VALIDATION'
   | 'PEDAGOGY_VALIDATION'
   | 'CONSISTENCY_VALIDATION'
+  | 'FAILED_AI_UNAVAILABLE'
   | 'READY_FOR_REVIEW';
 
 export interface SignalWeights {
