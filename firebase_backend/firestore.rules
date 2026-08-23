@@ -45,8 +45,6 @@ service cloud.firestore {
     }
 
     // ─── STUDY ROOMS ──────────────────────────────────────────────────────
-    // Public rooms: all authenticated users can read
-    // Only the room creator (or system) can write room metadata
     match /study_rooms/{roomId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
@@ -54,7 +52,6 @@ service cloud.firestore {
         && (resource.data.createdBy == request.auth.uid
             || resource.data.createdBy == "system");
 
-      // Participants: authenticated users can join/leave
       match /participants/{participantId} {
         allow read: if request.auth != null;
         allow write: if request.auth != null && request.auth.uid == participantId;
@@ -62,7 +59,6 @@ service cloud.firestore {
     }
 
     // ─── LEADERBOARD ──────────────────────────────────────────────────────
-    // All authenticated users can read; only own entry can be written
     match /leaderboard/{entryId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null
@@ -70,12 +66,64 @@ service cloud.firestore {
     }
 
     // ─── CONFIG (ADMIN ONLY) ──────────────────────────────────────────────
-    // Feature flags, exam catalog, AI key usage — read-only for users
-    // Only Firebase Admin SDK (Cloud Functions) can write
     match /config/{document} {
       allow read: if request.auth != null;
       allow write: if false; // Only Admin SDK via Cloud Functions
     }
 
+    // ─── QUOVEX ORIGINALS (PHASE 8 PUBLIC CONTRACT) ───────────────────────
+    // Public / Android clients can read ONLY published books
+    // All writes/mutations MUST go through Firebase Admin SDK
+    match /quovex_originals/{bookId} {
+      allow read: if resource.data.approvalStatus == 'PUBLISHED';
+      allow write: if false; // Managed exclusively by Server-Side Admin Control Plane
+    }
+
+    // ─── CONTENT STUDIO INTERNAL COLLECTIONS (ADMIN SDK EXCLUSIVE) ─────────
+    // Public/Student clients CANNOT read or write draft books, generation jobs,
+    // demand signals, evidence packs, debate blueprints, or validation reports.
+    match /topic_demand_signals/{signalId} {
+      allow read, write: if false;
+    }
+
+    match /book_requests/{requestId} {
+      allow read, write: if false;
+    }
+
+    match /content_generation_jobs/{jobId} {
+      allow read, write: if false;
+    }
+
+    match /evidence_packs/{packId} {
+      allow read, write: if false;
+    }
+
+    match /editorial_blueprints/{blueprintId} {
+      allow read, write: if false;
+    }
+
+    match /validation_reports/{reportId} {
+      allow read, write: if false;
+    }
+
+    // ─── PHASE 9 ADMIN CONTROL CENTER COLLECTIONS (ADMIN SDK EXCLUSIVE) ───
+    match /feature_flags/{flagId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only Admin SDK
+    }
+
+    match /audit_logs/{logId} {
+      allow read, write: if false; // Append-only via Admin SDK
+    }
+
+    match /moderation_reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if false; // Triaged via Admin SDK
+    }
+
+    match /notification_campaigns/{campaignId} {
+      allow read, write: if false; // Admin SDK exclusive
+    }
   }
 }
+
