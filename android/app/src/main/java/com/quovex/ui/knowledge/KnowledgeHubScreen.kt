@@ -69,7 +69,8 @@ fun KnowledgeHubScreen(
     onNavigateToAddMaterial: () -> Unit,
     onNavigateToMaterialDetail: (materialId: Long) -> Unit,
     onNavigateToFlashcards: (deckId: Long) -> Unit,
-    onNavigateToNcert: () -> Unit = {}
+    onNavigateToNcert: () -> Unit = {},
+    onNavigateToOriginals: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -119,15 +120,15 @@ fun KnowledgeHubScreen(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // ── OFFICIAL RESOURCES (NCERT LIBRARY) BANNER ────────────────────
+            // ── QUOVEX ORIGINALS BANNER ──────────────────────────────────────
             item {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .clickable(onClick = onNavigateToNcert),
+                        .clickable(onClick = onNavigateToOriginals),
                     color = SurfaceGlass,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BrandEmerald.copy(alpha = 0.35f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BrandEmerald.copy(alpha = 0.45f))
                 ) {
                     Row(
                         modifier = Modifier
@@ -144,13 +145,88 @@ fun KnowledgeHubScreen(
                                 modifier = Modifier
                                     .size(46.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(BrandEmerald.copy(alpha = 0.15f)),
+                                    .background(BrandEmerald.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = BrandEmerald,
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(14.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Quovex Originals",
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary,
+                                        fontSize = 16.sp
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Surface(
+                                        color = BrandEmerald.copy(alpha = 0.2f),
+                                        shape = CircleShape
+                                    ) {
+                                        Text(
+                                            text = "ORIGINALS",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = BrandEmerald,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "High-Yield Conceptual Educational Books",
+                                    color = TextSecondary,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Open Quovex Originals",
+                            tint = BrandEmerald,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            // ── OFFICIAL RESOURCES (NCERT LIBRARY) BANNER ────────────────────
+            item {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable(onClick = onNavigateToNcert),
+                    color = SurfaceGlass,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.White.copy(alpha = 0.08f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.AutoStories,
                                     contentDescription = null,
-                                    tint = BrandEmerald,
+                                    tint = TextSecondary,
                                     modifier = Modifier.size(26.dp)
                                 )
                             }
@@ -165,14 +241,14 @@ fun KnowledgeHubScreen(
                                     )
                                     Spacer(Modifier.width(6.dp))
                                     Surface(
-                                        color = BrandEmerald.copy(alpha = 0.2f),
+                                        color = Color.White.copy(alpha = 0.1f),
                                         shape = CircleShape
                                     ) {
                                         Text(
                                             text = "OFFICIAL",
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = BrandEmerald,
+                                            color = TextSecondary,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }

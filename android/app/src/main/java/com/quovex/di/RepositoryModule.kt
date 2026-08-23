@@ -40,5 +40,12 @@ abstract class RepositoryModule {
     abstract fun bindNcertPdfCacheRepository(
         impl: NcertPdfCacheRepositoryImpl
     ): NcertPdfCacheRepository
+
+    /** Quovex Originals repository */
+    @Binds
+    @Singleton
+    abstract fun bindQuovexOriginalsRepository(
+        impl: com.quovex.data.repository.QuovexOriginalsRepositoryImpl
+    ): com.quovex.domain.repository.QuovexOriginalsRepository
 }
 

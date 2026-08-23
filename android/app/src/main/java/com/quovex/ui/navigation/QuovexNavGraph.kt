@@ -223,6 +223,9 @@ fun QuovexNavGraph(
                     },
                     onNavigateToNcert = {
                         navController.navigate(QuovexRoute.NcertBrowser.route)
+                    },
+                    onNavigateToOriginals = {
+                        navController.navigate(QuovexRoute.OriginalsBrowser.route)
                     }
                 )
             }
@@ -479,6 +482,63 @@ fun QuovexNavGraph(
                                 prompt = query
                             )
                         )
+                    }
+                )
+            }
+
+            // --- QUOVEX ORIGINALS: BROWSER ---
+            composable(QuovexRoute.OriginalsBrowser.route) {
+                val originalsViewModel: com.quovex.ui.originals.OriginalsViewModel = hiltViewModel()
+                com.quovex.ui.originals.OriginalsBrowserScreen(
+                    viewModel = originalsViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToBookDetail = { bookId ->
+                        navController.navigate(QuovexRoute.OriginalBookDetail.createRoute(bookId))
+                    }
+                )
+            }
+
+            // --- QUOVEX ORIGINALS: BOOK DETAIL ---
+            composable(
+                route = QuovexRoute.OriginalBookDetail.route,
+                arguments = listOf(navArgument("bookId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val bookId = backStackEntry.arguments?.getString("bookId") ?: ""
+                val originalsViewModel: com.quovex.ui.originals.OriginalsViewModel = hiltViewModel()
+                com.quovex.ui.originals.OriginalBookDetailScreen(
+                    bookId = bookId,
+                    viewModel = originalsViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToChapterReader = { bId, chapterNum ->
+                        navController.navigate(QuovexRoute.OriginalChapterReader.createRoute(bId, chapterNum))
+                    }
+                )
+            }
+
+            // --- QUOVEX ORIGINALS: CHAPTER READER ---
+            composable(
+                route = QuovexRoute.OriginalChapterReader.route,
+                arguments = listOf(
+                    navArgument("bookId") { type = NavType.StringType },
+                    navArgument("chapterNumber") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val bookId = backStackEntry.arguments?.getString("bookId") ?: ""
+                val chapterNumber = backStackEntry.arguments?.getInt("chapterNumber") ?: 1
+                val originalsViewModel: com.quovex.ui.originals.OriginalsViewModel = hiltViewModel()
+                com.quovex.ui.originals.OriginalChapterReaderScreen(
+                    bookId = bookId,
+                    chapterNumber = chapterNumber,
+                    viewModel = originalsViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenAiChat = { subject, topic, prompt ->
+                        navController.navigate(QuovexRoute.AiChat.createRoute(subject, topic, prompt))
+                    },
+                    onStartQuiz = { materialId ->
+                        navController.navigate(QuovexRoute.Quiz.createRoute(materialId))
+                    },
+                    onStudyFlashcards = { deckId ->
+                        navController.navigate(QuovexRoute.FlashcardPlayer.createRoute(deckId.toInt(), reviewAll = true))
                     }
                 )
             }

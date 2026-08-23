@@ -72,21 +72,24 @@ class NcertPdfCacheRepositoryImpl @Inject constructor(
                 val tempFile = java.io.File(pdfCacheDir(), "${chapterId}.tmp")
 
                 val encodedHttps = java.net.URLEncoder.encode(httpsUrl, "UTF-8")
-                val urlsToTry = listOf(
+                val urlsToTry = mutableListOf(
                     httpsUrl,
-                    httpUrl,
-                    "http://127.0.0.1:5001/ncert/pdf?url=$encodedHttps",
-                    "http://10.0.2.2:5001/ncert/pdf?url=$encodedHttps",
-                    "http://192.168.135.233:5001/ncert/pdf?url=$encodedHttps",
-                    "https://api-dopkbhqrgq-uc.a.run.app/ncert/pdf?url=$encodedHttps"
+                    httpUrl
                 )
+                if (com.quovex.BuildConfig.DEBUG) {
+                    urlsToTry.add("http://10.0.2.2:5001/ncert/pdf?url=$encodedHttps")
+                    urlsToTry.add("http://127.0.0.1:5001/ncert/pdf?url=$encodedHttps")
+                }
+                urlsToTry.add("https://api-dopkbhqrgq-uc.a.run.app/ncert/pdf?url=$encodedHttps")
 
                 var downloadSuccess = false
                 var lastError: Exception? = null
 
                 for (targetUrl in urlsToTry) {
                     try {
-                        android.util.Log.d("NcertPdfCache", "Attempting download chapterId=$chapterId from URL: $targetUrl")
+                        if (com.quovex.BuildConfig.DEBUG) {
+                            android.util.Log.d("NcertPdfCache", "Attempting download chapterId=$chapterId from URL: $targetUrl")
+                        }
                         val request = Request.Builder()
                             .url(targetUrl)
                             .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
@@ -94,7 +97,6 @@ class NcertPdfCacheRepositoryImpl @Inject constructor(
                             .build()
 
                         okHttpClient.newCall(request).execute().use { response ->
-                            android.util.Log.d("NcertPdfCache", "Response code=${response.code} for $targetUrl")
                             if (response.isSuccessful) {
                                 val body = response.body
                                 if (body != null) {
@@ -112,7 +114,6 @@ class NcertPdfCacheRepositoryImpl @Inject constructor(
 
                         if (downloadSuccess) break
                     } catch (e: Exception) {
-                        android.util.Log.w("NcertPdfCache", "Download failed on URL: $targetUrl, error: ${e.message}")
                         lastError = e
                     }
                 }
@@ -130,7 +131,6 @@ class NcertPdfCacheRepositoryImpl @Inject constructor(
                     tempFile.delete()
                 }
 
-                android.util.Log.d("NcertPdfCache", "Successfully saved PDF to ${destFile.absolutePath}, size=${destFile.length()}")
                 Result.success(destFile.absolutePath)
             } catch (e: Exception) {
                 android.util.Log.e("NcertPdfCache", "Download failed for chapterId=$chapterId", e)

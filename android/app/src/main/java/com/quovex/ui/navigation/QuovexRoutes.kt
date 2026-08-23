@@ -38,6 +38,15 @@ sealed class QuovexRoute(val route: String) {
         fun createRoute(chapterId: String) = "ncert_pdf_reader/$chapterId"
     }
 
+    // Quovex Originals Educational Catalog
+    object OriginalsBrowser : QuovexRoute("originals_browser")
+    object OriginalBookDetail : QuovexRoute("original_book_detail/{bookId}") {
+        fun createRoute(bookId: String) = "original_book_detail/$bookId"
+    }
+    object OriginalChapterReader : QuovexRoute("original_chapter_reader/{bookId}/{chapterNumber}") {
+        fun createRoute(bookId: String, chapterNumber: Int) = "original_chapter_reader/$bookId/$chapterNumber"
+    }
+
     // Practice Quiz
     object Quiz : QuovexRoute("quiz/{materialId}") {
         fun createRoute(materialId: Long) = "quiz/$materialId"

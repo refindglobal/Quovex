@@ -36,3 +36,8 @@ firestore-debug.log*
 
 # Legacy archive
 legacy_archive/
+
+# Next.js / Admin panel
+.next/
+quovex-admin/.next/
+quovex-admin/node_modules/
