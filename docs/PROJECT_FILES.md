@@ -7,6 +7,13 @@ Quovex APP/
 │
 ├── docs/
 │   ├── PRD.md                          ← Product Requirements Document
+│   ├── UI_UX_SPEC.md                   ← Complete UI/UX Specification
+│   ├── TECHNICAL_DEEP_DIVE.md          ← Technical Deep Dive & Pipelines
+│   ├── ARCHITECTURE_MAP.md             ← Complete System Architecture
+│   ├── AI_MODELS.md                    ← Model IDs, Gateway & Brand Safety
+│   ├── DESIGN_AND_FEATURES.md          ← Design System & Features
+│   ├── ADMIN_PANEL.md                  ← Next.js Admin Panel Specification
+│   ├── CONTENT_STUDIO_SPEC.md          ← Content Studio & Multi-Agent Engine
 │   ├── PROJECT_FILES.md                ← This file
 │   └── CHANGELOG.md                   ← Version history
 │

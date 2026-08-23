@@ -1,5 +1,11 @@
 package com.quovex.ui.ai
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +29,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,13 +44,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.quovex.domain.model.SubjectCatalog
 import com.quovex.theme.QuovexTheme
 import com.quovex.ui.components.QuovexCard
 import com.quovex.ui.components.QuovexChip
+import com.quovex.ui.components.QuovexMathText
 import com.quovex.ui.components.QuovexTextField
 import com.quovex.ui.components.QuovexTopAppBar
 
@@ -53,14 +66,45 @@ fun AiChatScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
-    val subjects = listOf("Physics", "Chemistry", "Maths", "Biology")
+    val context = LocalContext.current
     val colors = QuovexTheme.colors
 
-    val suggestions = when (state.selectedSubject) {
-        "Physics" -> listOf("Explain Lenz's Law with examples", "Derive formula for Solenoid Inductance", "What is Carnot Engine efficiency?")
-        "Chemistry" -> listOf("Explain Aldol Condensation mechanism", "What is Markovnikov's Rule?", "How does Le Chatelier's Principle work?")
-        "Maths" -> listOf("Explain L'Hôpital's Rule with 0/0 example", "How to find Maxima and Minima?", "Integration by parts formula")
-        else -> listOf("What is DNA Replication?", "Explain Glycolysis steps", "Mendel's Laws of Inheritance")
+    // Universal subject catalog — dynamic list from ViewModel/Catalog
+    val subjects = if (state.availableSubjects.isNotEmpty()) {
+        state.availableSubjects
+    } else {
+        SubjectCatalog.chatSelectorNames
+    }
+
+    // Image Picker Launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream?.close()
+                if (bitmap != null) {
+                    viewModel.onImageAttached(bitmap)
+                }
+            } catch (_: Exception) { }
+        }
+    }
+
+    // Dynamic suggestions based on selected subject
+    val suggestions = when (state.selectedSubject.lowercase()) {
+        "physics" -> listOf("Explain Lenz's Law with examples", "Derive formula for Solenoid Inductance", "What is Carnot Engine efficiency?")
+        "chemistry" -> listOf("Explain Aldol Condensation mechanism", "What is Markovnikov's Rule?", "How does Le Chatelier's Principle work?")
+        "mathematics", "maths" -> listOf("Explain L'Hôpital's Rule with 0/0 example", "How to find Maxima and Minima?", "Integration by parts formula")
+        "biology" -> listOf("What is DNA Replication?", "Explain Glycolysis steps", "Mendel's Laws of Inheritance")
+        "accountancy" -> listOf("Explain rules of Debit and Credit", "What is Goodwill valuation?", "Format of Cash Flow Statement")
+        "business studies" -> listOf("Principles of Scientific Management", "Explain Maslow's Need Hierarchy", "Steps in Planning Process")
+        "economics" -> listOf("Law of Diminishing Marginal Utility", "Fiscal Deficit vs Revenue Deficit", "Determinants of Demand")
+        "history" -> listOf("Causes of Revolt of 1857", "Key features of Harappan Civilization", "Non-Cooperation Movement timeline")
+        "political science" -> listOf("Features of Indian Constitution", "Emergency provisions in India", "Role of Election Commission")
+        "computer science" -> listOf("Explain recursion with base condition", "Difference between Stack and Queue", "SQL JOIN operations")
+        else -> listOf("Summarize this concept", "Explain with real-world examples", "Create 3 practice questions on this")
     }
 
     LaunchedEffect(state.messages.size) {
@@ -80,7 +124,7 @@ fun AiChatScreen(
                         modifier = Modifier.padding(end = QuovexTheme.spacing.md)
                     ) {
                         QuovexChip(
-                            label = "Groq 20B",
+                            label = "Quovex AI",
                             isSelected = true,
                             leadingIcon = {
                                 Icon(
@@ -102,7 +146,7 @@ fun AiChatScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Subject Filter Bar
+            // Subject Filter Bar (Universal subjects)
             LazyRow(
                 contentPadding = PaddingValues(horizontal = QuovexTheme.spacing.lg, vertical = QuovexTheme.spacing.xs),
                 horizontalArrangement = Arrangement.spacedBy(QuovexTheme.spacing.sm)
@@ -110,7 +154,7 @@ fun AiChatScreen(
                 items(subjects) { subj ->
                     QuovexChip(
                         label = subj,
-                        isSelected = state.selectedSubject == subj,
+                        isSelected = state.selectedSubject.equals(subj, ignoreCase = true),
                         onClick = { viewModel.selectSubject(subj) }
                     )
                 }
@@ -132,7 +176,7 @@ fun AiChatScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
-                            Box(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth(0.82f)
                                     .clip(
@@ -144,8 +188,22 @@ fun AiChatScreen(
                                         )
                                     )
                                     .background(colors.primary)
-                                    .padding(QuovexTheme.spacing.base)
+                                    .padding(QuovexTheme.spacing.base),
+                                horizontalAlignment = Alignment.End
                             ) {
+                                // If image was attached, display it
+                                msg.attachedImageBitmap?.let { bmp ->
+                                    Image(
+                                        bitmap = bmp.asImageBitmap(),
+                                        contentDescription = "User attached image",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(160.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .padding(bottom = 8.dp),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                                 Text(
                                     text = msg.text,
                                     style = QuovexTheme.typography.bodyMedium,
@@ -186,7 +244,7 @@ fun AiChatScreen(
                                         )
                                     }
 
-                                    Text(
+                                    QuovexMathText(
                                         text = msg.text,
                                         style = QuovexTheme.typography.bodyMedium,
                                         color = colors.textPrimary,
@@ -234,19 +292,69 @@ fun AiChatScreen(
                 }
             }
 
+            // Attached image preview banner if user picked an image
+            state.attachedImage?.let { bmp ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = QuovexTheme.spacing.base, vertical = 4.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(colors.surfaceVariant)
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        bitmap = bmp.asImageBitmap(),
+                        contentDescription = "Attached preview",
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(6.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Image attached for AI vision analysis",
+                        style = QuovexTheme.typography.bodySmall,
+                        color = colors.textSecondary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { viewModel.clearAttachedImage() }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Remove attached image",
+                            tint = colors.textSecondary
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(QuovexTheme.spacing.xxs))
 
-            // Bottom Input Bar
+            // Bottom Input Bar with image attachment button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = QuovexTheme.spacing.base, vertical = QuovexTheme.spacing.sm),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Attach image button
+                IconButton(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddPhotoAlternate,
+                        contentDescription = "Attach problem image",
+                        tint = if (state.attachedImage != null) colors.primary else colors.textSecondary
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
                 QuovexTextField(
                     value = state.inputText,
                     onValueChange = { viewModel.onInputTextChanged(it) },
-                    placeholder = "Ask a doubt in ${state.selectedSubject}...",
+                    placeholder = if (state.attachedImage != null) "Ask about this image..." else "Ask a doubt in ${state.selectedSubject}...",
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),

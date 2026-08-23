@@ -64,8 +64,7 @@
 | `streakFire` | `#FF6B35` — streak flame |
 | `focusScore` | Green gradient: `#00C896` → `#FFD700` → `#FF5252` |
 | `premium` | `#FFD700` — gold for premium badge |
-| `groqBadge` | `#F55036` — Groq branding |
-| `cerebrasBadge` | `#6C63FF` — Cerebras branding |
+| `quovexAiBadge` | `#00C896` — Quovex AI Emerald Branding |
 
 ---
 

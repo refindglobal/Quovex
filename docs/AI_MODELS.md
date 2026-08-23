@@ -145,3 +145,33 @@ All Quovex AI prompts follow these principles. These are **behavior requirements
 - **Include explanation** for every correct answer
 - **Map to relatedConcept** — enables remedial flashcard creation
 - **Difficulty calibrated** to student level (1-5)
+
+---
+
+## 🏛️ Content Studio & Multi-Agent Model Assignment (`PLANNED`)
+
+| Pipeline Role | Provider / Engine | Primary Model | Fallback Model | Purpose |
+|---|---|---|---|---|
+| **Demand Intelligence Analyzer** | Backend Aggregator | Algorithmic + `openai/gpt-oss-20b` | N/A | Groups student doubt friction & mistake clusters |
+| **Evidence Pack Assembler** | Search / Scraper API | Sanitized Scraper + `openai/gpt-oss-20b` | `gpt-oss-120b` | Gathers verified facts, definitions, and real-world examples |
+| **Reasoning Agent A (Architect)** | Groq | `openai/gpt-oss-120b` | `gpt-oss-120b` (Cerebras) | Proposes chapter structure, analogies, and difficulty curve |
+| **Reasoning Agent B (Challenger)** | Cerebras | `gpt-oss-120b` | `openai/gpt-oss-120b` (Groq) | Challenges misconceptions, rigor, and pedagogical gaps |
+| **Synthesis & Editorial Agent** | Groq | `groq/compound` | `openai/gpt-oss-20b` | Combines debate outcomes into a unified book blueprint |
+| **Original Educational Writer** | Groq | `openai/gpt-oss-20b` | `qwen/qwen3.6-27b` | Authors fresh explanations, worked examples, and summaries |
+| **Multi-Tier Validation Engine** | Cross-Model | `gemma-4-31b` / `groq/compound` | `openai/gpt-oss-20b` | Independent validation (Fact, Math, Curriculum, Pedagogy) |
+
+---
+
+## 🚫 GLOBAL BRAND IDENTITY & REDACTION RULES
+
+> [!IMPORTANT]
+> **Provider and model names are strictly INTERNAL IMPLEMENTATION DETAILS.**
+> 
+> Under NO circumstances should `Groq`, `Cerebras`, `OpenAI`, `Qwen`, `Llama`, `Gemma`, model IDs, API keys, or fallback routing details ever be exposed in:
+> - Android UI (chips, headers, progress bars, dialogs)
+> - AI responses or explanations
+> - Error messages, retry notifications, or loaders
+> - Internal debate logs or system prompts
+> 
+> The student-facing AI brand identity is ALWAYS: **`Quovex AI`**.
+

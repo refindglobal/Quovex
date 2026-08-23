@@ -5,44 +5,57 @@ sealed class QuovexRoute(val route: String) {
     object Onboarding : QuovexRoute("onboarding")
     object Dashboard : QuovexRoute("dashboard")
     object Timer : QuovexRoute("timer")
-    object Library : QuovexRoute("library")
     object Community : QuovexRoute("community")
     object Profile : QuovexRoute("profile")
-    object AiChat : QuovexRoute("ai_chat")
-    object AiSummarizer : QuovexRoute("ai_summarizer")
+    object AiChat : QuovexRoute("ai_chat?subject={subject}&topic={topic}&prompt={prompt}") {
+        fun createRoute(subject: String = "", topic: String = "", prompt: String = ""): String {
+            val encodedPrompt = java.net.URLEncoder.encode(prompt, "UTF-8")
+            val encodedTopic = java.net.URLEncoder.encode(topic, "UTF-8")
+            val encodedSubject = java.net.URLEncoder.encode(subject, "UTF-8")
+            return "ai_chat?subject=$encodedSubject&topic=$encodedTopic&prompt=$encodedPrompt"
+        }
+    }
+    object DocumentScanner : QuovexRoute("document_scanner")
+    object ImageDoubt : QuovexRoute("image_doubt")
 
-    /**
-     * Deck Overview — shows stats before the user starts studying.
-     * Navigation: Library → DeckOverview → FlashcardPlayer
-     */
+    // Knowledge Hub & Learning Materials
+    object KnowledgeHub : QuovexRoute("knowledge_hub")
+    object AddMaterial : QuovexRoute("add_material")
+    object ImportUrl : QuovexRoute("import_url")
+    object MaterialDetail : QuovexRoute("material_detail/{materialId}") {
+        fun createRoute(materialId: Long) = "material_detail/$materialId"
+    }
+
+    // NCERT Official Resource Library
+    object NcertBrowser : QuovexRoute("ncert_browser")
+    object NcertBookDetail : QuovexRoute("ncert_book_detail/{bookId}") {
+        fun createRoute(bookId: String) = "ncert_book_detail/$bookId"
+    }
+    object NcertChapterDetail : QuovexRoute("ncert_chapter_detail/{chapterId}") {
+        fun createRoute(chapterId: String) = "ncert_chapter_detail/$chapterId"
+    }
+    object NcertPdfReader : QuovexRoute("ncert_pdf_reader/{chapterId}") {
+        fun createRoute(chapterId: String) = "ncert_pdf_reader/$chapterId"
+    }
+
+    // Practice Quiz
+    object Quiz : QuovexRoute("quiz/{materialId}") {
+        fun createRoute(materialId: Long) = "quiz/$materialId"
+    }
+
+    // Flashcards & Decks
     object DeckOverview : QuovexRoute("deck_overview/{deckId}") {
         fun createRoute(deckId: Int) = "deck_overview/$deckId"
     }
 
-    /**
-     * Flashcard study player.
-     * reviewAll=false (default): loads only due cards (nextReviewDate <= now)
-     * reviewAll=true: loads all cards in the deck regardless of due state
-     */
     object FlashcardPlayer : QuovexRoute("flashcard_player/{deckId}?reviewAll={reviewAll}") {
         fun createRoute(deckId: Int, reviewAll: Boolean = false) =
             "flashcard_player/$deckId?reviewAll=$reviewAll"
     }
 
-    /**
-     * Note Detail & Edit screen.
-     */
-    object NoteDetail : QuovexRoute("note_detail/{noteId}") {
-        fun createRoute(noteId: Long) = "note_detail/$noteId"
+    // Backward-compatible aliases
+    object Library : QuovexRoute("knowledge_hub")
+    object NoteDetail : QuovexRoute("material_detail/{noteId}") {
+        fun createRoute(noteId: Long) = "material_detail/$noteId"
     }
-
-    /**
-     * Document Scanner screen (ML Kit on-device OCR).
-     */
-    object DocumentScanner : QuovexRoute("document_scanner")
-
-    /**
-     * Vision AI Image Doubt Solver screen.
-     */
-    object ImageDoubt : QuovexRoute("image_doubt")
 }

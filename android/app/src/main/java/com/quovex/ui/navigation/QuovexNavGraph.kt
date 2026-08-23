@@ -19,6 +19,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -37,8 +38,6 @@ import com.quovex.data.local.UserPreferencesManager
 import com.quovex.theme.QuovexTheme
 import com.quovex.ui.ai.AiChatScreen
 import com.quovex.ui.ai.AiChatViewModel
-import com.quovex.ui.ai.AiNoteSummarizerScreen
-import com.quovex.ui.ai.AiNoteSummarizerViewModel
 import com.quovex.ui.ai.ImageDoubtScreen
 import com.quovex.ui.ai.ImageDoubtViewModel
 import com.quovex.ui.auth.AuthScreen
@@ -47,19 +46,26 @@ import com.quovex.ui.community.CommunityScreen
 import com.quovex.ui.community.CommunityViewModel
 import com.quovex.ui.dashboard.DashboardScreen
 import com.quovex.ui.dashboard.DashboardViewModel
-import com.quovex.ui.decks.DeckListViewModel
 import com.quovex.ui.decks.DeckOverviewScreen
 import com.quovex.ui.decks.DeckOverviewViewModel
-import com.quovex.ui.decks.LibraryScreen
 import com.quovex.ui.flashcards.FlashcardPlayerScreen
 import com.quovex.ui.flashcards.FlashcardPlayerViewModel
-import com.quovex.ui.notes.NoteDetailScreen
-import com.quovex.ui.notes.NoteDetailViewModel
-import com.quovex.ui.notes.NotesViewModel
+import com.quovex.ui.knowledge.KnowledgeHubScreen
+import com.quovex.ui.knowledge.KnowledgeHubViewModel
+import com.quovex.ui.knowledge.MaterialDetailScreen
+import com.quovex.ui.knowledge.MaterialDetailViewModel
+import com.quovex.ui.material.AddMaterialScreen
+import com.quovex.ui.material.ImportUrlScreen
+import com.quovex.ui.material.MaterialUiState
+import com.quovex.ui.material.MaterialViewModel
+import com.quovex.ui.material.ProcessingScreen
+import com.quovex.ui.material.SubjectInferenceScreen
 import com.quovex.ui.onboarding.OnboardingViewModel
 import com.quovex.ui.onboarding.OnboardingWizardScreen
 import com.quovex.ui.profile.ProfileScreen
 import com.quovex.ui.profile.ProfileViewModel
+import com.quovex.ui.quiz.QuizScreen
+import com.quovex.ui.quiz.QuizViewModel
 import com.quovex.ui.scanner.DocumentScannerScreen
 import com.quovex.ui.scanner.DocumentScannerViewModel
 import com.quovex.ui.timer.TimerScreen
@@ -87,12 +93,18 @@ fun QuovexNavGraph(
     val navTabs = listOf(
         NavTabItem(QuovexRoute.Dashboard.route, "Home", Icons.Filled.Home, Icons.Outlined.Home),
         NavTabItem(QuovexRoute.Timer.route, "Timer", Icons.Filled.Timer, Icons.Outlined.Timer),
-        NavTabItem(QuovexRoute.Library.route, "Library", Icons.Filled.AutoStories, Icons.Outlined.AutoStories),
+        NavTabItem(QuovexRoute.KnowledgeHub.route, "Hub", Icons.Filled.AutoStories, Icons.Outlined.AutoStories),
         NavTabItem(QuovexRoute.Community.route, "Community", Icons.Filled.Groups, Icons.Outlined.Groups),
         NavTabItem(QuovexRoute.Profile.route, "Profile", Icons.Filled.Person, Icons.Outlined.Person)
     )
 
-    val bottomBarRoutes = navTabs.map { it.route }
+    val bottomBarRoutes = listOf(
+        QuovexRoute.Dashboard.route,
+        QuovexRoute.Timer.route,
+        QuovexRoute.KnowledgeHub.route,
+        QuovexRoute.Community.route,
+        QuovexRoute.Profile.route
+    )
     val showBottomBar = currentDestination?.route in bottomBarRoutes
 
     Scaffold(
@@ -183,12 +195,11 @@ fun QuovexNavGraph(
                     viewModel = dashboardViewModel,
                     onStartTimerClick = { navController.navigate(QuovexRoute.Timer.route) },
                     onDeckClick = { deckId ->
-                        // Dashboard deck clicks go to Deck Overview first
                         navController.navigate(QuovexRoute.DeckOverview.createRoute(deckId))
                     },
-                    onAiChatClick = { navController.navigate(QuovexRoute.AiChat.route) },
-                    onAiNoteParserClick = { navController.navigate(QuovexRoute.AiSummarizer.route) },
-                    onLibraryClick = { navController.navigate(QuovexRoute.Library.route) }
+                    onAiChatClick = { navController.navigate(QuovexRoute.AiChat.createRoute()) },
+                    onAiNoteParserClick = { navController.navigate(QuovexRoute.AddMaterial.route) },
+                    onLibraryClick = { navController.navigate(QuovexRoute.KnowledgeHub.route) }
                 )
             }
 
@@ -198,37 +209,112 @@ fun QuovexNavGraph(
                 TimerScreen(viewModel = timerViewModel)
             }
 
-            // --- LIBRARY (Flashcards / Notes / Plans tabs) ---
-            composable(QuovexRoute.Library.route) {
-                val deckListViewModel: DeckListViewModel = hiltViewModel()
-                val notesViewModel: NotesViewModel = hiltViewModel()
-                LibraryScreen(
-                    deckViewModel = deckListViewModel,
-                    notesViewModel = notesViewModel,
-                    onDeckClick = { deckId ->
-                        navController.navigate(QuovexRoute.DeckOverview.createRoute(deckId))
+            // --- KNOWLEDGE HUB (Replaces old Library) ---
+            composable(QuovexRoute.KnowledgeHub.route) {
+                val knowledgeHubViewModel: KnowledgeHubViewModel = hiltViewModel()
+                KnowledgeHubScreen(
+                    viewModel = knowledgeHubViewModel,
+                    onNavigateToAddMaterial = { navController.navigate(QuovexRoute.AddMaterial.route) },
+                    onNavigateToMaterialDetail = { materialId ->
+                        navController.navigate(QuovexRoute.MaterialDetail.createRoute(materialId))
                     },
-                    onNoteClick = { noteId ->
-                        navController.navigate(QuovexRoute.NoteDetail.createRoute(noteId))
+                    onNavigateToFlashcards = { deckId ->
+                        navController.navigate(QuovexRoute.DeckOverview.createRoute(deckId.toInt()))
                     },
-                    onScanDocumentClick = {
-                        navController.navigate(QuovexRoute.DocumentScanner.route)
-                    },
-                    onImageDoubtClick = {
-                        navController.navigate(QuovexRoute.ImageDoubt.route)
+                    onNavigateToNcert = {
+                        navController.navigate(QuovexRoute.NcertBrowser.route)
                     }
                 )
             }
 
-            // --- NOTE DETAIL & EDIT ---
+            // --- ADD MATERIAL ---
+            composable(QuovexRoute.AddMaterial.route) {
+                val materialViewModel: MaterialViewModel = hiltViewModel()
+                val materialUiState by materialViewModel.uiState.collectAsState()
+
+                when (val state = materialUiState) {
+                    is MaterialUiState.Processing -> {
+                        ProcessingScreen(message = state.progressMessage)
+                    }
+                    is MaterialUiState.Inferred -> {
+                        SubjectInferenceScreen(
+                            inference = state.inference,
+                            initialTitle = state.inference.topic,
+                            onConfirm = { subject, topic, title ->
+                                materialViewModel.confirmAndTransform(
+                                    materialId = state.materialId,
+                                    confirmedSubject = subject,
+                                    confirmedTopic = topic,
+                                    confirmedTitle = title,
+                                    rawText = state.rawText
+                                )
+                            }
+                        )
+                    }
+                    is MaterialUiState.Success -> {
+                        androidx.compose.runtime.LaunchedEffect(state.materialId) {
+                            val id = state.materialId
+                            materialViewModel.resetState()
+                            navController.navigate(QuovexRoute.MaterialDetail.createRoute(id)) {
+                                popUpTo(QuovexRoute.KnowledgeHub.route)
+                            }
+                        }
+                    }
+                    else -> {
+                        AddMaterialScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToScanner = { navController.navigate(QuovexRoute.DocumentScanner.route) },
+                            onNavigateToImportUrl = { navController.navigate(QuovexRoute.ImportUrl.route) },
+                            onProcessText = { title, text, type ->
+                                materialViewModel.processRawText(title, text, type)
+                            }
+                        )
+                    }
+                }
+            }
+
+            // --- IMPORT URL ---
+            composable(QuovexRoute.ImportUrl.route) {
+                val materialViewModel: MaterialViewModel = hiltViewModel()
+                ImportUrlScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onImportUrl = { url, type ->
+                        materialViewModel.processRawText(title = url, rawText = "Extracting URL: $url", inputType = type)
+                        navController.navigate(QuovexRoute.AddMaterial.route) {
+                            popUpTo(QuovexRoute.AddMaterial.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            // --- MATERIAL DETAIL ---
             composable(
-                route = QuovexRoute.NoteDetail.route,
-                arguments = listOf(navArgument("noteId") { type = NavType.LongType })
+                route = QuovexRoute.MaterialDetail.route,
+                arguments = listOf(navArgument("materialId") { type = NavType.LongType })
             ) {
-                val noteDetailViewModel: NoteDetailViewModel = hiltViewModel()
-                NoteDetailScreen(
-                    viewModel = noteDetailViewModel,
-                    onBackClick = { navController.popBackStack() }
+                val materialDetailViewModel: MaterialDetailViewModel = hiltViewModel()
+                MaterialDetailScreen(
+                    viewModel = materialDetailViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToQuiz = { materialId ->
+                        navController.navigate(QuovexRoute.Quiz.createRoute(materialId))
+                    },
+                    onNavigateToFlashcards = { deckId ->
+                        navController.navigate(QuovexRoute.DeckOverview.createRoute(deckId.toInt()))
+                    }
+                )
+            }
+
+            // --- QUIZ ---
+            composable(
+                route = QuovexRoute.Quiz.route,
+                arguments = listOf(navArgument("materialId") { type = NavType.LongType })
+            ) {
+                val quizViewModel: QuizViewModel = hiltViewModel()
+                QuizScreen(
+                    viewModel = quizViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToResult = { navController.popBackStack() }
                 )
             }
 
@@ -238,9 +324,9 @@ fun QuovexNavGraph(
                 DocumentScannerScreen(
                     viewModel = documentScannerViewModel,
                     onBackClick = { navController.popBackStack() },
-                    onNoteSaved = { noteId ->
-                        navController.navigate(QuovexRoute.NoteDetail.createRoute(noteId)) {
-                            popUpTo(QuovexRoute.Library.route)
+                    onNoteSaved = { materialId ->
+                        navController.navigate(QuovexRoute.MaterialDetail.createRoute(materialId)) {
+                            popUpTo(QuovexRoute.KnowledgeHub.route)
                         }
                     }
                 )
@@ -252,9 +338,9 @@ fun QuovexNavGraph(
                 ImageDoubtScreen(
                     viewModel = imageDoubtViewModel,
                     onBackClick = { navController.popBackStack() },
-                    onNavigateToNote = { noteId ->
-                        navController.navigate(QuovexRoute.NoteDetail.createRoute(noteId)) {
-                            popUpTo(QuovexRoute.Library.route)
+                    onNavigateToNote = { materialId ->
+                        navController.navigate(QuovexRoute.MaterialDetail.createRoute(materialId)) {
+                            popUpTo(QuovexRoute.KnowledgeHub.route)
                         }
                     }
                 )
@@ -278,6 +364,24 @@ fun QuovexNavGraph(
                 )
             }
 
+            // --- FLASHCARD PLAYER ---
+            composable(
+                route = QuovexRoute.FlashcardPlayer.route,
+                arguments = listOf(
+                    navArgument("deckId") { type = NavType.IntType },
+                    navArgument("reviewAll") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
+                )
+            ) {
+                val flashcardViewModel: FlashcardPlayerViewModel = hiltViewModel()
+                FlashcardPlayerScreen(
+                    viewModel = flashcardViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
             // --- COMMUNITY ---
             composable(QuovexRoute.Community.route) {
                 val communityViewModel: CommunityViewModel = hiltViewModel()
@@ -298,7 +402,14 @@ fun QuovexNavGraph(
             }
 
             // --- AI CHAT ---
-            composable(QuovexRoute.AiChat.route) {
+            composable(
+                route = QuovexRoute.AiChat.route,
+                arguments = listOf(
+                    navArgument("subject") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("topic") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("prompt") { type = NavType.StringType; defaultValue = "" }
+                )
+            ) {
                 val aiChatViewModel: AiChatViewModel = hiltViewModel()
                 AiChatScreen(
                     viewModel = aiChatViewModel,
@@ -306,32 +417,69 @@ fun QuovexNavGraph(
                 )
             }
 
-            // --- AI NOTE PARSER ---
-            composable(QuovexRoute.AiSummarizer.route) {
-                val aiSummarizerViewModel: AiNoteSummarizerViewModel = hiltViewModel()
-                AiNoteSummarizerScreen(
-                    viewModel = aiSummarizerViewModel,
-                    onBackClick = { navController.popBackStack() }
+            // --- NCERT OFFICIAL RESOURCE LIBRARY ---
+            composable(QuovexRoute.NcertBrowser.route) {
+                val ncertBrowserViewModel: com.quovex.ui.ncert.NcertBrowserViewModel = hiltViewModel()
+                com.quovex.ui.ncert.NcertBrowserScreen(
+                    viewModel = ncertBrowserViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToBookDetail = { bookId ->
+                        navController.navigate(QuovexRoute.NcertBookDetail.createRoute(bookId))
+                    }
                 )
             }
 
-            // --- FLASHCARD PLAYER ---
-            // reviewAll=false (default): due-only mode
-            // reviewAll=true: all cards in deck
             composable(
-                route = QuovexRoute.FlashcardPlayer.route,
-                arguments = listOf(
-                    navArgument("deckId") { type = NavType.IntType },
-                    navArgument("reviewAll") {
-                        type = NavType.BoolType
-                        defaultValue = false
+                route = QuovexRoute.NcertBookDetail.route,
+                arguments = listOf(navArgument("bookId") { type = NavType.StringType })
+            ) {
+                val ncertBookDetailViewModel: com.quovex.ui.ncert.NcertBookDetailViewModel = hiltViewModel()
+                com.quovex.ui.ncert.NcertBookDetailScreen(
+                    viewModel = ncertBookDetailViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToChapterDetail = { chapterId ->
+                        navController.navigate(QuovexRoute.NcertChapterDetail.createRoute(chapterId))
                     }
                 )
+            }
+
+            composable(
+                route = QuovexRoute.NcertChapterDetail.route,
+                arguments = listOf(navArgument("chapterId") { type = NavType.StringType })
             ) {
-                val flashcardViewModel: FlashcardPlayerViewModel = hiltViewModel()
-                FlashcardPlayerScreen(
-                    viewModel = flashcardViewModel,
-                    onBackClick = { navController.popBackStack() }
+                val ncertChapterDetailViewModel: com.quovex.ui.ncert.NcertChapterDetailViewModel = hiltViewModel()
+                com.quovex.ui.ncert.NcertChapterDetailScreen(
+                    viewModel = ncertChapterDetailViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToMaterialDetail = { materialId ->
+                        navController.navigate(QuovexRoute.MaterialDetail.createRoute(materialId)) {
+                            popUpTo(QuovexRoute.NcertBrowser.route)
+                        }
+                    },
+                    onReadInQuovex = { chapterId ->
+                        navController.navigate(QuovexRoute.NcertPdfReader.createRoute(chapterId))
+                    }
+                )
+            }
+
+            composable(
+                route = QuovexRoute.NcertPdfReader.route,
+                arguments = listOf(navArgument("chapterId") { type = NavType.StringType })
+            ) {
+                val pdfReaderViewModel: com.quovex.ui.ncert.NcertPdfReaderViewModel = hiltViewModel()
+                val readerState = pdfReaderViewModel.uiState.collectAsState().value
+                com.quovex.ui.ncert.NcertPdfReaderScreen(
+                    viewModel = pdfReaderViewModel,
+                    onBack = { navController.popBackStack() },
+                    onAskAi = { query, _ ->
+                        navController.navigate(
+                            QuovexRoute.AiChat.createRoute(
+                                subject = readerState.chapter?.subject ?: "General",
+                                topic = readerState.chapter?.chapterTitle ?: "NCERT",
+                                prompt = query
+                            )
+                        )
+                    }
                 )
             }
         }

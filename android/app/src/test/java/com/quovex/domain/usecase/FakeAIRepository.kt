@@ -125,6 +125,45 @@ class FakeAIRepository : AIRepository {
         days: Int
     ): Result<String> = Result.success("Sample Study Plan")
 
+    var documentOrganizationResult: Result<com.quovex.domain.model.ScannedDocumentOrganization> = Result.success(
+        com.quovex.domain.model.ScannedDocumentOrganization(
+            detectedSubject = "Physics",
+            detectedStream = "Science",
+            documentTitle = "Electromagnetism Notes",
+            chapters = listOf(
+                com.quovex.domain.model.ScannedChapter(
+                    title = "Chapter 1: Magnetic Effects",
+                    subtopics = listOf(
+                        com.quovex.domain.model.ScannedSubtopic(
+                            title = "Biot-Savart Law",
+                            noteSections = listOf(
+                                com.quovex.domain.model.ScannedNoteSection(
+                                    sectionTitle = "Formula & Derivation",
+                                    content = "B = (mu_0 / 4pi) * (I dl sin theta / r^2)",
+                                    keyPoints = listOf("Directly proportional to current", "Inversely proportional to r^2")
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            confidence = 0.92f
+        )
+    )
+
+    override suspend fun sendMessageWithImage(
+        imageInput: DomainImageInput,
+        message: String,
+        subject: String,
+        history: List<ChatMessageDto>
+    ): Result<String> = Result.success("Vision AI response for image in $subject: $message")
+
+    override suspend fun analyzeDocumentImages(
+        pageImages: List<DomainImageInput>,
+        subjectHint: String
+    ): Result<com.quovex.domain.model.ScannedDocumentOrganization> = documentOrganizationResult
+
     override suspend fun getDailyQuote(streak: Int): Result<Pair<String, String>> =
         Result.success(Pair("Study hard", "Author"))
 }
+

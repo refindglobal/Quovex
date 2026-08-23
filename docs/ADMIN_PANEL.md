@@ -70,6 +70,15 @@ quovex-admin/
 │   │   │   ├── exams/page.tsx       ← Exam catalog CRUD
 │   │   │   ├── quotes/page.tsx      ← Motivational quotes
 │   │   │   └── feature-flags/page.tsx ← Feature toggle switches
+│   │   ├── content-studio/          ← Content Studio (PLANNED)
+│   │   │   ├── page.tsx             ← Overview & Pipeline health
+│   │   │   ├── demand-signals/page.tsx ← Aggregated student friction
+│   │   │   ├── requests/page.tsx    ← Admin book drafting parameters
+│   │   │   ├── jobs/page.tsx        ← Multi-agent generation monitor
+│   │   │   ├── drafts/page.tsx      ← Staged books list
+│   │   │   ├── review/[id]/page.tsx ← Human review & chapter diff editor
+│   │   │   ├── published/page.tsx   ← Live Quovex Originals catalog
+│   │   │   └── analytics/page.tsx   ← Book performance & difficulty stats
 │   │   ├── analytics/
 │   │   │   └── page.tsx             ← Deep analytics dashboard
 │   │   ├── moderation/
@@ -87,6 +96,12 @@ quovex-admin/
 │       │   ├── route.ts             ← GET all keys + usage stats
 │       │   ├── [keyId]/route.ts     ← PATCH (toggle, cooldown)
 │       │   └── reset/route.ts       ← Reset cooldown for a key
+│       ├── content-studio/          ← Content Studio API Routes
+│       │   ├── demand-signals/route.ts
+│       │   ├── book-requests/route.ts
+│       │   ├── generation-jobs/route.ts
+│       │   ├── review/route.ts
+│       │   └── publish/route.ts
 │       ├── notifications/
 │       │   └── send/route.ts        ← POST send FCM notification
 │       ├── feature-flags/

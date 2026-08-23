@@ -368,3 +368,53 @@ flowchart TD
 
     L["Re-assessment\nevery 2 weeks\nbased on quiz scores"] -..->|"Update levels"| E
 ```
+
+---
+
+## 11. Content Ecosystem & Content Studio Architecture Map
+
+```mermaid
+graph TB
+    subgraph HUBS["🏛️ Knowledge Hub Ecosystems"]
+        OFFICIAL["📚 Official Resources (NCERT)\n(Class 9-12 Hierarchy)\nRead Portal / Study with Quovex AI"]
+        ORIGINALS["✦ Quovex Originals\n(Multi-Agent Synthesized Books)\nRead Book / Flashcards / Quiz"]
+        MYMAT["📁 My Materials\n(User Imported Scans, PDFs, YouTube)\nSummary / Concepts / Cards / Quiz"]
+    end
+
+    subgraph STUDIO["🏭 Content Studio (Admin Panel)"]
+        DEMAND["📈 Demand Intelligence\n(Tutor doubts + Quiz mistake clusters)"]
+        REQUEST["📝 Admin Book Request\n(Curriculum, Class, Target Time)"]
+        RESEARCH["🔍 Research & Evidence Pack\n(Verified facts + Provenance)"]
+        DEBATE["⚔️ Multi-Agent Debate\n(Agent A vs Agent B → Synthesis)"]
+        WRITING["✍️ Original Writing\n(Pedagogical synthesis + Clean Math)"]
+        VALIDATION["🧪 Multi-Tier Validation\n(Fact + Math + Curriculum + Consistency)"]
+        REVIEW["👁️ Human Review & Approval\n(Version history v1, v2 → Publish)"]
+    end
+
+    subgraph ENGINE["⚡ Quovex Learning Engine"]
+        SUMM["Summary & Key Concepts"]
+        CARDS["Spaced Repetition (SM-2)"]
+        QUIZ["Active Recall Quiz"]
+        TUTOR["Contextual Quovex AI Tutor"]
+        MASTERY["Mastery Tracker"]
+    end
+
+    DEMAND -->|"Admin triggers"| REQUEST
+    REQUEST --> RESEARCH
+    RESEARCH --> DEBATE
+    DEBATE --> WRITING
+    WRITING --> VALIDATION
+    VALIDATION --> REVIEW
+    REVIEW -->|"Admin approves"| ORIGINALS
+
+    OFFICIAL -->|"Study with AI"| ENGINE
+    ORIGINALS --> ENGINE
+    MYMAT --> ENGINE
+
+    ENGINE --> SUMM
+    ENGINE --> CARDS
+    ENGINE --> QUIZ
+    ENGINE --> TUTOR
+    ENGINE --> MASTERY
+```
+

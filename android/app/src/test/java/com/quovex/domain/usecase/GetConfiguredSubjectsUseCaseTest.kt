@@ -29,9 +29,11 @@ class GetConfiguredSubjectsUseCaseTest {
 
         val subjects = useCase().first()
 
-        assertEquals(2, subjects.size)
+        assertEquals("Physics", subjects[0])
+        assertEquals("Chemistry", subjects[1])
         assertTrue(subjects.contains("Physics"))
         assertTrue(subjects.contains("Chemistry"))
+        assertTrue(subjects.size >= 2)
     }
 
     @Test
@@ -40,8 +42,10 @@ class GetConfiguredSubjectsUseCaseTest {
 
         val subjects = useCase().first()
 
-        assertEquals(GetConfiguredSubjectsUseCase.defaultSubjectCatalog, subjects)
+        assertEquals(com.quovex.domain.model.SubjectCatalog.chatSelectorNames, subjects)
         assertTrue(subjects.contains("Physics"))
         assertTrue(subjects.contains("Mathematics"))
+        assertTrue(subjects.contains("Accountancy"))
+        assertTrue(subjects.contains("History"))
     }
 }

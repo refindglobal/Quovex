@@ -8,17 +8,25 @@ data class FormulaItem(
 
 /**
  * Pure Kotlin domain model for a Learning Material in Quovex.
- * A Learning Material is a structured study asset built from any source (scan, PDF, YouTube, web, quick note).
+ * A Learning Material is a structured study asset built from any source:
+ * scan, PDF, YouTube, web, quick note, or multi-page document scan.
+ *
+ * The model is universal — it must work for ALL academic streams:
+ * Science, Commerce, Humanities, Languages, Mathematics, etc.
+ * formulas[] is optional — not every subject uses formulas.
  */
 data class LearningMaterial(
     val id: Long = 0,
     val cloudId: String? = null,
     val title: String,
     val subject: String,
+    /** Broad academic stream — populated from SubjectCatalog */
+    val subjectCategory: SubjectCategory = SubjectCategory.OTHER,
     val topic: String = "",
     val subtopic: String = "",
     val summary: String = "",
     val keyPoints: List<String> = emptyList(),
+    /** Optional — populated for Science/Maths; empty for Commerce/Humanities is valid */
     val formulas: List<FormulaItem> = emptyList(),
     val inputType: NoteInputType = NoteInputType.TEXT,
     val status: NoteProcessingStatus = NoteProcessingStatus.READY,

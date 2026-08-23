@@ -16,13 +16,22 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val DEFAULT_BASE_URL = "https://us-central1-quovex-f3104.cloudfunctions.net/api/"
+    private val DEFAULT_BASE_URL: String
+        get() = if (com.quovex.BuildConfig.DEBUG) {
+            "http://10.0.2.2:5001/"
+        } else {
+            "https://api-dopkbhqrgq-uc.a.run.app/"
+        }
 
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
+            level = if (com.quovex.BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
         return OkHttpClient.Builder()
             .addInterceptor(logging)

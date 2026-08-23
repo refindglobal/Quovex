@@ -4,6 +4,8 @@ import com.quovex.data.remote.dto.GatewayChatRequest
 import com.quovex.data.remote.dto.GatewayChatResponse
 import com.quovex.data.remote.dto.GatewayClassifyRequest
 import com.quovex.data.remote.dto.GatewayClassifyResponse
+import com.quovex.data.remote.dto.GatewayDocumentAnalyzeRequest
+import com.quovex.data.remote.dto.GatewayDocumentAnalyzeResponse
 import com.quovex.data.remote.dto.GatewayDoubtRequest
 import com.quovex.data.remote.dto.GatewayDoubtResponse
 import com.quovex.data.remote.dto.GatewayPdfExtractRequest
@@ -82,4 +84,26 @@ interface AiGatewayApiService {
     suspend fun getQuote(
         @Query("streak") streak: Int
     ): Response<GatewayQuoteResponse>
+
+    /**
+     * POST ai/document/analyze
+     *
+     * Dedicated document intelligence endpoint — NOT the same as ai/doubt/image.
+     *
+     * Purpose: Analyze multi-page scanned document images to understand structure,
+     * identify chapters/subtopics, and return organized note hierarchy.
+     *
+     * Pages are sent in batches of up to 5. The gateway performs synthesis
+     * on the final batch (isFinalBatch=true).
+     *
+     * This endpoint is AUTHENTICATED — requires Bearer token.
+     */
+    @POST("ai/document/analyze")
+    suspend fun analyzeDocument(
+        @Header("Authorization") authHeader: String,
+        @Body request: GatewayDocumentAnalyzeRequest
+    ): Response<GatewayDocumentAnalyzeResponse>
+
+    @GET("ncert/catalog")
+    suspend fun getNcertCatalog(): Response<com.quovex.data.remote.dto.NcertCatalogResponseDto>
 }

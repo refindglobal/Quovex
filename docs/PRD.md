@@ -317,18 +317,129 @@ After any material is processed, the AI must:
 
 ---
 
-### MODULE D — KNOWLEDGE HUB (Library)
+### MODULE D — KNOWLEDGE HUB & UNIFIED CONTENT ECOSYSTEM
 
-The Library is NOT a generic file list. It is a **Knowledge Hub** organized by subject and topic.
+> [!IMPORTANT]
+> The **Knowledge Hub** is the central content area of Quovex. It is NOT a generic file list or basic note list.
+> It unifies three major, logically and visually distinct content ecosystems under a single roof:
+> 
+> ```
+> KNOWLEDGE HUB
+> │
+> ├── 📚 NCERT / OFFICIAL RESOURCES (Official Curriculum Assets)
+> │
+> ├── ✦ QUOVEX ORIGINALS (Original Multi-Agent Reasoned Books)
+> │
+> └── 📁 MY MATERIALS (User-Imported Study Materials: Scan, PDF, YouTube, Web, Text)
+> ```
+> 
+> All three ecosystems connect directly to the Quovex learning tools: **Read → Summary → Key Concepts → Flashcards → Quiz → Mistakes → Remedial Flashcards → Mastery Tracker**.
 
-| ID | Requirement |
-|---|---|
-| K-001 | Top-level view: subjects the student studies |
-| K-002 | Each subject contains: Learning Materials, Flashcard Decks, Quiz history |
-| K-003 | A Learning Material and its generated flashcards and quiz are visually linked |
-| K-004 | Example display: "Physics · Thermodynamics — 1 material, 24 cards, 5 questions" |
-| K-005 | Student understands these are three representations of the same knowledge |
-| K-006 | Quick actions from Knowledge Hub: Study Cards, Take Quiz, Review Summary |
+#### D0. Canonical Content Type & Metadata Model
+
+Every item in the Knowledge Hub conforms to a unified content model with strict source separation:
+
+```typescript
+type ContentType = 'OFFICIAL_RESOURCE' | 'QUOVEX_ORIGINAL' | 'USER_MATERIAL';
+
+interface BaseContentMetadata {
+    id: string;
+    contentType: ContentType;
+    title: string;
+    subject: string;
+    topic: string;
+    language: string; // 'en' | 'hi' | 'es' | etc.
+    countryRegion: string; // 'IN' | 'US' | 'UK' | 'GLOBAL'
+    curriculum: string; // 'CBSE' | 'ICSE' | 'StateBoard' | 'AP' | 'IB' | 'GCSE' | 'A-Level'
+    gradeClass: string; // 'Class 11' | 'Grade 12' | 'Undergraduate'
+    exam?: string; // 'JEE' | 'NEET' | 'SAT' | 'UPSC'
+    sourceAuthority: string; // 'NCERT' | 'Quovex Studio' | 'User'
+    sourceUrl?: string;
+    createdAt: number;
+    updatedAt: number;
+}
+
+// 1. OFFICIAL_RESOURCE Specific Metadata
+interface OfficialResourceMetadata extends BaseContentMetadata {
+    contentType: 'OFFICIAL_RESOURCE';
+    publisher: string; // e.g. "National Council of Educational Research and Training (NCERT)"
+    officialSourceUrl: string; // Official portal URL (e.g. ncert.nic.in)
+    bookTitle: string;
+    chapterNumber: number;
+    rightsNotice: string;
+    isStudyTransformAvailable: boolean;
+}
+
+// 2. QUOVEX_ORIGINAL Specific Metadata
+interface QuovexOriginalMetadata extends BaseContentMetadata {
+    contentType: 'QUOVEX_ORIGINAL';
+    generationJobId: string;
+    version: number; // e.g. 1, 2, 3
+    approvalStatus: 'REQUESTED' | 'GENERATING' | 'DRAFT' | 'READY_FOR_REVIEW' | 'REVISION_REQUESTED' | 'APPROVED' | 'PUBLISHED' | 'UNPUBLISHED' | 'ARCHIVED';
+    approvedBy?: string;
+    approvedAt?: number;
+    createdBy: string; // Admin UID or "Content Studio Engine"
+    difficulty: 'Simple' | 'Intermediate' | 'Advanced';
+    targetReadingTimeMinutes: number;
+    chapterCount: number;
+}
+
+// 3. USER_MATERIAL Specific Metadata
+interface UserMaterialMetadata extends BaseContentMetadata {
+    contentType: 'USER_MATERIAL';
+    ownerUid: string;
+    inputType: 'SCAN' | 'PDF' | 'YOUTUBE' | 'WEB' | 'QUICK_TEXT';
+    storageRef?: string; // Firebase Storage reference for original scan/PDF
+    syncStatus: 'LOCAL_ONLY' | 'SYNCED' | 'PENDING_SYNC';
+}
+```
+
+#### D1. NCERT / Official Resource Library
+**Status:** `PLANNED / NOT YET IMPLEMENTED`  
+**Priority:** P1  
+
+- **Structure**: Browse hierarchy by `Class → Subject → Book → Chapter` (e.g., *NCERT → Class 11 → Physics → Part 1 → Chapter 5: Laws of Motion*).
+- **Display Card**: Shows official metadata badge (`NCERT`), Class, Subject, and Chapter Title.
+- **Actions**:
+  1. **`[ Read Official NCERT ]`**: Directs the student to the official source portal (e.g., `ncert.nic.in`). Quovex does NOT assume redistribution rights or mirror official PDFs without verified licenses.
+  2. **`[ Study with Quovex AI ]`**: Transforms the official curriculum topic into the full Quovex learning pipeline: Summary, Key Concepts, Formulas, Flashcards, and Practice Quiz.
+- **Copyright & Provenance**: NCERT content is strictly classified as `OFFICIAL_RESOURCE` and is never claimed as a Quovex Original.
+
+#### D2. Quovex Originals (Original Multi-Agent Reasoned Books)
+**Status:** `PLANNED / NOT YET IMPLEMENTED`  
+**Priority:** P1  
+
+- **Concept**: Original, high-yield educational books synthesized to eliminate learning bottlenecks.
+- **Creation Flow**:
+  1. **Demand Intelligence**: Aggregates anonymized student friction signals (AI Tutor doubt frequency, quiz mistake clusters, flashcard failure rates).
+  2. **Admin Initiation**: Admin reviews demand and clicks `Create Book Draft`. **Student activity never automatically generates published books.**
+  3. **Evidence Pack**: Fact-checking pipeline gathers verified evidence with source provenance.
+  4. **Multi-Agent Reasoning Debate**: Internal Reasoning Agent A and Agent B challenge pedagogy, structure, and depth; Synthesis Agent produces editorial plan.
+  5. **Original Educational Writing**: Authors new explanations, real-world examples, and step-by-step intuition (Zero mechanical rewriting/paraphrasing).
+  6. **Multi-Tier Validation**: Fact, Math, Terminology, Curriculum, and Consistency checks.
+  7. **Human Review & Approval**: Admin reviews, edits, and explicitly approves. **AI is advisory; human approval is mandatory before public release.**
+- **Quovex Original Book Structure**:
+  - Cover & Overview
+  - Learning Objectives
+  - Concept Breakdown (Simple → Intermediate → Advanced)
+  - Worked Examples & Real-World Context (sports, space, medicine, tech)
+  - Common Pitfalls & Misconceptions
+  - Quick Revision Summary
+  - Integrated Spaced Repetition Flashcards & Practice Quiz
+
+#### D3. My Materials (User-Owned Learning Materials)
+**Status:** `CURRENTLY IMPLEMENTED IN v3.0`  
+**Priority:** P0  
+
+- Ingested via Multi-Modal selector (Scan Notes, PDF, YouTube, Web URL, Quick Text).
+- AI-first classification and subject inference.
+- Generates 4 integrated learning views: Summary, Key Concepts, Spaced Repetition Flashcards, and Practice Quiz.
+
+#### D4. Knowledge Hub Unified UI & Navigation
+- **Top Ecosystem Selector**: Switch between `[ Official Resources ]`, `[ Quovex Originals ]`, and `[ My Materials ]`.
+- **Subject & Topic Filtering**: Dynamic horizontal subject chips (`All`, `Physics`, `Chemistry`, `Maths`, `Biology`, etc.).
+- **Card Distinction Badges**: High-contrast pill badges clearly identifying `NCERT`, `QUOVEX ORIGINAL`, or `MY MATERIAL`.
+- **Unified Action**: Instant access to Study Flashcards, Take Quiz, or Ask Quovex AI across all three content sources.
 
 ---
 
@@ -679,20 +790,24 @@ Free users see ads via **Google AdMob**. Ads are placed at natural, non-intrusiv
 - [ ] **Q6:** Should avatar system have social sharing (share your scholar card)?
 - [ ] **Q7:** Should URL import show a clear disclaimer that not all websites are extractable?
 
-## 14. Admin Panel
+## 14. Admin Panel & Content Studio
 
-Quovex has a dedicated internal admin web dashboard. See [ADMIN_PANEL.md](./ADMIN_PANEL.md) for full specification.
+Quovex includes a dedicated internal administration environment built on Next.js / React + Firebase Admin SDK. See [ADMIN_PANEL.md](./ADMIN_PANEL.md) and [CONTENT_STUDIO_SPEC.md](./CONTENT_STUDIO_SPEC.md) for full specifications.
 
 **Key admin capabilities:**
-- Real-time DAU/MAU, revenue, crash-free rate dashboard
-- User management (ban, grant premium, delete accounts)
-- **AI Key Manager** — monitor and control all 4 Groq + 4 Cerebras keys in real-time
-- Push notification center (broadcast to all / segments)
-- Feature flags (toggle features remotely without app update)
-- AdMob revenue tracking
-- Deep analytics (session patterns, streak distribution, AI query types)
-
-**Admin Tech:** Appsmith (open-source, self-hosted free) + Firebase Admin SDK
+- **Executive Operations**: Real-time DAU/MAU, revenue, crash-free rate dashboard
+- **User Management**: Ban, grant premium, delete accounts, inspect usage
+- **AI Key & Gateway Manager**: Real-time monitoring and failover for rotating provider key pools
+- **Push Notification Center**: Targeted broadcast announcements to segments
+- **Feature Flags**: Remote toggles without requiring app updates
+- **Content Studio (`PLANNED / NOT YET IMPLEMENTED`)**:
+  - **Overview**: High-level content pipeline health and catalog inventory.
+  - **Demand Signals**: Aggregates anonymized student friction (AI Tutor doubt frequencies, quiz mistake clusters, flashcard failure rates).
+  - **Book Requests**: Admin drafting parameters (Subject, Topic, Curriculum, Class, Exam, Language, Target Reading Time).
+  - **Generation Jobs**: Multi-agent research, evidence pack assembly, and debate tracking.
+  - **Review Queue**: Human editorial review, fact-checking, math validation, diff comparison, and approval.
+  - **Published Books Catalog**: Public catalog management and version tracking.
+  - **Content Analytics**: Chapter completion rates, student quiz accuracy before/after, and AI tutor helpfulness.
 
 ---
 
@@ -700,15 +815,17 @@ Quovex has a dedicated internal admin web dashboard. See [ADMIN_PANEL.md](./ADMI
 
 | Quovex Has | Competitors Don't |
 |---|---|
+| 3 Unified Content Ecosystems (NCERT + Originals + User Materials) | Fragmented across disconnected apps |
 | Reads your PDFs/scans and builds study tools | Other apps require manual input |
 | AI infers subject/topic automatically | Others require manual tagging |
 | Learning Material → Flashcards → Quiz → Mastery loop | Siloed tools |
+| Demand-driven Quovex Originals with multi-agent debate | Generic unverified AI text dumps |
 | Image Doubt Solver (problem tutoring) | Separate expensive apps |
 | Distraction blocker INSIDE study app | Forest/Freedom are separate apps |
 | Spaced repetition built-in | Requires Anki separately |
 | Contextual AI tutor (knows your material) | Generic ChatGPT-style bots |
 | Gamified RPG progression | Most study apps are dry |
-| Global PPP pricing | Most apps India-only or US-only |
+| Global PPP pricing & Multi-Curriculum support | Most apps India-only or US-only |
 | Morning briefing AI | Generic notifications only |
 | Streak Rescue Tokens | Duolingo punishes you harshly |
 | Social Study Rooms | No study app has ambient co-study |
@@ -723,3 +840,4 @@ Quovex has a dedicated internal admin web dashboard. See [ADMIN_PANEL.md](./ADMI
 | 2.0 | 2026-08-21 | Major expansion: Reddit research, global strategy, complete ecosystem (15+ features), backend architecture, retention mechanics, AI cost optimization |
 | 2.1 | 2026-08-21 | Added: 4-key rotation for Groq + Cerebras, AdMob ads in free tier (banner/interstitial/rewarded), Admin Panel spec |
 | 3.0 | 2026-08-22 | **Documentation Reset:** Redefined Notes as Learning Material System. Made subject inference AI-first (not mandatory pre-selection). Promoted Quiz to first-class module. Separated Scan Notes from Image Doubt. Upgraded AI Chat to contextual study tutor with context injection. Defined Knowledge Hub as unified learning space. Linked Learning Material → Flashcards → Quiz → Mistakes → Remedial loop. Removed manual typing as primary input assumption. |
+| 3.1 | 2026-08-22 | **Content Ecosystem Update:** Added 3 major ecosystems to Knowledge Hub (NCERT / Official Resources, Quovex Originals, My Materials). Defined canonical metadata model with source separation. Added Content Studio, Demand Intelligence, Evidence Pack, Multi-Agent Debate, Multi-Tier Validation, Human Approval workflow, and Versioning. Explicitly documented `PLANNED / NOT YET IMPLEMENTED` status tags. |

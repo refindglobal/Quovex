@@ -268,18 +268,15 @@ fun ImageDoubtScreen(
                                         color = colors.primary
                                     )
                                 }
-                                if (state.solutionProvider != null) {
-                                    QuovexChip(label = state.solutionProvider!!.uppercase(), isSelected = false)
-                                }
+                                QuovexChip(label = "QUOVEX AI", isSelected = false)
                             }
 
                             Spacer(Modifier.height(spacing.md))
 
-                            Text(
+                            com.quovex.ui.components.QuovexMathText(
                                 text = state.solutionText!!,
                                 style = QuovexTheme.typography.bodyMedium,
-                                color = colors.textPrimary,
-                                lineHeight = QuovexTheme.typography.bodyMedium.lineHeight
+                                color = colors.textPrimary
                             )
 
                             Spacer(Modifier.height(spacing.xl))

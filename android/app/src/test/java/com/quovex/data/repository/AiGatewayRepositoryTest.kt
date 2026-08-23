@@ -152,6 +152,46 @@ class AiGatewayRepositoryTest {
         override suspend fun getQuote(streak: Int): Response<GatewayQuoteResponse> {
             return Response.success(GatewayQuoteResponse(quote = "Focus is everything", author = "Quovex"))
         }
+
+        override suspend fun getNcertCatalog(): Response<com.quovex.data.remote.dto.NcertCatalogResponseDto> {
+            return Response.success(com.quovex.data.remote.dto.NcertCatalogResponseDto())
+        }
+
+        override suspend fun analyzeDocument(
+            authHeader: String,
+            request: com.quovex.data.remote.dto.GatewayDocumentAnalyzeRequest
+        ): Response<com.quovex.data.remote.dto.GatewayDocumentAnalyzeResponse> {
+            val code = shouldFailWithCode
+            return if (code != null) {
+                Response.error(code, okhttp3.ResponseBody.create(null, "Error $code"))
+            } else {
+                Response.success(
+                    com.quovex.data.remote.dto.GatewayDocumentAnalyzeResponse(
+                        success = true,
+                        isFinal = true,
+                        detectedSubject = "Accountancy",
+                        detectedStream = "Commerce",
+                        chapters = listOf(
+                            com.quovex.data.remote.dto.DocumentChapterDto(
+                                title = "Chapter 1",
+                                startPage = 0,
+                                endPage = 1,
+                                subtopics = listOf(
+                                    com.quovex.data.remote.dto.DocumentSubtopicDto(
+                                        title = "Subtopic 1",
+                                        content = "Notes content",
+                                        keyPoints = listOf("Key point 1"),
+                                        startPage = 0,
+                                        endPage = 1
+                                    )
+                                )
+                            )
+                        ),
+                        confidence = 0.95f
+                    )
+                )
+            }
+        }
     }
 
     @Test
@@ -248,5 +288,22 @@ class AiGatewayRepositoryTest {
         val questions = result.getOrThrow()
         assertEquals(1, questions.size)
         assertEquals("What is F?", questions[0].question)
+    }
+
+    @Test
+    fun `analyzeDocumentImages returns structured organization on success`() = runTest {
+        val fakeAuth = FakeAuthService(loggedIn = true, token = "test_valid_jwt")
+        val fakeApi = FakeAiApiService()
+        val repo = AiGatewayRepositoryImpl(fakeApi, fakeAuth)
+
+        val pages = listOf(
+            com.quovex.domain.model.DomainImageInput(bytes = byteArrayOf(1, 2, 3), mimeType = "image/jpeg")
+        )
+        val result = repo.analyzeDocumentImages(pages, "Accountancy")
+        assertTrue(result.isSuccess)
+        val org = result.getOrThrow()
+        assertEquals("Accountancy", org.detectedSubject)
+        assertEquals("Commerce", org.detectedStream)
+        assertEquals(1, org.chapters.size)
     }
 }

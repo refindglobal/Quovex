@@ -210,6 +210,92 @@ function extractJson(text) {
     return null;
 }
 
+function cleanMathAndLatex(raw) {
+    if (!raw || typeof raw !== 'string') return raw;
+    let text = raw;
+
+    // 1. Remove LaTeX delimiters
+    text = text.replace(/\\\[/g, '\n').replace(/\\\]/g, '\n');
+    text = text.replace(/\\\(/g, '').replace(/\\\)/g, '');
+    text = text.replace(/\$\$/g, '\n').replace(/\$/g, '');
+
+    // 2. Remove LaTeX formatting tags
+    text = text.replace(/\\displaystyle/g, '');
+    text = text.replace(/\\limits/g, '');
+    text = text.replace(/\\nolimits/g, '');
+
+    // 3. Clean \boxed{...}, \text{...}, \mathrm{...}, \mathbf{...}, \mathit{...}
+    text = text.replace(/\\(?:boxed|text|mathrm|mathbf|mathit|boldsymbol|overline)\{([^}]*)\}/g, '$1');
+    text = text.replace(/\\(?:boxed|text|mathrm|mathbf|mathit|boldsymbol|overline)\{([^}]*)\}/g, '$1');
+
+    // 4. Fractions: \frac{a}{b} -> (a / b)
+    text = text.replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1 / $2)');
+    text = text.replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1 / $2)');
+
+    // 5. Roots: \sqrt[n]{x} and \sqrt{x}
+    text = text.replace(/\\sqrt\[(.*?)\]\{(.*?)\}/g, '$1√($2)');
+    text = text.replace(/\\sqrt\{([^}]*)\}/g, '√($1)');
+
+    // 6. Calculus: \int, \sum
+    text = text.replace(/\\int_\{?(.*?)\}?\^\{?(.*?)\}?/g, '∫[$1 to $2] ');
+    text = text.replace(/\\int/g, '∫ ');
+    text = text.replace(/\\sum_\{?(.*?)\}?\^\{?(.*?)\}?/g, '∑[$1 to $2] ');
+    text = text.replace(/\\sum/g, '∑ ');
+
+    // 7. Greek letters
+    const greek = {
+        '\\alpha': 'α', '\\beta': 'β', '\\gamma': 'γ', '\\delta': 'δ',
+        '\\epsilon': 'ε', '\\varepsilon': 'ε', '\\zeta': 'ζ', '\\eta': 'η',
+        '\\theta': 'θ', '\\vartheta': 'θ', '\\iota': 'ι', '\\kappa': 'κ',
+        '\\lambda': 'λ', '\\mu': 'μ', '\\nu': 'ν', '\\xi': 'ξ',
+        '\\pi': 'π', '\\rho': 'ρ', '\\sigma': 'σ', '\\tau': 'τ',
+        '\\phi': 'φ', '\\varphi': 'φ', '\\chi': 'χ', '\\psi': 'ψ', '\\omega': 'ω',
+        '\\Gamma': 'Γ', '\\Delta': 'Δ', '\\Theta': 'Θ', '\\Lambda': 'Λ',
+        '\\Xi': 'Ξ', '\\Pi': 'Π', '\\Sigma': 'Σ', '\\Phi': 'Φ', '\\Psi': 'Ψ', '\\Omega': 'Ω'
+    };
+    for (const [k, v] of Object.entries(greek)) {
+        text = text.replaceAll(k, v);
+    }
+
+    // 8. Operators & symbols
+    const ops = {
+        '\\cdot': '·', '\\times': '×', '\\div': '÷', '\\pm': '±', '\\mp': '∓',
+        '\\le': '≤', '\\leq': '≤', '\\ge': '≥', '\\geq': '≥', '\\ne': '≠', '\\neq': '≠',
+        '\\approx': '≈', '\\equiv': '≡', '\\to': '→', '\\rightarrow': '→', '\\implies': '→',
+        '\\leftarrow': '←', '\\leftrightarrow': '↔', '\\iff': '↔', '\\infty': '∞',
+        '\\partial': '∂', '\\nabla': '∇', '\\in': '∈', '\\notin': '∉', '\\subset': '⊂',
+        '\\subseteq': '⊆', '\\forall': '∀', '\\exists': '∃', '\\circ': '°'
+    };
+    for (const [k, v] of Object.entries(ops)) {
+        text = text.replaceAll(k, v);
+    }
+
+    // 9. Spacing
+    text = text.replace(/\\[,;:!]/g, ' ').replace(/\\quad/g, '   ').replace(/\\qquad/g, '      ');
+
+    // 10. Superscripts & Subscripts
+    const superMap = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','n':'ⁿ','i':'ⁱ','x':'ˣ','y':'ʸ' };
+    const subMap = { '0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋','=':'₌','(':'₍',')':'₎','a':'ₐ','e':'ₑ','i':'ᵢ','o':'ₒ','u':'ᵤ','x':'ₓ' };
+
+    text = text.replace(/\^\{([0-9+\-nixy=()]+)\}/g, (_, m) => m.split('').map(c => superMap[c] || c).join(''));
+    text = text.replace(/\^([0-9n])/g, (_, m) => superMap[m] || m);
+    text = text.replace(/\^(-[0-9]+)/g, (_, m) => m.split('').map(c => superMap[c] || c).join(''));
+
+    text = text.replace(/_\{([0-9+\-aeioux=()]+)\}/g, (_, m) => m.split('').map(c => subMap[c] || c).join(''));
+    text = text.replace(/_\{([a-zA-Z0-9_]+)\}/g, '_$1');
+    text = text.replace(/_([0-9])/g, (_, m) => subMap[m] || m);
+
+    // 11. Chemistry notation
+    text = text.replace(/\b(H|He|Li|Be|B|C|N|O|F|Ne|Na|Mg|Al|Si|P|S|Cl|Ar|K|Ca|Sc|Ti|V|Cr|Mn|Fe|Co|Ni|Cu|Zn|Ga|Ge|As|Se|Br|Kr|Rb|Sr|Ag|Cd|Sn|Sb|I|Xe|Cs|Ba|Pt|Au|Hg|Pb|Bi|U)([0-9]+)/g, (_, el, count) => {
+        return el + count.split('').map(c => subMap[c] || c).join('');
+    });
+
+    // 12. Strip leftover backslashes
+    text = text.replace(/\\([a-zA-Z]+)/g, '$1');
+
+    return text.trim();
+}
+
 // -------------------------------------------------------------
 // EXPRESS APP (REST Endpoints matching docs/TECHNICAL_DEEP_DIVE.md)
 // -------------------------------------------------------------
@@ -297,16 +383,21 @@ ${contextSections.join('\n\n')}
 
 ${MATH_READABILITY_RULES}`;
 
+        let validHistory = (history || []).filter(h => h && (h.role === 'user' || h.role === 'assistant'));
+        while (validHistory.length > 0 && validHistory[0].role === 'assistant') {
+            validHistory.shift();
+        }
+
         const messages = [
             { role: 'system', content: systemPrompt },
-            ...history.slice(-8),
+            ...validHistory.slice(-8),
             { role: 'user', content: message }
         ];
 
         const result = await callAiWithFailover({ messages, temperature: 0.4 });
         res.json({
             success: true,
-            response: result.content,
+            response: cleanMathAndLatex(result.content),
             provider: result.provider,
             model: result.model
         });
@@ -783,17 +874,111 @@ app.get('/ai/quote', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/ncert/catalog
+ * Serves remote NCERT metadata-only catalog for Classes 9-12
+ */
+app.get('/ncert/catalog', async (req, res) => {
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        const localPath = path.join(__dirname, 'ncert_catalog_v1.json');
+        const assetPath = path.join(__dirname, '../../android/app/src/main/assets/ncert/ncert_catalog_v1.json');
+        
+        let targetPath = null;
+        if (fs.existsSync(localPath)) {
+            targetPath = localPath;
+        } else if (fs.existsSync(assetPath)) {
+            targetPath = assetPath;
+        }
+
+        if (targetPath) {
+            const data = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
+            return res.json(data);
+        }
+        res.json({
+            version: 1,
+            lastUpdated: "2026-08-20",
+            curriculum: "CBSE / NCERT Rationalised Edition",
+            publisher: "NCERT",
+            books: [],
+            chapters: []
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+/**
+ * GET /ncert/pdf and /api/ncert/pdf
+ * Proxy stream for NCERT PDFs to handle client network/TLS reset issues
+ */
+const handlePdfProxy = async (req, res) => {
+    try {
+        let targetUrl = req.query.url;
+        if (!targetUrl || !targetUrl.includes('ncert.nic.in')) {
+            return res.status(400).json({ error: 'Invalid or missing NCERT PDF URL' });
+        }
+        if (!targetUrl.startsWith('https://') && !targetUrl.startsWith('http://')) {
+            targetUrl = 'https://' + targetUrl;
+        }
+
+        // Always use https for NCERT PDF download with custom TLS agent
+        const httpsUrl = targetUrl.replace('http://', 'https://');
+        const https = require('https');
+        const agent = new https.Agent({
+            rejectUnauthorized: false
+        });
+
+        https.get(httpsUrl, {
+            agent,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': '*/*'
+            }
+        }, (proxyRes) => {
+            if (proxyRes.statusCode === 301 || proxyRes.statusCode === 302) {
+                const redirectUrl = proxyRes.headers.location;
+                if (redirectUrl) {
+                    return https.get(redirectUrl, { agent, headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': '*/*' } }, (rRes) => {
+                        res.setHeader('Content-Type', 'application/pdf');
+                        if (rRes.headers['content-length']) res.setHeader('Content-Length', rRes.headers['content-length']);
+                        rRes.pipe(res);
+                    });
+                }
+            }
+
+            if (proxyRes.statusCode !== 200) {
+                return res.status(proxyRes.statusCode || 502).json({
+                    error: `NCERT server returned status ${proxyRes.statusCode}`
+                });
+            }
+            res.setHeader('Content-Type', 'application/pdf');
+            if (proxyRes.headers['content-length']) {
+                res.setHeader('Content-Length', proxyRes.headers['content-length']);
+            }
+            proxyRes.pipe(res);
+        }).on('error', (err) => {
+            console.error('PDF proxy error:', err.message);
+            res.status(502).json({ error: 'Failed to fetch PDF from NCERT portal: ' + err.message });
+        });
+    } catch (e) {
+        console.error('PDF proxy exception:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+};
+
+app.get('/ncert/pdf', handlePdfProxy);
+app.get('/api/ncert/pdf', handlePdfProxy);
+
 // Export Express App as Cloud Function
 exports.api = functions.https.onRequest(app);
 
-// Legacy onCall compatibility export
-exports.generateFlashcards = functions.https.onCall(async (data, context) => {
-    return {
-        flashcards: [
-            {
-                front: "Quovex Spaced Repetition",
-                back: "Uses SuperMemo-2 algorithm to optimize memory retention."
-            }
-        ]
-    };
-});
+// Standalone local execution support for emulator/dev testing
+if (require.main === module) {
+    const PORT = process.env.PORT || 5001;
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Quovex Backend API Server running locally on http://0.0.0.0:${PORT}`);
+    });
+}
+

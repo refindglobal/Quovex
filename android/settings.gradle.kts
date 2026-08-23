@@ -22,6 +22,7 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        maven { url = java.net.URI.create("https://jitpack.io") }
     }
 }
 

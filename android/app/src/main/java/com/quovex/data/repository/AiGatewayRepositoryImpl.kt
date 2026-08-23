@@ -1,20 +1,25 @@
 package com.quovex.data.repository
 
+import com.quovex.data.batch.DocumentAnalysisBatcher
 import com.quovex.data.remote.AiGatewayApiService
 import com.quovex.data.remote.FirebaseAuthService
 import com.quovex.data.remote.dto.AiSummaryResult
 import com.quovex.data.remote.dto.ChatMessageDto
+import com.quovex.data.remote.dto.DocumentPageDto
 import com.quovex.data.remote.dto.GatewayChatRequest
 import com.quovex.data.remote.dto.GatewayClassifyRequest
+import com.quovex.data.remote.dto.GatewayDocumentAnalyzeRequest
 import com.quovex.data.remote.dto.GatewayDoubtRequest
 import com.quovex.data.remote.dto.GatewayPlanRequest
 import com.quovex.data.remote.dto.GatewayQuizRequest
 import com.quovex.data.remote.dto.GatewaySummarizeRequest
 import com.quovex.data.remote.dto.GatewayUrlExtractRequest
+import com.quovex.data.remote.dto.toDomain
 import com.quovex.domain.model.AiError
 import com.quovex.domain.model.DomainImageInput
 import com.quovex.domain.model.ImageDoubtSolution
 import com.quovex.domain.model.QuizQuestion
+import com.quovex.domain.model.ScannedDocumentOrganization
 import com.quovex.domain.model.SubjectInference
 import com.quovex.domain.repository.AIRepository
 import java.io.IOException
@@ -203,8 +208,8 @@ class AiGatewayRepositoryImpl @Inject constructor(
                 if (body != null && body.success && body.data != null) {
                     val questions = body.data.questions.map { dto ->
                         QuizQuestion(
-                            id = dto.id.toLong(),
-                            materialId = 0,
+                            id = 0L,
+                            materialId = 0L,
                             question = dto.question,
                             options = dto.options,
                             correctIndex = dto.correctIndex,
@@ -344,5 +349,161 @@ class AiGatewayRepositoryImpl @Inject constructor(
         } catch (e: Throwable) {
             Result.success(Pair("Action is the foundational key to all success.", "Pablo Picasso"))
         }
+    }
+
+    /**
+     * AI Chat with image attachment.
+     *
+     * Reuses the ai/doubt/image endpoint infrastructure since both involve
+     * vision + text question → contextual answer.
+     * The framing/prompt on the gateway side will differ from academic problem solving.
+     *
+     * Shared with: image compression, base64 encoding, auth header
+     * NOT shared with: Document Intelligence (separate endpoint + use case)
+     */
+    override suspend fun sendMessageWithImage(
+        imageInput: DomainImageInput,
+        message: String,
+        subject: String,
+        history: List<ChatMessageDto>
+    ): Result<String> {
+        return try {
+            val authHeader = getAuthHeader()
+            val base64 = java.util.Base64.getEncoder().encodeToString(imageInput.bytes)
+            val dataUri = "data:${imageInput.mimeType};base64,$base64"
+
+            val response = apiService.solveImageDoubt(
+                authHeader = authHeader,
+                request = GatewayDoubtRequest(
+                    imageUrl = dataUri,
+                    base64Image = base64,
+                    subject = subject,
+                    // Use message as the question — gateway will infer chat context from subject
+                    questionText = message.ifBlank { "Please analyze and explain what you see in this image." }
+                )
+            )
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.success && body.solution != null) {
+                    Result.success(body.solution)
+                } else {
+                    Result.failure(AiError.InvalidResponseError(body?.error ?: "Failed to analyze image"))
+                }
+            } else {
+                val error = when (response.code()) {
+                    401 -> AiError.AuthenticationError("Session expired or invalid. Please sign in again.")
+                    429 -> AiError.RateLimitError("Daily vision AI limit reached.")
+                    503, 502 -> AiError.ProviderUnavailableError("Quovex AI is temporarily unavailable.")
+                    else -> AiError.UnknownAIError("Gateway error (HTTP ${response.code()})")
+                }
+                Result.failure(error)
+            }
+        } catch (e: Throwable) {
+            Result.failure(mapException(e))
+        }
+    }
+
+    /**
+     * Document Intelligence — multi-page document analysis.
+     *
+     * SEPARATE from solveImageDoubt (ai/doubt/image) and sendMessageWithImage.
+     * Uses dedicated endpoint: ai/document/analyze
+     *
+     * Batching strategy:
+     *   - Pages split into chunks of BATCH_SIZE (5)
+     *   - Each chunk sent as a separate request
+     *   - Partial analysis JSON accumulated across batches
+     *   - Final batch triggers synthesis → returns full ScannedDocumentOrganization
+     *
+     * Cost efficiency:
+     *   - 10-page document = 2 batches (not 10 individual requests)
+     *   - 30-page document = 6 batches
+     *   - Pages compressed to JPEG ≤ 256KB before sending
+     */
+    override suspend fun analyzeDocumentImages(
+        pageImages: List<DomainImageInput>,
+        subjectHint: String
+    ): Result<ScannedDocumentOrganization> {
+        if (pageImages.isEmpty()) {
+            return Result.failure(AiError.InvalidResponseError("No pages to analyze"))
+        }
+
+        return try {
+            val authHeader = getAuthHeader()
+            val batches = pageImages.chunked(DOCUMENT_ANALYSIS_BATCH_SIZE)
+            val totalBatches = batches.size
+            val totalPages = pageImages.size
+            var partialResults: String? = null
+            var lastResponse: com.quovex.data.remote.dto.GatewayDocumentAnalyzeResponse? = null
+
+            batches.forEachIndexed { batchIndex, batchPages ->
+                val isFinalBatch = batchIndex == totalBatches - 1
+
+                val pageDtos = batchPages.mapIndexed { localIndex, imageInput ->
+                    val globalPageIndex = batchIndex * DOCUMENT_ANALYSIS_BATCH_SIZE + localIndex
+                    val base64 = java.util.Base64.getEncoder().encodeToString(imageInput.bytes)
+                    DocumentPageDto(
+                        pageIndex = globalPageIndex,
+                        imageDataUri = "data:${imageInput.mimeType};base64,$base64"
+                    )
+                }
+
+                val response = apiService.analyzeDocument(
+                    authHeader = authHeader,
+                    request = GatewayDocumentAnalyzeRequest(
+                        pages = pageDtos,
+                        totalPages = totalPages,
+                        batchIndex = batchIndex,
+                        totalBatches = totalBatches,
+                        subject = subjectHint,
+                        isFinalBatch = isFinalBatch,
+                        partialResults = partialResults
+                    )
+                )
+
+                if (!response.isSuccessful || response.body() == null) {
+                    val errorCode = response.code()
+                    val error = when (errorCode) {
+                        401 -> AiError.AuthenticationError("Session expired or invalid.")
+                        429 -> AiError.RateLimitError("Document analysis quota reached.")
+                        503, 502 -> AiError.ProviderUnavailableError("Document AI is temporarily unavailable.")
+                        else -> AiError.UnknownAIError("Document analysis error (HTTP $errorCode)")
+                    }
+                    return Result.failure(error)
+                }
+
+                val body = response.body()!!
+                if (!body.success) {
+                    return Result.failure(
+                        AiError.InvalidResponseError(body.error ?: "Document analysis failed")
+                    )
+                }
+
+                lastResponse = body
+                // Accumulate partial analysis for next batch
+                if (!isFinalBatch) {
+                    partialResults = body.partialAnalysis
+                }
+            }
+
+            val finalResponse = lastResponse
+            if (finalResponse != null && finalResponse.chapters != null) {
+                Result.success(finalResponse.toDomain())
+            } else {
+                Result.failure(AiError.InvalidResponseError("Document analysis did not return organization data"))
+            }
+        } catch (e: Throwable) {
+            Result.failure(mapException(e))
+        }
+    }
+
+    companion object {
+        /**
+         * Pages per analysis batch — sourced from [DocumentAnalysisBatcher.DEFAULT_BATCH_SIZE].
+         * Change [DocumentAnalysisBatcher.DEFAULT_BATCH_SIZE] to adjust globally.
+         */
+        private val DOCUMENT_ANALYSIS_BATCH_SIZE
+            get() = DocumentAnalysisBatcher.DEFAULT_BATCH_SIZE
     }
 }

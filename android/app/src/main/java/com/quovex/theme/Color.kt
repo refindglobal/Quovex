@@ -9,6 +9,12 @@ val PrimaryEmeraldDark = Color(0xFF009B74)
 val PrimaryEmeraldLight = Color(0xFF5DFDCB)
 val PrimaryEmeraldGlow = Color(0x3300C896)
 
+// ─── Semantic Aliases ────────────────────────────────────────────────────────
+val BrandEmerald = PrimaryEmerald
+val BrandEmeraldDim = PrimaryEmeraldGlow
+val SurfaceDark = Color(0xFF0A0F0D)
+val SurfaceGlass = Color(0xFF111917)
+
 val DangerRed = Color(0xFFFF5252)
 val DangerRedDark = Color(0xFFD32F2F)
 val DangerRedContainer = Color(0x22FF5252)

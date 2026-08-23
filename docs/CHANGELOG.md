@@ -2,6 +2,47 @@
 
 ---
 
+## [v3.1.0-docs] — 2026-08-22 — Content Ecosystem & Content Studio Specification
+
+**Type:** Product & Architecture Documentation Update.
+
+### Highlights
+- **3 Unified Content Ecosystems in Knowledge Hub**:
+  - `NCERT / OFFICIAL RESOURCES`: Official curriculum assets with Class → Subject → Book → Chapter hierarchy. Supports `[ Read Official NCERT ]` (official source portal URL linking without unpermitted PDF redistribution) and `[ Study with Quovex AI ]` (transformation into active learning assets).
+  - `QUOVEX ORIGINALS`: High-yield, multi-agent reasoned educational books authored via Demand Signals → Research → Evidence Pack → Multi-Agent Debate → Synthesis → Original Writing → Multi-Tier Validation → Human Approval.
+  - `MY MATERIALS`: User-imported private study materials (Scan, PDF, YouTube, Web, Quick Text).
+- **Canonical Content Type Model**: Defined strict metadata separation across `OFFICIAL_RESOURCE`, `QUOVEX_ORIGINAL`, and `USER_MATERIAL`.
+- **Content Studio for Admin Panel**: Added specification for Demand Signals, Book Requests, Generation Jobs, Draft Books, Review Queue, and Published Books within the existing Next.js Admin Panel.
+- **Strict Governance & Brand Safety**:
+  - Confirmed: Student activity NEVER auto-generates books (only creates demand signals).
+  - Confirmed: Admin explicitly triggers book drafting; human editorial approval is mandatory.
+  - Confirmed: Provider and model names (`Groq`, `Cerebras`, `OpenAI`) are internal implementation details only. Public identity is always **`Quovex AI`**.
+- **Implementation Status**: Explicitly marked NCERT Library, Quovex Originals, Content Studio, Demand Signals, and AI Debate Pipeline as `PLANNED / NOT YET IMPLEMENTED`.
+
+---
+
+## [v3.0.0] — 2026-08-22 — Clean In-Place Rebuild & Device Verification Complete
+
+**Type:** Production Rebuild & Live Device Verification (Phase 1–5 Complete).
+
+### Highlights
+- **In-Place Rebuild**: Rebuilt the existing Quovex repository cleanly with 100% adherence to latest v3 specifications, without creating external duplicate projects.
+- **Room Database Migration v2→v3**: Bumped schema to version 3 with `MIGRATION_2_3`. Added exactly 15 new columns (notes: 9, decks: 1, flashcards: 4, sessions: 1) and 4 new tables (`subjects`, `quiz_questions`, `quiz_results`, `quiz_mistakes`).
+- **Clean Architecture & Domain Layer**: Zero Android dependencies in domain models and 7 new UseCases (`ClassifyMaterialUseCase`, `GenerateQuizUseCase`, `RecordQuizResultUseCase`, `GetQuizResultsUseCase`, `CreateRemedialFlashcardsUseCase`, `ProcessScanAndSummarizeUseCase`, `ConfirmMaterialSubjectUseCase`).
+- **Cloud Functions v2 Deployment**: Deployed 11 production endpoints to `https://api-dopkbhqrgq-uc.a.run.app` on Firebase project `quovex-f3104` with 4-key rotation pool and automatic failover.
+- **UI & UX Complete**:
+  - `KnowledgeHubScreen`: Dynamic subject chips, material cards with "Needs Processing" legacy badge, and central action state.
+  - `AddMaterialScreen`: Multi-modal intake (Scan Notes, Web/YouTube, Quick Text).
+  - `ProcessingScreen`: Real-time AI analysis progress status.
+  - `SubjectInferenceScreen`: Confidence percentage badge and confirmation.
+  - `MaterialDetailScreen`: 4 tabs (Summary, Key Concepts, Flashcards, Quiz).
+  - `AiChatScreen`: Full AI Tutor with `Quovex AI` branding and clean LaTeX/Unicode mathematical notation ($x^2 \to x²$, roots $\sqrt{x}$, Greek symbols $\theta, \alpha, \beta$).
+  - `QuizScreen` & `QuizResultScreen`: Full active recall taking flow with remedial flashcard generation from mistakes.
+- **Brand Protection & Privacy**: Strictly redacted all internal LLM provider names (Groq, Cerebras, OpenAI) and model IDs across all UI, errors, and loaders.
+- **Verification**: 100% unit tests passed (`testDebugUnitTest`), successful APK build and install, live device verification on `emulator-5554`.
+
+---
+
 ## [v3.0.0-docs] — 2026-08-22 — Documentation Reset
 
 **Type:** Documentation only — no code changes.

@@ -975,3 +975,76 @@ object PreferenceKeys {
     val SELECTED_LANGUAGE = stringPreferencesKey("language")
 }
 ```
+
+---
+
+## 15. Content Ecosystem & Studio Architecture (v3.1)
+
+### 15.1 Ecosystem Separation & Data Schema
+**Status:** `NCERT & ORIGINALS PLANNED / MY MATERIALS IMPLEMENTED`
+
+Quovex strictly segregates content ownership and rights into three discrete Firestore collections:
+
+```
+Firestore
+├── official_resources/      # NCERT & Government Curriculum assets (read-only)
+├── quovex_originals/        # Multi-agent synthesized books (published catalog)
+├── user_materials/          # Student-imported private study materials
+├── content_studio/          # Internal editorial pipelines & demand intelligence
+│   ├── demand_signals/      # Anonymized student difficulty & doubt frequency
+│   ├── book_requests/       # Admin drafting specifications
+│   ├── generation_jobs/     # Research, debate & validation jobs
+│   └── draft_books/         # Staged revisions (v1, v2) awaiting human approval
+```
+
+### 15.2 NCERT Official Resource Flow
+```
+Browse: Class (9-12) → Subject (Physics) → Book → Chapter (Laws of Motion)
+  ├── Action 1: [ Read Official NCERT ]
+  │     → Resolves officialSourceUrl (e.g. ncert.nic.in/textbook/pdf/kepy105.pdf)
+  │     → Launches Custom Tab (No unauthorized PDF mirroring/re-hosting)
+  └── Action 2: [ Study with Quovex AI ]
+        → Ingests chapter concepts into Quovex AI transformation engine
+        → Generates: Summary + Key Concepts + Spaced Repetition Cards + Quiz
+        → Stored under user's learning assets (Originality in learning synthesis)
+```
+
+### 15.3 Quovex Originals Multi-Agent Production Pipeline
+```
+[ Anonymized Demand Signals ]
+  │ (High doubt volume, low quiz accuracy on "Integration by Parts")
+  ▼
+[ Admin Reviews in Content Studio ] → Clicks [ Create Book Draft ]
+  │
+  ▼
+[ 1. Research & Evidence Pack Assembly ]
+  │ → Fetches verified facts, definitions, real-world examples, misconceptions
+  │ → Embeds provenance metadata (sourceUrl, publisher, retrievedAt, evidenceId)
+  │ → Strictly respects robots directives, terms of service, and copyright
+  ▼
+[ 2. Multi-Agent Reasoning Debate ]
+  │ ├── Reasoning Agent A (Proposes chapter progression, analogies, worked examples)
+  │ ├── Reasoning Agent B (Challenges misconceptions, rigor, pedagogy, edge cases)
+  │ └── Synthesis Agent (Generates balanced editorial blueprint)
+  ▼
+[ 3. Original Educational Writing ]
+  │ → Authors new explanations (Understand → rethink → reorganize → teach)
+  │ → Zero copy/paraphrasing of external texts
+  │ → Mathematical readability ($x^2 \to x²$, roots $\sqrt{x}$, Greek symbols $\theta, \alpha, \beta$, chemistry $\text{H}_2\text{O}$)
+  ▼
+[ 4. Multi-Tier Validation Engine ]
+  │ ├── Fact Validation
+  │ ├── Math / Formula Accuracy Validation
+  │ ├── Curriculum Alignment Validation
+  │ └── Pedagogical Consistency Validation
+  ▼
+[ 5. Human Editorial Review & Approval ]
+  │ → Staged in Content Studio Review Queue
+  │ → Admin can preview, edit chapters, compare versions (v1 vs v2), and approve
+  │ → Only APPROVED books transition to PUBLISHED in the public catalog
+  ▼
+[ 6. Public Catalog Release ]
+  → Visible under Knowledge Hub > Quovex Originals
+  → Connects to Spaced Repetition Flashcards, Quizzes, and Quovex AI Tutor
+```
+

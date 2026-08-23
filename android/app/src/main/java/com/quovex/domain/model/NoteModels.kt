@@ -8,7 +8,8 @@ enum class NoteInputType {
     PDF,
     URL,
     YOUTUBE,
-    SCAN
+    SCAN,
+    SCAN_MULTI_PAGE
 }
 
 /**

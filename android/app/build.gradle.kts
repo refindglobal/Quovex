@@ -108,9 +108,18 @@ dependencies {
   implementation(libs.google.credentials.play)
   implementation(libs.googleid)
 
-  // Image loading & ML Kit OCR
+  // Image loading & ML Kit OCR (retained for ImageDoubt feature)
   implementation(libs.coil.compose)
   implementation(libs.mlkit.text.recognition)
+
+  // In-app PDF reader — AndroidPdfViewer renders; PDFBox extracts native text layer & geometry
+  implementation(libs.android.pdf.viewer)
+  implementation(libs.pdfbox.android)
+
+  // ML Kit Document Scanner — BETA (16.0.0-beta1)
+  // Provides: auto edge detection, perspective correction, multi-page, crop, rotate
+  // No OCR dependency — scanner is image-based only
+  implementation(libs.mlkit.document.scanner)
 
   // Room DB
   implementation(libs.room.runtime)
