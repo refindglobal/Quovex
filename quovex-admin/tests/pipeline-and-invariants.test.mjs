@@ -67,7 +67,7 @@ test('Pipeline Stages & Server-Side Approval Invariants', async (t) => {
 
   await t.test('2. Server-Side Approval Invariant strictly rejects unapproved publish', async () => {
     // Attempting to publish while status is 'READY_FOR_REVIEW' (not yet approved)
-    const result = contentPipeline.publishBook(testBookId, true);
+    const result = await contentPipeline.publishBook(testBookId, true);
     assert.equal(result.success, false, 'Must reject publish when not approved');
     assert.ok(result.error?.includes('Server-Side Security Invariant Violation'));
 
@@ -75,8 +75,8 @@ test('Pipeline Stages & Server-Side Approval Invariants', async (t) => {
     assert.notEqual(book?.approvalStatus, 'PUBLISHED');
   });
 
-  await t.test('3. Human Editorial Sign-Off transitions state to APPROVED with audit trail', () => {
-    const approvedBook = contentPipeline.approveBook(
+  await t.test('3. Human Editorial Sign-Off transitions state to APPROVED with audit trail', async () => {
+    const approvedBook = await contentPipeline.approveBook(
       testBookId,
       'admin_lead_editor',
       'Verified all 3 chapters, LaTeX formulas, and practice quiz explanations.'
@@ -88,15 +88,15 @@ test('Pipeline Stages & Server-Side Approval Invariants', async (t) => {
     assert.ok(approvedBook.approvedAt > 0);
   });
 
-  await t.test('4. Publish to Test / Staging Catalog succeeds for approved book', () => {
-    const publishResult = contentPipeline.publishBook(testBookId, true);
+  await t.test('4. Publish to Test / Staging Catalog succeeds for approved book', async () => {
+    const publishResult = await contentPipeline.publishBook(testBookId, true);
     assert.equal(publishResult.success, true);
     assert.equal(publishResult.book?.approvalStatus, 'PUBLISHED');
     assert.equal(publishResult.book?.isStaging, true);
   });
 
-  await t.test('5. Unpublish immediately revokes public visibility', () => {
-    const unpublishResult = contentPipeline.unpublishBook(testBookId);
+  await t.test('5. Unpublish immediately revokes public visibility', async () => {
+    const unpublishResult = await contentPipeline.unpublishBook(testBookId);
     assert.equal(unpublishResult.success, true);
     assert.equal(unpublishResult.book?.approvalStatus, 'UNPUBLISHED');
   });

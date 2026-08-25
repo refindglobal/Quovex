@@ -105,8 +105,8 @@ test('Phase 11 — End-to-End Real Flow & Security Invariants', async (t) => {
 
   studioStore.books.set(testBookId, draftBook);
 
-  await t.test('4. Publishing unapproved book is strictly rejected by Server-Side Invariant', () => {
-    const attempt = contentPipeline.publishBook(testBookId, true);
+  await t.test('4. Publishing unapproved book is strictly rejected by Server-Side Invariant', async () => {
+    const attempt = await contentPipeline.publishBook(testBookId, true);
     assert.equal(attempt.success, false);
     assert.ok(attempt.error?.includes('Server-Side Security Invariant Violation'));
 
@@ -114,8 +114,8 @@ test('Phase 11 — End-to-End Real Flow & Security Invariants', async (t) => {
     assert.notEqual(book?.approvalStatus, 'PUBLISHED');
   });
 
-  await t.test('5. Human Editorial Sign-Off transitions state to APPROVED', () => {
-    const approved = contentPipeline.approveBook(
+  await t.test('5. Human Editorial Sign-Off transitions state to APPROVED', async () => {
+    const approved = await contentPipeline.approveBook(
       testBookId,
       'super_admin_01',
       'Editorial review completed. All mathematical equations verified.'
@@ -126,8 +126,8 @@ test('Phase 11 — End-to-End Real Flow & Security Invariants', async (t) => {
     assert.ok(approved.approvedAt && approved.approvedAt > 0);
   });
 
-  await t.test('6. Publishing approved book makes it visible in public catalog', () => {
-    const publishResult = contentPipeline.publishBook(testBookId, true);
+  await t.test('6. Publishing approved book makes it visible in public catalog', async () => {
+    const publishResult = await contentPipeline.publishBook(testBookId, true);
     assert.equal(publishResult.success, true);
     assert.equal(publishResult.book?.approvalStatus, 'PUBLISHED');
 
@@ -137,8 +137,8 @@ test('Phase 11 — End-to-End Real Flow & Security Invariants', async (t) => {
     assert.equal(found.title, "Newton's Laws — Made Simple");
   });
 
-  await t.test('7. Unpublishing immediately removes book from public catalog', () => {
-    const unpublishResult = contentPipeline.unpublishBook(testBookId);
+  await t.test('7. Unpublishing immediately removes book from public catalog', async () => {
+    const unpublishResult = await contentPipeline.unpublishBook(testBookId);
     assert.equal(unpublishResult.success, true);
     assert.equal(unpublishResult.book?.approvalStatus, 'UNPUBLISHED');
 

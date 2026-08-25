@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { studioStore } from '@/lib/content-studio/pipeline';
 
 export async function GET(req: Request) {
+  await studioStore.loadAllFromFirestore();
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
   const isStagingParam = searchParams.get('isStaging');

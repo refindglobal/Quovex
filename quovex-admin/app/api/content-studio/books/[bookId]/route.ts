@@ -6,7 +6,10 @@ export async function GET(
   { params }: { params: Promise<{ bookId: string }> }
 ) {
   const { bookId } = await params;
-  const book = studioStore.books.get(bookId);
+  let book = studioStore.books.get(bookId);
+  if (!book) {
+    book = (await studioStore.getBookAsync(bookId)) || undefined;
+  }
 
   if (!book) {
     return NextResponse.json(

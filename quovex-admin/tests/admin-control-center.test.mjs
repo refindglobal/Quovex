@@ -82,11 +82,12 @@ test('Quovex Admin Control Center — Phase 9 Security & Operations Test Suite',
     assert.equal(latestLog.actorEmail, 'superadmin@quovex.ai');
   });
 
-  await t.test('5. Publishing an unapproved book is rejected by Server-Side Invariant', () => {
+  await t.test('5. Publishing an unapproved book is rejected by Server-Side Invariant', async () => {
     const draftBookId = 'book_unapproved_test';
     studioStore.books.set(draftBookId, {
       id: draftBookId,
-      title: 'Unapproved Quantum Physics',
+      generationJobId: 'job_test_inv_1',
+      title: 'Quantum Mechanics for High School',
       subject: 'Physics',
       topic: 'Quantum Mechanics',
       countryRegion: 'IN',
@@ -100,18 +101,18 @@ test('Quovex Admin Control Center — Phase 9 Security & Operations Test Suite',
       isStaging: false,
     });
 
-    const result = contentPipeline.publishBook(draftBookId, false);
+    const result = await contentPipeline.publishBook(draftBookId, false);
     assert.equal(result.success, false);
     assert.ok(result.error?.includes('Server-Side Security Invariant Violation'));
   });
 
-  await t.test('6. Publishing succeeds after mandatory human editorial approval sign-off', () => {
+  await t.test('6. Publishing succeeds after mandatory human editorial approval sign-off', async () => {
     const draftBookId = 'book_unapproved_test';
-    const approved = contentPipeline.approveBook(draftBookId, 'editor_lead@quovex.ai', 'Verified math equations');
+    const approved = await contentPipeline.approveBook(draftBookId, 'editor_lead@quovex.ai', 'Verified math equations');
     assert.ok(approved);
     assert.equal(approved.approvalStatus, 'APPROVED');
 
-    const result = contentPipeline.publishBook(draftBookId, false);
+    const result = await contentPipeline.publishBook(draftBookId, false);
     assert.equal(result.success, true);
     assert.equal(result.book?.approvalStatus, 'PUBLISHED');
   });

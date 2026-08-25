@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     if (action === 'PUBLISH') {
-      const result = contentPipeline.publishBook(bookId, isStaging ?? false);
+      const result = await contentPipeline.publishBook(bookId, isStaging ?? false);
       if (!result.success) {
         return NextResponse.json(
           { success: false, error: result.error },
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ success: true, book: result.book });
     } else if (action === 'UNPUBLISH') {
-      const result = contentPipeline.unpublishBook(bookId);
+      const result = await contentPipeline.unpublishBook(bookId);
       if (!result.success) {
         return NextResponse.json(
           { success: false, error: result.error },
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ success: true, book: result.book });
     } else if (action === 'ARCHIVE') {
-      const result = contentPipeline.archiveBook(bookId);
+      const result = await contentPipeline.archiveBook(bookId);
       if (!result.success) {
         return NextResponse.json(
           { success: false, error: result.error },

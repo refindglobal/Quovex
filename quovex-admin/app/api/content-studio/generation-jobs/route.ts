@@ -3,6 +3,7 @@ import { contentPipeline, studioStore } from '@/lib/content-studio/pipeline';
 import { BookRequestInput } from '@/lib/types/content-studio';
 
 export async function GET() {
+  await studioStore.loadAllFromFirestore();
   const jobsList = Array.from(studioStore.jobs.values()).sort(
     (a, b) => b.createdAt - a.createdAt
   );

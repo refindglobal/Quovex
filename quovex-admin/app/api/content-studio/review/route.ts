@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     if (action === 'APPROVE') {
-      const book = contentPipeline.approveBook(
+      const book = await contentPipeline.approveBook(
         bookId,
         adminId || 'admin_editor',
         notes
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ success: true, book });
     } else if (action === 'REQUEST_REVISION') {
-      const book = contentPipeline.requestRevision(
+      const book = await contentPipeline.requestRevision(
         bookId,
         adminId || 'admin_editor',
         notes || 'Editorial revision requested by reviewer.'

@@ -6,7 +6,10 @@ export async function GET(
   { params }: { params: Promise<{ jobId: string }> }
 ) {
   const { jobId } = await params;
-  const job = studioStore.jobs.get(jobId);
+  let job = studioStore.jobs.get(jobId);
+  if (!job) {
+    job = (await studioStore.getJobAsync(jobId)) || undefined;
+  }
 
   if (!job) {
     return NextResponse.json(
