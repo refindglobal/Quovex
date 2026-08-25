@@ -7,18 +7,21 @@
 **Type:** Production Persistence, Storage Architecture Hardening, Audit Trail Security.
 
 ### Highlights
-- **Real Firestore Storage Migration for Content Studio**:
-  - `studioStore` upgraded from in-memory Map to persistent Firestore collections: `quovex_originals` (manuscripts & published books), `content_studio_jobs`, `content_studio_evidence_packs`, `content_studio_blueprints`, and `content_studio_validations`.
-  - Proved persistence across full server process restart; confirmed real-time synchronization with native Android app.
+- **Production Google Cloud Firestore Verification (`quovex-f3104`)**:
+  - Validated live connectivity via Google Cloud Application Default Credentials (ADC) without emulators.
+  - Deployed production Firestore Security Rules (`match /quovex_originals/{bookId} { allow read: if resource.data.approvalStatus == 'PUBLISHED'; }`) and composite indexes.
+  - Executed full 16-stage multi-agent synthesis, 5-tier validation, editorial review, and live publishing of *"Rotational Motion and Angular Momentum"* (CBSE Class 11 Physics) to cloud collection `quovex_originals`.
+  - Proved persistence across server restart (`GET /api/content-studio/books?status=PUBLISHED` returned cloud data).
+  - Verified native Android client reading directly from production Cloud Firestore in real-time (`OriginalsBrowserScreen` → `OriginalBookDetailScreen` → `OriginalChapterReaderScreen` with LaTeX math).
 - **Immutable Security Audit Trail**:
-  - `adminStore.logAudit()` writes immutable audit events directly to Firestore collection `admin_audit_logs`.
+  - `adminStore.logAudit()` writes immutable audit events directly to Firestore collection `admin_audit_logs` in `quovex-f3104`.
 - **Persistent Feature Flag Engine**:
-  - `adminStore.flags` migrated to Firestore collection `feature_flags`; state changes survive restarts and server deploys with automatic default seeding on initial boot.
+  - `adminStore.flags` migrated to Firestore collection `feature_flags` in `quovex-f3104`; state changes survive restarts and server deploys with automatic default seeding on initial boot.
 - **Accurate Storage Architecture Matrix**:
-  - **Firestore Backed:** Content Studio (Books & Jobs), Security Audit Logs (`admin_audit_logs`), Feature Flags (`feature_flags`).
+  - **Firestore Backed (Verified Production `quovex-f3104` on 2026-08-25):** Content Studio (Books & Jobs), Security Audit Logs (`admin_audit_logs`), Feature Flags (`feature_flags`).
   - **In-Memory Local Session Store:** Users (`adminStore.users`), Moderation Reports (`adminStore.moderationReports`), Notification Campaigns (`adminStore.notifications`), and Demand Signals (`signalsStore`).
 - **Build & Test Verification**:
-  - Re-verified Next.js admin tests (33/33 pass, production build 50/50 routes) and Android clean test suite with exact execution duration.
+  - Re-verified Next.js admin tests (34/34 pass, production build 50/50 routes) and Android clean test suite (191/191 pass).
 
 ---
 

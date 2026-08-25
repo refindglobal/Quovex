@@ -147,8 +147,9 @@ export class ValidatorEngine {
 
     const allText = this.getAllBookText(book).toLowerCase();
     let objectivesMet = 0;
+    const finalObjectives = blueprint.synthesisFinalObjectives || [];
 
-    for (const objective of blueprint.synthesisFinalObjectives) {
+    for (const objective of finalObjectives) {
       // Check if keywords from objective appear in book text
       const keywords = objective
         .toLowerCase()
@@ -164,13 +165,13 @@ export class ValidatorEngine {
       }
     }
 
-    const score = Math.round((objectivesMet / Math.max(1, blueprint.synthesisFinalObjectives.length)) * 100);
+    const score = Math.round((objectivesMet / Math.max(1, finalObjectives.length)) * 100);
 
     return {
       tierName: 'CURRICULUM',
       passed: score >= 80,
       score,
-      inspectedItemsCount: blueprint.synthesisFinalObjectives.length,
+      inspectedItemsCount: finalObjectives.length,
       issues,
       remediationSuggestions: suggestions,
     };

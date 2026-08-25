@@ -35,10 +35,10 @@
 
 | Admin Module | Backing File | Storage Layer | Real Cloud/Firestore Backed | Persistence Across Server Restart |
 |---|---|---|---|---|
-| **Content Studio (Books & Manuscripts)** | `pipeline.ts` | Firestore (`quovex_originals`) | **YES** ✅ | Persists across restarts; read directly by Android client |
-| **Content Studio (Jobs & Blueprints)** | `pipeline.ts` | Firestore (`content_studio_*`) | **YES** ✅ | Persists generation state, evidence packs, validation reports |
-| **Security Audit Logs** | `admin-store.ts` | Firestore (`admin_audit_logs`) | **YES** ✅ | Immutable audit trail persisted to Firestore collection |
-| **Feature Flags** | `admin-store.ts` | Firestore (`feature_flags`) | **YES** ✅ | Persistent flag state, default seed on first boot |
+| **Content Studio (Books & Manuscripts)** | `pipeline.ts` | Firestore (`quovex_originals`) | **YES** (verified against production `quovex-f3104` on 2026-08-25) ✅ | Persists across restarts; read directly by Android client |
+| **Content Studio (Jobs & Blueprints)** | `pipeline.ts` | Firestore (`content_studio_*`) | **YES** (verified against production `quovex-f3104` on 2026-08-25) ✅ | Persists generation state, evidence packs, validation reports |
+| **Security Audit Logs** | `admin-store.ts` | Firestore (`admin_audit_logs`) | **YES** (verified against production `quovex-f3104` on 2026-08-25) ✅ | Immutable audit trail persisted to Firestore collection |
+| **Feature Flags** | `admin-store.ts` | Firestore (`feature_flags`) | **YES** (verified against production `quovex-f3104` on 2026-08-25) ✅ | Persistent flag state, default seed on first boot |
 | **User Directory & Accounts** | `admin-store.ts` | In-Memory `Map<string, UserAccount>` | **NO** ⚠️ *(In-Memory)* | Local session store; resets on server restart |
 | **Moderation Queue** | `admin-store.ts` | In-Memory `Map<string, ModerationReport>` | **NO** ⚠️ *(In-Memory)* | Local session store; resets on server restart |
 | **Push Notification Campaigns** | `admin-store.ts` | In-Memory `Map<string, NotificationCampaign>` | **NO** ⚠️ *(In-Memory)* | Local session store; resets on server restart |

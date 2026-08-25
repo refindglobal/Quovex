@@ -147,7 +147,11 @@ Output JSON matching this exact schema:
       architectAnalogies: architectResult.visualAnalogies || [],
       challengerIdentifiedRisks: challengerResult.identifiedRisks || [],
       challengerEdgeCases: challengerResult.edgeCases || [],
-      synthesisFinalObjectives: synthesisResult.finalObjectives || request.learningObjectives,
+      synthesisFinalObjectives:
+        synthesisResult.finalObjectives ||
+        request.learningObjectives ||
+        request.targetConcepts ||
+        [`Understand core principles of ${request.topic}`, `Apply mathematical derivations and formulas`, `Solve numerical problems accurately`],
       synthesisChapterPlan: finalChapters,
       curriculumAlignmentNotes: synthesisResult.curriculumAlignmentNotes || `Aligned to ${request.curriculum} — ${request.gradeClass}.`,
       createdAt: Date.now()

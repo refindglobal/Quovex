@@ -22,15 +22,7 @@ object FirebaseModule {
     @Provides
     @Singleton
     fun provideFirebaseFirestore(): FirebaseFirestore {
-        val firestore = FirebaseFirestore.getInstance()
-        if (com.quovex.BuildConfig.DEBUG) {
-            try {
-                firestore.useEmulator("10.0.2.2", 8080)
-            } catch (e: Exception) {
-                // Already configured
-            }
-        }
-        return firestore
+        return FirebaseFirestore.getInstance()
     }
 
     @Provides

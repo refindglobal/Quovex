@@ -83,8 +83,8 @@ export class WriterEngine {
 
       coverImageUrl: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1200&q=80",
       introduction: `Welcome to ${request.title}. This Quovex Original is engineered to eliminate confusion and build ironclad conceptual intuition in ${request.topic}. Each chapter blends visual analogies with rigorous mathematical problem solving.`,
-      learningObjectives: blueprint.synthesisFinalObjectives,
-      prerequisites: request.prerequisites.length > 0 ? request.prerequisites : [
+      learningObjectives: blueprint.synthesisFinalObjectives || [],
+      prerequisites: request.prerequisites?.length ? request.prerequisites : [
         "Basic algebra and coordinate geometry",
         "Elementary vector addition and resolution",
         "Basic concepts of velocity, speed, and time"
