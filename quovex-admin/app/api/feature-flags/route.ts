@@ -8,6 +8,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: auth.error }, { status: auth.statusCode || 401 });
   }
 
+  await adminStore.loadFeatureFlagsFromFirestore();
   const flags = Array.from(adminStore.flags.values());
   return NextResponse.json({
     success: true,

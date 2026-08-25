@@ -2,6 +2,26 @@
 
 ---
 
+## [v3.6.0] — 2026-08-25 — Phase 11.2: Admin Storage Layer Hardening & Firestore Persistence
+
+**Type:** Production Persistence, Storage Architecture Hardening, Audit Trail Security.
+
+### Highlights
+- **Real Firestore Storage Migration for Content Studio**:
+  - `studioStore` upgraded from in-memory Map to persistent Firestore collections: `quovex_originals` (manuscripts & published books), `content_studio_jobs`, `content_studio_evidence_packs`, `content_studio_blueprints`, and `content_studio_validations`.
+  - Proved persistence across full server process restart; confirmed real-time synchronization with native Android app.
+- **Immutable Security Audit Trail**:
+  - `adminStore.logAudit()` writes immutable audit events directly to Firestore collection `admin_audit_logs`.
+- **Persistent Feature Flag Engine**:
+  - `adminStore.flags` migrated to Firestore collection `feature_flags`; state changes survive restarts and server deploys with automatic default seeding on initial boot.
+- **Accurate Storage Architecture Matrix**:
+  - **Firestore Backed:** Content Studio (Books & Jobs), Security Audit Logs (`admin_audit_logs`), Feature Flags (`feature_flags`).
+  - **In-Memory Local Session Store:** Users (`adminStore.users`), Moderation Reports (`adminStore.moderationReports`), Notification Campaigns (`adminStore.notifications`), and Demand Signals (`signalsStore`).
+- **Build & Test Verification**:
+  - Re-verified Next.js admin tests (33/33 pass, production build 50/50 routes) and Android clean test suite with exact execution duration.
+
+---
+
 ## [v3.5.0] — 2026-08-23 — Phase 11: Real Production E2E Integration & Hardening
 
 **Type:** Production Hardening, End-to-End Verification, Security & Data Integrity.

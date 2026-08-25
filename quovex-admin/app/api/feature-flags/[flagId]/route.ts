@@ -11,7 +11,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ flagId
   const { flagId } = await params;
   const { enabled, rolloutPercentage = 100 } = await req.json();
 
-  const updated = adminStore.updateFlag(flagId, enabled, rolloutPercentage, auth.admin);
+  const updated = await adminStore.updateFlagAsync(flagId, enabled, rolloutPercentage, auth.admin);
 
   if (!updated) {
     return NextResponse.json({ error: 'Feature flag not found' }, { status: 404 });

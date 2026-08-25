@@ -206,19 +206,41 @@ export async function callAiGateway({
  */
 export function extractJsonFromAiResponse<T = any>(rawText: string): T {
   if (!rawText) throw new Error('Empty AI response.');
-  const cleaned = rawText
-    .replace(/^```json/im, '')
-    .replace(/^```/im, '')
+  
+  // 1. Strip reasoning <think>...</think> tags if present
+  let cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+  // 2. Strip markdown code fences
+  cleaned = cleaned
+    .replace(/^```json\s*/im, '')
+    .replace(/^```\s*/im, '')
     .replace(/```$/im, '')
     .trim();
 
+  // 3. Direct parse attempt
   try {
     return JSON.parse(cleaned);
-  } catch (err) {
-    const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    if (match) {
-      return JSON.parse(match[0]);
-    }
-    throw new Error(`Failed to parse structured JSON from AI output: ${rawText.substring(0, 200)}...`);
+  } catch (_) {}
+
+  // 4. Search for outermost JSON object {...}
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      const candidate = cleaned.substring(firstBrace, lastBrace + 1);
+      return JSON.parse(candidate);
+    } catch (_) {}
   }
+
+  // 5. Search for outermost JSON array [...]
+  const firstBracket = cleaned.indexOf('[');
+  const lastBracket = cleaned.lastIndexOf(']');
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    try {
+      const candidate = cleaned.substring(firstBracket, lastBracket + 1);
+      return JSON.parse(candidate);
+    } catch (_) {}
+  }
+
+  throw new Error(`Failed to parse structured JSON from AI output: ${rawText.substring(0, 200)}...`);
 }

@@ -11,10 +11,11 @@ import {
   AiKeyInfo,
 } from './types/admin';
 import { studioStore } from './content-studio/pipeline';
+import { getAdminFirestore } from './firebase-admin';
 
 /**
  * Server-Side Admin Store
- * Manages runtime entities, feature flags, moderation, notifications, and append-only audit trail.
+ * Manages runtime entities, feature flags, moderation, notifications, and append-only audit trail with Firestore persistence.
  */
 class AdminControlStore {
   public users: Map<string, UserAccount> = new Map();
@@ -22,6 +23,8 @@ class AdminControlStore {
   public moderationReports: Map<string, ModerationReport> = new Map();
   public notifications: Map<string, NotificationCampaign> = new Map();
   public auditLogs: AuditLogEntry[] = [];
+  private flagsLoadedFromDb = false;
+  private logsLoadedFromDb = false;
 
   constructor() {
     this.initializeDefaultFlags();
@@ -113,6 +116,61 @@ class AdminControlStore {
     }
   }
 
+  // --- FIRESTORE PERSISTENCE: AUDIT LOGS & FEATURE FLAGS ---
+  public async loadAuditLogsFromFirestore(): Promise<AuditLogEntry[]> {
+    try {
+      const db = getAdminFirestore();
+      const snap = await db.collection('admin_audit_logs').orderBy('timestamp', 'desc').limit(200).get();
+      if (!snap.empty) {
+        this.auditLogs = snap.docs.map((doc) => doc.data() as AuditLogEntry);
+        this.logsLoadedFromDb = true;
+      }
+    } catch (err: any) {
+      console.warn('Firestore loadAuditLogs warning:', err.message);
+    }
+    return this.auditLogs;
+  }
+
+  public async saveAuditLogToFirestore(log: AuditLogEntry): Promise<void> {
+    try {
+      const db = getAdminFirestore();
+      await db.collection('admin_audit_logs').doc(log.id).set(log);
+    } catch (err: any) {
+      console.warn(`Firestore saveAuditLog warning (${log.id}):`, err.message);
+    }
+  }
+
+  public async loadFeatureFlagsFromFirestore(): Promise<FeatureFlag[]> {
+    try {
+      const db = getAdminFirestore();
+      const snap = await db.collection('feature_flags').get();
+      if (!snap.empty) {
+        for (const doc of snap.docs) {
+          const flag = doc.data() as FeatureFlag;
+          this.flags.set(flag.id, flag);
+        }
+        this.flagsLoadedFromDb = true;
+      } else {
+        // First run: seed default flags to Firestore
+        for (const flag of this.flags.values()) {
+          await this.saveFeatureFlagToFirestore(flag);
+        }
+      }
+    } catch (err: any) {
+      console.warn('Firestore loadFeatureFlags warning:', err.message);
+    }
+    return Array.from(this.flags.values());
+  }
+
+  public async saveFeatureFlagToFirestore(flag: FeatureFlag): Promise<void> {
+    try {
+      const db = getAdminFirestore();
+      await db.collection('feature_flags').doc(flag.id).set(flag);
+    } catch (err: any) {
+      console.warn(`Firestore saveFeatureFlag warning (${flag.id}):`, err.message);
+    }
+  }
+
   // --- AUDIT LOGGING ---
   public logAudit(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): AuditLogEntry {
     const log: AuditLogEntry = {
@@ -121,6 +179,8 @@ class AdminControlStore {
       timestamp: Date.now(),
     };
     this.auditLogs.unshift(log); // newest first
+    // Asynchronously persist immutable audit entry to Firestore
+    this.saveAuditLogToFirestore(log).catch(() => {});
     return log;
   }
 
@@ -189,7 +249,19 @@ class AdminControlStore {
       success: true,
     });
 
+    // Asynchronously persist updated flag to Firestore
+    this.saveFeatureFlagToFirestore(flag).catch(() => {});
+
     return flag;
+  }
+
+  public async updateFlagAsync(flagId: string, enabled: boolean, rolloutPercentage: number, actor: AdminUser): Promise<FeatureFlag | null> {
+    await this.loadFeatureFlagsFromFirestore();
+    const updated = this.updateFlag(flagId, enabled, rolloutPercentage, actor);
+    if (updated) {
+      await this.saveFeatureFlagToFirestore(updated);
+    }
+    return updated;
   }
 
   // --- MODERATION ---

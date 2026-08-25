@@ -12,6 +12,7 @@ export async function GET(req: Request) {
   const action = searchParams.get('action');
   const targetType = searchParams.get('targetType');
 
+  await adminStore.loadAuditLogsFromFirestore();
   let logs = adminStore.auditLogs;
 
   if (action) {

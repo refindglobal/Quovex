@@ -10,6 +10,7 @@ export async function GET(req: Request) {
 
   const metrics = adminStore.getPlatformMetrics();
   const systemHealth = adminStore.getSystemHealth();
+  await adminStore.loadAuditLogsFromFirestore();
   const recentLogs = adminStore.auditLogs.slice(0, 5);
 
   return NextResponse.json({

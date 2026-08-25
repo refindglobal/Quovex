@@ -31,7 +31,23 @@
 
 ---
 
-## 2. Invariant Compliance
+## 2. Admin Module Storage Architecture & Provenance Table
 
-- **Zero Hardcoded Demonstration Data:** Confirmed. All KPI cards dynamically calculate values from registered user accounts, Content Studio manuscripts, and live AI gateway counters.
+| Admin Module | Backing File | Storage Layer | Real Cloud/Firestore Backed | Persistence Across Server Restart |
+|---|---|---|---|---|
+| **Content Studio (Books & Manuscripts)** | `pipeline.ts` | Firestore (`quovex_originals`) | **YES** ✅ | Persists across restarts; read directly by Android client |
+| **Content Studio (Jobs & Blueprints)** | `pipeline.ts` | Firestore (`content_studio_*`) | **YES** ✅ | Persists generation state, evidence packs, validation reports |
+| **Security Audit Logs** | `admin-store.ts` | Firestore (`admin_audit_logs`) | **YES** ✅ | Immutable audit trail persisted to Firestore collection |
+| **Feature Flags** | `admin-store.ts` | Firestore (`feature_flags`) | **YES** ✅ | Persistent flag state, default seed on first boot |
+| **User Directory & Accounts** | `admin-store.ts` | In-Memory `Map<string, UserAccount>` | **NO** ⚠️ *(In-Memory)* | Local session store; resets on server restart |
+| **Moderation Queue** | `admin-store.ts` | In-Memory `Map<string, ModerationReport>` | **NO** ⚠️ *(In-Memory)* | Local session store; resets on server restart |
+| **Push Notification Campaigns** | `admin-store.ts` | In-Memory `Map<string, NotificationCampaign>` | **NO** ⚠️ *(In-Memory)* | Local session store; resets on server restart |
+| **Demand Intelligence Signals** | `demand-intelligence.ts` | In-Memory `Map<string, TopicDemandSignal>` | **NO** ⚠️ *(In-Memory)* | Dynamic session calculation from telemetry |
+
+---
+
+## 3. Invariant Compliance
+
+- **Zero Hardcoded Demonstration Data:** Confirmed. All KPI cards calculate dynamically rather than displaying static hardcoded numbers.
 - **Empty State Rendering:** When collections are empty, UI renders standard `EmptyState` components rather than fictitious counts.
+- **Persistent Production Storage:** Critical operational data (Published Books, Manuscripts, Quality Validation Reports, Security Audit Logs, Feature Flags) is strictly backed by Firestore.

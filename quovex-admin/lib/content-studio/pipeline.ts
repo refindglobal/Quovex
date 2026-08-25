@@ -38,12 +38,28 @@ class ContentStudioStore {
   public evidencePacks: Map<string, EvidencePack> = new Map();
   public blueprints: Map<string, EditorialBlueprint> = new Map();
   public validationReports: Map<string, ContentValidationReport> = new Map();
+  private sanitizeForFirestore(obj: any): any {
+    if (obj === null || obj === undefined) return null;
+    if (Array.isArray(obj)) {
+      return obj.map((item) => (Array.isArray(item) ? item.join(', ') : this.sanitizeForFirestore(item)));
+    }
+    if (typeof obj === 'object') {
+      const res: Record<string, any> = {};
+      for (const [key, val] of Object.entries(obj)) {
+        if (val !== undefined) {
+          res[key] = this.sanitizeForFirestore(val);
+        }
+      }
+      return res;
+    }
+    return obj;
+  }
 
   public async saveBook(book: QuovexOriginalBook): Promise<void> {
     this.books.set(book.id, book);
     try {
       const db = getAdminFirestore();
-      await db.collection('quovex_originals').doc(book.id).set(JSON.parse(JSON.stringify(book)), { merge: true });
+      await db.collection('quovex_originals').doc(book.id).set(this.sanitizeForFirestore(book), { merge: true });
     } catch (e: any) {
       console.warn(`Firestore saveBook warning (${book.id}):`, e.message);
     }
@@ -53,7 +69,7 @@ class ContentStudioStore {
     this.jobs.set(job.jobId, job);
     try {
       const db = getAdminFirestore();
-      await db.collection('content_generation_jobs').doc(job.jobId).set(JSON.parse(JSON.stringify(job)), { merge: true });
+      await db.collection('content_generation_jobs').doc(job.jobId).set(this.sanitizeForFirestore(job), { merge: true });
     } catch (e: any) {
       console.warn(`Firestore saveJob warning (${job.jobId}):`, e.message);
     }
@@ -63,7 +79,7 @@ class ContentStudioStore {
     this.evidencePacks.set(pack.packId, pack);
     try {
       const db = getAdminFirestore();
-      await db.collection('evidence_packs').doc(pack.packId).set(JSON.parse(JSON.stringify(pack)), { merge: true });
+      await db.collection('evidence_packs').doc(pack.packId).set(this.sanitizeForFirestore(pack), { merge: true });
     } catch (e: any) {
       console.warn(`Firestore saveEvidencePack warning (${pack.packId}):`, e.message);
     }
@@ -73,7 +89,7 @@ class ContentStudioStore {
     this.blueprints.set(blueprint.blueprintId, blueprint);
     try {
       const db = getAdminFirestore();
-      await db.collection('editorial_blueprints').doc(blueprint.blueprintId).set(JSON.parse(JSON.stringify(blueprint)), { merge: true });
+      await db.collection('editorial_blueprints').doc(blueprint.blueprintId).set(this.sanitizeForFirestore(blueprint), { merge: true });
     } catch (e: any) {
       console.warn(`Firestore saveBlueprint warning (${blueprint.blueprintId}):`, e.message);
     }
@@ -83,7 +99,7 @@ class ContentStudioStore {
     this.validationReports.set(report.reportId, report);
     try {
       const db = getAdminFirestore();
-      await db.collection('validation_reports').doc(report.reportId).set(JSON.parse(JSON.stringify(report)), { merge: true });
+      await db.collection('validation_reports').doc(report.reportId).set(this.sanitizeForFirestore(report), { merge: true });
     } catch (e: any) {
       console.warn(`Firestore saveValidationReport warning (${report.reportId}):`, e.message);
     }
