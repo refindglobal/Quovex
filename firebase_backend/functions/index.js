@@ -85,7 +85,7 @@ async function callAiWithFailover({
     isVision = false
 }) {
     // 1. Try Groq Primary Model (4 Keys Rotating Pool)
-    const primaryModel = isVision ? 'openai/gpt-oss-120b' : 'openai/gpt-oss-20b';
+    const primaryModel = isVision ? 'qwen/qwen3.6-27b' : 'openai/gpt-oss-20b';
     for (let attempt = 0; attempt < GROQ_KEYS.length; attempt++) {
         const groqKey = getNextGroqKey();
         if (!groqKey) break;
@@ -213,6 +213,9 @@ function extractJson(text) {
 function cleanMathAndLatex(raw) {
     if (!raw || typeof raw !== 'string') return raw;
     let text = raw;
+
+    // 0. Remove internal model thinking tags (<think>...</think>)
+    text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
     // 1. Remove LaTeX delimiters
     text = text.replace(/\\\[/g, '\n').replace(/\\\]/g, '\n');
@@ -597,7 +600,19 @@ ${MATH_READABILITY_RULES}`;
         }
 
         const messages = [
-            { role: 'system', content: 'You are an expert STEM tutor and academic problem solver.' },
+            {
+                role: 'system',
+                content: `You are Quovex AI, an elite STEM tutor and visual problem solver.
+If the image contains a solvable academic problem, math equation, physics diagram, chemistry formula, or study question:
+1. Identify the problem and state given values clearly.
+2. State applicable laws, theorems, and formulas.
+3. Provide rigorous step-by-step mathematical/conceptual derivations.
+4. Highlight the final calculated answer clearly with standard units.
+5. List 1-2 common student pitfalls or exam tips.
+
+If the image does NOT contain an academic problem (for example, if it is a photo of a pet, person, landscape, random object, or is completely unreadable/blurry):
+Politely state: "No solvable academic problem was detected in this photo. Please capture a clear, focused photo of a textbook question, handwritten problem, or formula sheet."`
+            },
             { role: 'user', content: userMessageContent }
         ];
 
@@ -609,7 +624,7 @@ ${MATH_READABILITY_RULES}`;
 
         res.json({
             success: true,
-            solution: result.content,
+            solution: cleanMathAndLatex(result.content),
             provider: result.provider,
             model: result.model
         });

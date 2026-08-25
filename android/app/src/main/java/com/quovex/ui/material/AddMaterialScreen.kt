@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,6 +64,7 @@ fun AddMaterialScreen(
     onNavigateBack: () -> Unit,
     onNavigateToScanner: () -> Unit,
     onNavigateToImportUrl: () -> Unit,
+    onNavigateToImageDoubt: () -> Unit = {},
     onProcessText: (title: String, text: String, type: NoteInputType) -> Unit
 ) {
     var quickTitle by remember { mutableStateOf("") }
@@ -121,6 +123,14 @@ fun AddMaterialScreen(
                     icon = Icons.Default.CameraAlt,
                     accentColor = BrandEmerald,
                     onClick = onNavigateToScanner
+                )
+
+                ImportSourceCard(
+                    title = "Photo Doubt Solver",
+                    subtitle = "Snap a math/physics problem for step-by-step AI visual solving",
+                    icon = Icons.Default.Psychology,
+                    accentColor = Color(0xFFA78BFA),
+                    onClick = onNavigateToImageDoubt
                 )
 
                 ImportSourceCard(

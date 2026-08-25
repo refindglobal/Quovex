@@ -268,6 +268,7 @@ fun QuovexNavGraph(
                             onNavigateBack = { navController.popBackStack() },
                             onNavigateToScanner = { navController.navigate(QuovexRoute.DocumentScanner.route) },
                             onNavigateToImportUrl = { navController.navigate(QuovexRoute.ImportUrl.route) },
+                            onNavigateToImageDoubt = { navController.navigate(QuovexRoute.ImageDoubt.route) },
                             onProcessText = { title, text, type ->
                                 materialViewModel.processRawText(title, text, type)
                             }

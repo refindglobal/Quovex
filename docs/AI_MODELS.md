@@ -8,9 +8,9 @@
 
 | Model ID | Best For | Notes |
 |---|---|---|
-| `openai/gpt-oss-120b` | Vision (Image Doubt Solver), complex reasoning | **Largest, most capable. Supports images.** |
-| `openai/gpt-oss-20b` | Fast chat, note summarization, quiz gen, flashcard gen, quotes | Faster + cheaper than 120b |
-| `qwen/qwen3.6-27b` | Balanced chat + reasoning, Groq fallback | Good multilingual support |
+| `qwen/qwen3.6-27b` | **Multimodal Vision (Image Doubt Solver)**, multilingual | **Live Verified: native `image_url` base64 vision support.** |
+| `openai/gpt-oss-120b` | Complex reasoning, large text synthesis | Largest text model |
+| `openai/gpt-oss-20b` | Fast chat, note summarization, quiz gen, flashcard gen, quotes | Faster + cheaper text model |
 | `groq/compound` | Agentic tasks, tool use, AI level assessment | Best for complex multi-step reasoning |
 | `groq/compound-mini` | Quick agentic tasks | Faster compound model |
 | `allam-2-7b` | Arabic language support | Only if targeting Arabic users |
@@ -27,8 +27,8 @@
 
 | Model ID | Best For | Notes |
 |---|---|---|
-| `gpt-oss-120b` | Study plan generation, long reasoning, vision | **128K context — use for study plans** |
-| `gemma-4-31b` | Vision (Image Doubt fallback), document understanding | Best vision model on Cerebras |
+| `gpt-oss-120b` | Study plan generation, long reasoning | **128K context — use for study plans** |
+| `gemma-4-31b` | Vision (Image Doubt fallback), document understanding | Vision model on Cerebras |
 
 ---
 
@@ -45,8 +45,8 @@
 | **Quiz Generation** | Groq | `openai/gpt-oss-20b` | JSON schema mode — MCQ generation |
 | **Study Plan Generation** | Cerebras | `gpt-oss-120b` | 128K context for full plans |
 | **Study Plan Replan** | Cerebras | `gpt-oss-120b` | Same — needs full context |
-| **Image Doubt Solver** | Groq | `openai/gpt-oss-120b` | Vision support + most capable |
-| **Image Doubt (fallback)** | Cerebras | `gemma-4-31b` | Also supports vision |
+| **Image Doubt Solver** | Groq | `qwen/qwen3.6-27b` | Primary multimodal vision model |
+| **Image Doubt (fallback)** | Cerebras | `gemma-4-31b` | Cerebras vision failover |
 | **Motivational Quotes** | Groq | `openai/gpt-oss-20b` | Quick, simple generation |
 | **AI Level Assessment Quiz** | Groq | `groq/compound` | Adaptive difficulty reasoning |
 | **Content Safety** | Groq | `meta-llama/llama-prompt-guard-2-22m` | Fast moderation on all inputs |
