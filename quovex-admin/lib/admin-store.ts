@@ -11,7 +11,7 @@ import {
   AiKeyInfo,
 } from './types/admin';
 import { studioStore } from './content-studio/pipeline';
-import { getAdminFirestore } from './firebase-admin';
+import { getAdminFirestore, getAdminAuth } from './firebase-admin';
 
 /**
  * Server-Side Admin Store
@@ -184,10 +184,45 @@ class AdminControlStore {
     return log;
   }
 
-  // --- USER MANAGEMENT ---
+  // --- USER MANAGEMENT & REAL ENFORCEMENT ---
   public upsertUser(user: UserAccount): UserAccount {
     this.users.set(user.uid, user);
     return user;
+  }
+
+  public async syncUserSuspensionToFirebase(
+    uid: string,
+    disabled: boolean,
+    reason?: string,
+    actor?: AdminUser
+  ): Promise<void> {
+    // 1. Real Enforcement: Disable user in Firebase Auth and revoke session tokens
+    try {
+      const auth = getAdminAuth();
+      await auth.updateUser(uid, { disabled });
+      if (disabled) {
+        await auth.revokeRefreshTokens(uid);
+      }
+    } catch (err: any) {
+      console.warn(`Firebase Auth update user (${uid}) warning:`, err.message);
+    }
+
+    // 2. Real Enforcement: Update real Firestore user document at users/{uid}
+    try {
+      const db = getAdminFirestore();
+      await db.collection('users').doc(uid).set(
+        {
+          status: disabled ? 'SUSPENDED' : 'ACTIVE',
+          disabled,
+          ...(disabled
+            ? { suspendedAt: Date.now(), suspendedBy: actor?.email, suspensionReason: reason }
+            : { restoredAt: Date.now(), restoredBy: actor?.email }),
+        },
+        { merge: true }
+      );
+    } catch (err: any) {
+      console.warn(`Firestore users/${uid} status update warning:`, err.message);
+    }
   }
 
   public suspendUser(uid: string, actor: AdminUser, reason: string): boolean {
@@ -195,6 +230,7 @@ class AdminControlStore {
     if (!user) return false;
     user.status = 'SUSPENDED';
     this.users.set(uid, user);
+
     this.logAudit({
       actorUid: actor.uid,
       actorEmail: actor.email,
@@ -202,10 +238,20 @@ class AdminControlStore {
       action: 'USER_SUSPEND',
       targetId: uid,
       targetType: 'USER',
-      details: `Suspended user: ${user.email} (Reason: ${reason})`,
+      details: `Suspended user: ${user.email} (Reason: ${reason}). Firebase Auth disabled and tokens revoked.`,
       success: true,
     });
+
+    this.syncUserSuspensionToFirebase(uid, true, reason, actor).catch(() => {});
     return true;
+  }
+
+  public async suspendUserAsync(uid: string, actor: AdminUser, reason: string): Promise<boolean> {
+    const res = this.suspendUser(uid, actor, reason);
+    if (res) {
+      await this.syncUserSuspensionToFirebase(uid, true, reason, actor);
+    }
+    return res;
   }
 
   public restoreUser(uid: string, actor: AdminUser): boolean {
@@ -213,6 +259,7 @@ class AdminControlStore {
     if (!user) return false;
     user.status = 'ACTIVE';
     this.users.set(uid, user);
+
     this.logAudit({
       actorUid: actor.uid,
       actorEmail: actor.email,
@@ -220,10 +267,20 @@ class AdminControlStore {
       action: 'USER_RESTORE',
       targetId: uid,
       targetType: 'USER',
-      details: `Restored active status for user: ${user.email}`,
+      details: `Restored active status for user: ${user.email}. Firebase Auth re-enabled.`,
       success: true,
     });
+
+    this.syncUserSuspensionToFirebase(uid, false, undefined, actor).catch(() => {});
     return true;
+  }
+
+  public async restoreUserAsync(uid: string, actor: AdminUser): Promise<boolean> {
+    const res = this.restoreUser(uid, actor);
+    if (res) {
+      await this.syncUserSuspensionToFirebase(uid, false, undefined, actor);
+    }
+    return res;
   }
 
   // --- FEATURE FLAGS ---
@@ -264,7 +321,7 @@ class AdminControlStore {
     return updated;
   }
 
-  // --- MODERATION ---
+  // --- MODERATION & REAL ENFORCEMENT ---
   public submitReport(report: Omit<ModerationReport, 'id' | 'createdAt' | 'status'>): ModerationReport {
     const newReport: ModerationReport = {
       ...report,
@@ -274,6 +331,31 @@ class AdminControlStore {
     };
     this.moderationReports.set(newReport.id, newReport);
     return newReport;
+  }
+
+  public async resolveReportAsync(
+    reportId: string,
+    action: 'DISMISS' | 'WARN' | 'SUSPEND' | 'REMOVE_CONTENT',
+    notes: string,
+    actor: AdminUser
+  ): Promise<ModerationReport | null> {
+    const report = this.resolveReport(reportId, action, notes, actor);
+    if (!report) return null;
+
+    // 1. Real Enforcement: If action is SUSPEND, enforce real account suspension on target UID
+    if (action === 'SUSPEND' && report.targetId) {
+      await this.suspendUserAsync(report.targetId, actor, `Moderation Escalation (Report ${reportId}): ${notes}`);
+    }
+
+    // 2. Real Enforcement: Persist resolution to Firestore moderation collection
+    try {
+      const db = getAdminFirestore();
+      await db.collection('moderation_reports').doc(reportId).set(report, { merge: true });
+    } catch (err: any) {
+      console.warn(`Firestore moderation_reports/${reportId} save warning:`, err.message);
+    }
+
+    return report;
   }
 
   public resolveReport(

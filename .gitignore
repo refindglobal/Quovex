@@ -18,6 +18,8 @@ android/local.properties
 *.apk
 *.aab
 *.hprof
+.kotlin/
+android/.kotlin/
 
 # Secrets & Private configs
 secrets.properties

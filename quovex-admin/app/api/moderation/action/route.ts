@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing reportId or action' }, { status: 400 });
     }
 
-    const resolved = adminStore.resolveReport(reportId, action, notes, auth.admin);
+    const resolved = await adminStore.resolveReportAsync(reportId, action, notes, auth.admin);
 
     if (!resolved) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 });

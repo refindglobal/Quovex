@@ -12,11 +12,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ uid: st
   const { action, reason = 'Administrative review' } = await req.json();
 
   if (action === 'SUSPEND') {
-    const success = adminStore.suspendUser(uid, auth.admin, reason);
+    const success = await adminStore.suspendUserAsync(uid, auth.admin, reason);
     if (!success) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     return NextResponse.json({ success: true, status: 'SUSPENDED' });
   } else if (action === 'RESTORE') {
-    const success = adminStore.restoreUser(uid, auth.admin);
+    const success = await adminStore.restoreUserAsync(uid, auth.admin);
     if (!success) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     return NextResponse.json({ success: true, status: 'ACTIVE' });
   }
