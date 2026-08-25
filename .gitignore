@@ -26,6 +26,7 @@ secrets.properties
 *.env
 .env
 .env.*
+!.env.example
 
 # Node / Cloud Functions
 node_modules/
