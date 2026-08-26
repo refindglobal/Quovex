@@ -29,6 +29,11 @@ class GetDashboardStatsUseCaseTest {
 
     private lateinit var fakeRepository: FakeQuovexRepository
     private lateinit var fakeUserPrefs: UserPreferencesManager
+    private lateinit var fakeUserStatsDao: FakeUserStatsDao
+    private lateinit var fakeSessionDao: FakeSessionDao
+    private lateinit var calculateStreakUseCase: CalculateStreakUseCase
+    private lateinit var getScholarLevelUseCase: GetScholarLevelUseCase
+    private lateinit var studyAnalyticsUseCase: StudyAnalyticsUseCase
     private lateinit var useCase: GetDashboardStatsUseCase
 
     private val testZone = ZoneId.of("UTC")
@@ -37,7 +42,18 @@ class GetDashboardStatsUseCaseTest {
     fun setup() {
         fakeRepository = FakeQuovexRepository()
         fakeUserPrefs = UserPreferencesManager(null)
-        useCase = GetDashboardStatsUseCase(fakeRepository, fakeUserPrefs)
+        fakeUserStatsDao = FakeUserStatsDao()
+        fakeSessionDao = FakeSessionDao()
+        calculateStreakUseCase = CalculateStreakUseCase(fakeUserStatsDao, fakeUserPrefs)
+        getScholarLevelUseCase = GetScholarLevelUseCase()
+        studyAnalyticsUseCase = StudyAnalyticsUseCase(fakeSessionDao, fakeUserPrefs)
+        useCase = GetDashboardStatsUseCase(
+            fakeRepository,
+            fakeUserPrefs,
+            calculateStreakUseCase,
+            getScholarLevelUseCase,
+            studyAnalyticsUseCase
+        )
     }
 
     private fun setUserProfile(dailyGoalHours: Float, streak: Int = 5, xp: Int = 1000) {
@@ -203,5 +219,18 @@ class GetDashboardStatsUseCaseTest {
         assertTrue(result.activeSession.isActive)
         assertEquals("Organic Chemistry", result.activeSession.subject)
         assertEquals(1200, result.activeSession.remainingSeconds)
+    }
+
+    @Test
+    fun testPhase12AnalyticsAndScholarIntegration() = runBlocking {
+        setUserProfile(dailyGoalHours = 3.0f, streak = 7, xp = 1600)
+
+        val result = useCase(testZone)
+
+        assertEquals(28, result.heatmapGrid.size)
+        assertEquals(1, result.streakInfo.currentStreak) // From fakeUserStatsDao initial seed
+        assertEquals(com.quovex.domain.model.ScholarRank.SCHOLAR, result.scholarLevelInfo.rank)
+        assertEquals("JEE Advanced", result.examCountdown.targetExam)
+        assertTrue(result.examCountdown.daysRemaining > 0)
     }
 }

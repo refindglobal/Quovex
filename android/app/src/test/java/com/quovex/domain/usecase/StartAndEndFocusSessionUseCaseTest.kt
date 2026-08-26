@@ -1,5 +1,6 @@
 package com.quovex.domain.usecase
 
+import com.quovex.data.local.UserPreferencesManager
 import com.quovex.data.local.SessionStateManager
 import com.quovex.domain.model.FocusMode
 import com.quovex.domain.model.SessionStatus
@@ -15,6 +16,10 @@ class StartAndEndFocusSessionUseCaseTest {
 
     private lateinit var sessionStateManager: SessionStateManager
     private lateinit var fakeRepository: FakeQuovexRepository
+    private lateinit var fakeUserStatsDao: FakeUserStatsDao
+    private lateinit var fakeUserPrefs: UserPreferencesManager
+    private lateinit var awardXpUseCase: AwardXpUseCase
+    private lateinit var calculateStreakUseCase: CalculateStreakUseCase
     private lateinit var startUseCase: StartFocusSessionUseCase
     private lateinit var endUseCase: EndFocusSessionUseCase
 
@@ -22,8 +27,12 @@ class StartAndEndFocusSessionUseCaseTest {
     fun setUp() {
         sessionStateManager = SessionStateManager()
         fakeRepository = FakeQuovexRepository()
+        fakeUserStatsDao = FakeUserStatsDao()
+        fakeUserPrefs = UserPreferencesManager(null)
+        awardXpUseCase = AwardXpUseCase(fakeUserStatsDao, fakeUserPrefs)
+        calculateStreakUseCase = CalculateStreakUseCase(fakeUserStatsDao, fakeUserPrefs)
         startUseCase = StartFocusSessionUseCase(sessionStateManager)
-        endUseCase = EndFocusSessionUseCase(sessionStateManager, fakeRepository)
+        endUseCase = EndFocusSessionUseCase(sessionStateManager, fakeRepository, awardXpUseCase, calculateStreakUseCase)
     }
 
     @Test

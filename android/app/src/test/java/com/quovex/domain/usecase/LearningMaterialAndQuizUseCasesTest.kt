@@ -29,11 +29,14 @@ class LearningMaterialAndQuizUseCasesTest {
     fun setUp() {
         fakeRepository = FakeQuovexRepository()
         fakeAiRepository = FakeAIRepository()
+        val fakeUserStatsDao = FakeUserStatsDao()
+        val fakeUserPrefs = com.quovex.data.local.UserPreferencesManager(null)
+        val awardXpUseCase = AwardXpUseCase(fakeUserStatsDao, fakeUserPrefs)
 
         classifyMaterialUseCase = ClassifyMaterialUseCase(fakeAiRepository)
         confirmMaterialSubjectUseCase = ConfirmMaterialSubjectUseCase(fakeRepository)
         generateQuizUseCase = GenerateQuizUseCase(fakeAiRepository, fakeRepository)
-        recordQuizResultUseCase = RecordQuizResultUseCase(fakeRepository)
+        recordQuizResultUseCase = RecordQuizResultUseCase(fakeRepository, awardXpUseCase)
         getQuizResultsUseCase = GetQuizResultsUseCase(fakeRepository)
         createRemedialFlashcardsUseCase = CreateRemedialFlashcardsUseCase(fakeRepository)
         processScanAndSummarizeUseCase = ProcessScanAndSummarizeUseCase(fakeAiRepository)

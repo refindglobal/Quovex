@@ -43,9 +43,13 @@ class FlashcardPlayerViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         fakeRepository = FakeQuovexRepository()
+        val fakeUserStatsDao = com.quovex.domain.usecase.FakeUserStatsDao()
+        val fakeUserPrefs = com.quovex.data.local.UserPreferencesManager(null)
+        val awardXpUseCase = com.quovex.domain.usecase.AwardXpUseCase(fakeUserStatsDao, fakeUserPrefs)
+
         getDueUseCase = GetDueFlashcardsUseCase(fakeRepository)
         getAllCardsUseCase = GetFlashcardsForDeckUseCase(fakeRepository)
-        reviewCardUseCase = ReviewCardUseCase(fakeRepository)
+        reviewCardUseCase = ReviewCardUseCase(fakeRepository, awardXpUseCase)
 
         fakeRepository.decksList = listOf(sampleDeck)
         fakeRepository.mostRecentDeck = sampleDeck
