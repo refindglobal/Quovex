@@ -11,7 +11,9 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.google.firebase.firestore.FirebaseFirestore
 import com.quovex.domain.manager.AdManager
+import com.quovex.domain.model.AdMobRemoteConfig
 import com.quovex.domain.model.AdRewardResult
 import com.quovex.domain.model.AdState
 import com.quovex.domain.model.AdUnitIds
@@ -30,11 +32,13 @@ import javax.inject.Singleton
 @Singleton
 class AdMobManagerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val billingRepository: BillingRepository
+    private val billingRepository: BillingRepository,
+    private val firestore: FirebaseFirestore? = null
 ) : AdManager {
 
     private val scope = CoroutineScope(Dispatchers.Main)
 
+    private val _remoteConfig = MutableStateFlow(AdMobRemoteConfig())
     private val _adState = MutableStateFlow(AdState())
     override val adState: StateFlow<AdState> = _adState.asStateFlow()
 
@@ -52,7 +56,46 @@ class AdMobManagerImpl @Inject constructor(
         try {
             MobileAds.initialize(context) {}
         } catch (_: Throwable) {
-            // Safe guard against missing services in test
+            // Guard against missing services in test
+        }
+
+        // Listen for real-time dynamic AdMob configuration updates from Firestore (config/admob)
+        try {
+            val db = firestore ?: FirebaseFirestore.getInstance()
+            db.collection("config").document("admob")
+                .addSnapshotListener { snapshot, error ->
+                    if (error == null && snapshot != null && snapshot.exists()) {
+                        val banner = snapshot.getString("bannerAdUnitId") ?: AdUnitIds.TEST_BANNER
+                        val interstitial = snapshot.getString("interstitialAdUnitId") ?: AdUnitIds.TEST_INTERSTITIAL
+                        val rewarded = snapshot.getString("rewardedAdUnitId") ?: AdUnitIds.TEST_REWARDED
+                        val adsEnabled = snapshot.getBoolean("adsEnabled") ?: true
+                        val bonusQueries = snapshot.getLong("bonusAiQueriesPerReward")?.toInt() ?: 3
+
+                        _remoteConfig.value = AdMobRemoteConfig(
+                            bannerAdUnitId = banner,
+                            interstitialAdUnitId = interstitial,
+                            rewardedAdUnitId = rewarded,
+                            isAdsEnabledGlobally = adsEnabled,
+                            bonusAiQueriesPerReward = bonusQueries
+                        )
+
+                        val isAdFree = billingRepository.userEntitlement.value.isAdFree
+                        _adState.update { current ->
+                            current.copy(
+                                isBannerEnabled = adsEnabled && !isAdFree,
+                                bannerAdUnitId = banner,
+                                bonusAiQueriesPerReward = bonusQueries
+                            )
+                        }
+
+                        if (!isAdFree && adsEnabled) {
+                            preloadInterstitial()
+                            preloadRewarded()
+                        }
+                    }
+                }
+        } catch (_: Throwable) {
+            // Graceful fallback for offline or unit test execution
         }
 
         scope.launch {
@@ -68,15 +111,20 @@ class AdMobManagerImpl @Inject constructor(
                         )
                     }
                 } else {
-                    _adState.update { it.copy(isBannerEnabled = true) }
-                    preloadInterstitial()
-                    preloadRewarded()
+                    val isGloballyEnabled = _remoteConfig.value.isAdsEnabledGlobally
+                    _adState.update { it.copy(isBannerEnabled = isGloballyEnabled) }
+                    if (isGloballyEnabled) {
+                        preloadInterstitial()
+                        preloadRewarded()
+                    }
                 }
             }
         }
     }
 
     override fun preloadInterstitial() {
+        val config = _remoteConfig.value
+        if (!config.isAdsEnabledGlobally) return
         if (billingRepository.userEntitlement.value.isAdFree) return
         if (interstitialAd != null || isLoadingInterstitial) return
 
@@ -85,7 +133,7 @@ class AdMobManagerImpl @Inject constructor(
             val adRequest = AdRequest.Builder().build()
             InterstitialAd.load(
                 context,
-                AdUnitIds.TEST_INTERSTITIAL,
+                config.interstitialAdUnitId,
                 adRequest,
                 object : InterstitialAdLoadCallback() {
                     override fun onAdLoaded(ad: InterstitialAd) {
@@ -107,6 +155,7 @@ class AdMobManagerImpl @Inject constructor(
     }
 
     override fun showInterstitial(activity: Activity): Boolean {
+        if (!_remoteConfig.value.isAdsEnabledGlobally) return false
         if (billingRepository.userEntitlement.value.isAdFree) return false
 
         val ad = interstitialAd ?: run {
@@ -133,6 +182,8 @@ class AdMobManagerImpl @Inject constructor(
     }
 
     override fun preloadRewarded() {
+        val config = _remoteConfig.value
+        if (!config.isAdsEnabledGlobally) return
         if (billingRepository.userEntitlement.value.isAdFree) return
         if (rewardedAd != null || isLoadingRewarded) return
 
@@ -141,7 +192,7 @@ class AdMobManagerImpl @Inject constructor(
             val adRequest = AdRequest.Builder().build()
             RewardedAd.load(
                 context,
-                AdUnitIds.TEST_REWARDED,
+                config.rewardedAdUnitId,
                 adRequest,
                 object : RewardedAdLoadCallback() {
                     override fun onAdLoaded(ad: RewardedAd) {
@@ -199,7 +250,7 @@ class AdMobManagerImpl @Inject constructor(
 
         ad.show(activity) { rewardItem ->
             rewardEarned = true
-            val bonusAmount = if (rewardItem.amount > 0) rewardItem.amount else 5
+            val bonusAmount = if (rewardItem.amount > 0) rewardItem.amount else _remoteConfig.value.bonusAiQueriesPerReward
             onResult(AdRewardResult.Success(bonusAmount))
         }
     }
