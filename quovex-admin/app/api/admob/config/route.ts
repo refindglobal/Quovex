@@ -82,6 +82,7 @@ export async function POST(req: Request) {
       targetId: 'config/admob',
       targetType: 'SETTINGS',
       details: `Updated AdMob config: adsEnabled=${updatedConfig.adsEnabled}, banner=${updatedConfig.bannerAdUnitId.slice(0, 15)}...`,
+      success: true,
     });
 
     return NextResponse.json({
