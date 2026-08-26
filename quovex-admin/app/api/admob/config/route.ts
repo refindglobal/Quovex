@@ -67,7 +67,7 @@ export async function POST(req: Request) {
       adsEnabled: body.adsEnabled !== undefined ? Boolean(body.adsEnabled) : true,
       bonusAiQueriesPerReward: typeof body.bonusAiQueriesPerReward === 'number' ? body.bonusAiQueriesPerReward : 3,
       updatedAt: Date.now(),
-      updatedBy: auth.user?.email || 'admin',
+      updatedBy: auth.admin?.email || 'admin',
     };
 
     const db = getAdminFirestore();
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     // Record audit log
     await adminStore.recordAuditLog({
       action: 'UPDATE_ADMOB_CONFIG',
-      performedBy: auth.user?.email || 'admin',
+      performedBy: auth.admin?.email || 'admin',
       target: 'config/admob',
       details: `Updated AdMob config: adsEnabled=${updatedConfig.adsEnabled}, banner=${updatedConfig.bannerAdUnitId.slice(0, 15)}...`,
     });
