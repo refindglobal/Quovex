@@ -10,5 +10,6 @@ data class UserProfile(
     val xp: Int = 12400,
     val level: Int = 24,
     val isOnboarded: Boolean = false,
-    val email: String = "arjun.sharma@quovex.app"
+    val email: String = "arjun.sharma@quovex.app",
+    val rescueTokens: Int = 1
 )

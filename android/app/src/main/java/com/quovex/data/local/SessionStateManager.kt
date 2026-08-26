@@ -73,7 +73,13 @@ class SessionStateManager @Inject constructor() {
     /**
      * Marks the session as completed and publishes the factual session summary.
      */
-    fun markCompleted(endTimeMillis: Long = System.currentTimeMillis()): SessionSummary {
+    fun markCompleted(
+        endTimeMillis: Long = System.currentTimeMillis(),
+        focusScore: Int? = null,
+        distractionsCount: Int = 0,
+        drowsinessCount: Int = 0,
+        cameraTrackingEnabled: Boolean = false
+    ): SessionSummary {
         val current = _activeSession.value
         val actualMinutes = FocusTimerEngine.calculateElapsedMinutes(current.startedAtMillis, endTimeMillis)
             .coerceAtLeast(current.totalSeconds / 60)
@@ -86,7 +92,11 @@ class SessionStateManager @Inject constructor() {
             startTimeMillis = current.startedAtMillis,
             endTimeMillis = endTimeMillis,
             isCompleted = true,
-            strictFocusEnabled = current.strictFocusEnabled
+            strictFocusEnabled = current.strictFocusEnabled,
+            focusScore = focusScore,
+            distractionsCount = distractionsCount,
+            drowsinessCount = drowsinessCount,
+            cameraTrackingEnabled = cameraTrackingEnabled
         )
 
         _latestSummary.value = summary
@@ -101,7 +111,13 @@ class SessionStateManager @Inject constructor() {
     /**
      * Marks the session as ended early / cancelled and publishes the factual session summary.
      */
-    fun markCancelled(endTimeMillis: Long = System.currentTimeMillis()): SessionSummary {
+    fun markCancelled(
+        endTimeMillis: Long = System.currentTimeMillis(),
+        focusScore: Int? = null,
+        distractionsCount: Int = 0,
+        drowsinessCount: Int = 0,
+        cameraTrackingEnabled: Boolean = false
+    ): SessionSummary {
         val current = _activeSession.value
         val actualMinutes = FocusTimerEngine.calculateElapsedMinutes(current.startedAtMillis, endTimeMillis)
 
@@ -113,7 +129,11 @@ class SessionStateManager @Inject constructor() {
             startTimeMillis = current.startedAtMillis,
             endTimeMillis = endTimeMillis,
             isCompleted = false,
-            strictFocusEnabled = current.strictFocusEnabled
+            strictFocusEnabled = current.strictFocusEnabled,
+            focusScore = focusScore,
+            distractionsCount = distractionsCount,
+            drowsinessCount = drowsinessCount,
+            cameraTrackingEnabled = cameraTrackingEnabled
         )
 
         _latestSummary.value = summary

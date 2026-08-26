@@ -4,16 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quovex.domain.model.LearningMaterial
 import com.quovex.domain.model.NoteInputType
-import com.quovex.domain.model.NoteItem
-import com.quovex.domain.model.NoteProcessingStatus
 import com.quovex.domain.model.SubjectInference
-import com.quovex.domain.usecase.ClassifyMaterialUseCase
-import com.quovex.domain.usecase.ConfirmMaterialSubjectUseCase
-import com.quovex.domain.usecase.GenerateQuizUseCase
-import com.quovex.domain.usecase.GetNoteByIdUseCase
-import com.quovex.domain.usecase.ProcessScanAndSummarizeUseCase
-import com.quovex.domain.usecase.SaveNoteUseCase
-import com.quovex.domain.usecase.SummarizeNoteUseCase
+import com.quovex.domain.usecase.ExtractUrlContentUseCase
+import com.quovex.domain.usecase.InferNoteMetadataUseCase
+import com.quovex.domain.usecase.SynthesizeLearningMaterialUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,91 +19,113 @@ sealed interface MaterialUiState {
     data object Idle : MaterialUiState
     data class Processing(val progressMessage: String) : MaterialUiState
     data class Inferred(
-        val materialId: Long,
         val rawText: String,
+        val initialTitle: String,
         val inference: SubjectInference,
-        val inputType: NoteInputType
+        val inputType: NoteInputType,
+        val sourceUrl: String? = null
     ) : MaterialUiState
-    data class Success(val materialId: Long) : MaterialUiState
+    data class Success(val material: LearningMaterial) : MaterialUiState
     data class Error(val message: String) : MaterialUiState
 }
 
 @HiltViewModel
 class MaterialViewModel @Inject constructor(
-    private val saveNoteUseCase: SaveNoteUseCase,
-    private val getNoteByIdUseCase: GetNoteByIdUseCase,
-    private val summarizeNoteUseCase: SummarizeNoteUseCase,
-    private val classifyMaterialUseCase: ClassifyMaterialUseCase,
-    private val processScanAndSummarizeUseCase: ProcessScanAndSummarizeUseCase,
-    private val confirmMaterialSubjectUseCase: ConfirmMaterialSubjectUseCase,
-    private val generateQuizUseCase: GenerateQuizUseCase
+    private val inferNoteMetadataUseCase: InferNoteMetadataUseCase,
+    private val synthesizeLearningMaterialUseCase: SynthesizeLearningMaterialUseCase,
+    private val extractUrlContentUseCase: ExtractUrlContentUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MaterialUiState>(MaterialUiState.Idle)
     val uiState: StateFlow<MaterialUiState> = _uiState.asStateFlow()
 
-    fun processRawText(title: String, rawText: String, inputType: NoteInputType = NoteInputType.TEXT) {
+    fun importUrlContent(url: String, inputType: NoteInputType) {
         viewModelScope.launch {
-            _uiState.value = MaterialUiState.Processing("Quovex AI is analyzing and classifying your material...")
+            val progressMessage = if (inputType == NoteInputType.YOUTUBE) {
+                "Extracting YouTube lecture captions and key metadata..."
+            } else {
+                "Extracting readable academic text from webpage..."
+            }
+            _uiState.value = MaterialUiState.Processing(progressMessage)
 
-            val classificationResult = classifyMaterialUseCase(rawText.take(2500))
-            val inference = classificationResult.getOrDefault(
-                SubjectInference(
-                    subject = "General",
-                    topic = title.ifBlank { "Study Topic" },
-                    confidence = 0.6f
+            val extractionResult = extractUrlContentUseCase(url, inputType)
+            extractionResult.onSuccess { extracted ->
+                processRawText(
+                    title = extracted.title,
+                    rawText = extracted.content,
+                    inputType = extracted.inputType,
+                    sourceUrl = url
                 )
+            }.onFailure { error ->
+                _uiState.value = MaterialUiState.Error(
+                    error.message ?: "Failed to extract content from URL. Please verify the link."
+                )
+            }
+        }
+    }
+
+    fun processRawText(
+        title: String,
+        rawText: String,
+        inputType: NoteInputType = NoteInputType.TEXT,
+        sourceUrl: String? = null
+    ) {
+        viewModelScope.launch {
+            _uiState.value = MaterialUiState.Processing("Analyzing study notes with Quovex AI...")
+
+            val inferenceResult = inferNoteMetadataUseCase(
+                rawText = rawText,
+                fileName = title.ifBlank { null }
             )
 
-            val materialId = saveNoteUseCase(
-                NoteItem(
-                    title = title.ifBlank { inference.topic.ifBlank { "Study Material" } },
-                    subject = inference.subject,
-                    content = rawText,
-                    inputType = inputType,
-                    status = NoteProcessingStatus.PROCESSING
+            val inference = inferenceResult.getOrDefault(
+                SubjectInference(
+                    subject = "General",
+                    topic = title.ifBlank { "Study Material" },
+                    subtopic = null,
+                    confidence = 0.85f
                 )
             )
 
             _uiState.value = MaterialUiState.Inferred(
-                materialId = materialId,
                 rawText = rawText,
+                initialTitle = title.ifBlank { "${inference.subject} - ${inference.topic}" },
                 inference = inference,
-                inputType = inputType
+                inputType = inputType,
+                sourceUrl = sourceUrl
             )
         }
     }
 
-    fun confirmAndTransform(
-        materialId: Long,
+    fun confirmAndSynthesize(
         confirmedSubject: String,
         confirmedTopic: String,
         confirmedTitle: String,
-        rawText: String
+        rawText: String,
+        inputType: NoteInputType = NoteInputType.TEXT,
+        sourceUrl: String? = null,
+        confidence: Float = 0.9f
     ) {
         viewModelScope.launch {
-            _uiState.value = MaterialUiState.Processing("Quovex AI is generating summaries, key concepts & flashcards...")
+            _uiState.value = MaterialUiState.Processing(
+                "Synthesizing structured notes, formulas, flashcards & topic quiz..."
+            )
 
-            val summaryResult = summarizeNoteUseCase(rawText, confirmedSubject)
+            val result = synthesizeLearningMaterialUseCase(
+                title = confirmedTitle,
+                subject = confirmedSubject,
+                topic = confirmedTopic,
+                rawText = rawText,
+                inputType = inputType,
+                sourceUrl = sourceUrl,
+                inferredConfidence = confidence
+            )
 
-            summaryResult.onSuccess { summaryData ->
-                val flashcardsCount = summaryData.flashcards?.size ?: 0
-
-                val updatedItem = NoteItem(
-                    id = materialId,
-                    title = confirmedTitle,
-                    subject = confirmedSubject,
-                    content = rawText,
-                    status = NoteProcessingStatus.READY,
-                    keyPoints = summaryData.keyPoints ?: emptyList(),
-                    flashcardCount = flashcardsCount
-                )
-                saveNoteUseCase(updatedItem)
-
-                _uiState.value = MaterialUiState.Success(materialId)
+            result.onSuccess { material ->
+                _uiState.value = MaterialUiState.Success(material)
             }.onFailure { error ->
                 _uiState.value = MaterialUiState.Error(
-                    "Quovex AI couldn't complete transformation: ${error.message ?: "Please try again."}"
+                    "AI Synthesis failed: ${error.message ?: "Please try again."}"
                 )
             }
         }

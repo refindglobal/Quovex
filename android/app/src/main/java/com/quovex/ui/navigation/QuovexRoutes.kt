@@ -67,4 +67,25 @@ sealed class QuovexRoute(val route: String) {
     object NoteDetail : QuovexRoute("material_detail/{noteId}") {
         fun createRoute(noteId: Long) = "material_detail/$noteId"
     }
+
+    // Community — Live Study Room
+    object StudyRoomLive : QuovexRoute("study_room_live/{roomId}") {
+        fun createRoute(roomId: String) = "study_room_live/$roomId"
+    }
+
+    // AI Study Planner & Exam Schedule Engine
+    object StudyPlanner : QuovexRoute("study_planner")
+
+    // Google Play Billing & Premium Subscription Paywall
+    object PremiumPaywall : QuovexRoute("premium_paywall")
+
+    // Performance Analytics & Insights Center
+    object Analytics : QuovexRoute("analytics")
+
+    // Daily Diagnostic Quiz & Remedial Mastery
+    object DailyDiagnosticQuiz : QuovexRoute("daily_diagnostic_quiz")
+
+    // Streak Protection & Resilience Cemetery
+    object Streak : QuovexRoute("streak")
 }
+

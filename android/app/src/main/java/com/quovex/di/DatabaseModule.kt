@@ -4,11 +4,15 @@ import android.content.Context
 import androidx.room.Room
 import com.quovex.data.local.QuovexDatabase
 import com.quovex.data.local.UserPreferencesManager
+import com.quovex.data.local.dao.CommunityDao
 import com.quovex.data.local.dao.FlashcardDao
 import com.quovex.data.local.dao.MaterialDao
 import com.quovex.data.local.dao.QuizDao
 import com.quovex.data.local.dao.QuovexDao
 import com.quovex.data.local.dao.SessionDao
+import com.quovex.data.local.dao.StreakDao
+import com.quovex.data.local.dao.StudyPlanDao
+import com.quovex.data.local.dao.UserStatsDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +36,11 @@ object DatabaseModule {
         )
         .addMigrations(
             QuovexDatabase.MIGRATION_1_2,
-            QuovexDatabase.MIGRATION_2_3
+            QuovexDatabase.MIGRATION_2_3,
+            QuovexDatabase.MIGRATION_3_4,
+            QuovexDatabase.MIGRATION_4_5,
+            QuovexDatabase.MIGRATION_5_6,
+            QuovexDatabase.MIGRATION_6_7
         )
         .build()
     }
@@ -60,6 +68,26 @@ object DatabaseModule {
     @Provides
     fun provideQuizDao(database: QuovexDatabase): QuizDao {
         return database.quizDao()
+    }
+
+    @Provides
+    fun provideUserStatsDao(database: QuovexDatabase): UserStatsDao {
+        return database.userStatsDao()
+    }
+
+    @Provides
+    fun provideCommunityDao(database: QuovexDatabase): CommunityDao {
+        return database.communityDao()
+    }
+
+    @Provides
+    fun provideStudyPlanDao(database: QuovexDatabase): StudyPlanDao {
+        return database.studyPlanDao()
+    }
+
+    @Provides
+    fun provideStreakDao(database: QuovexDatabase): StreakDao {
+        return database.streakDao()
     }
 
     @Provides

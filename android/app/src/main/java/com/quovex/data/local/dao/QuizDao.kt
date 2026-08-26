@@ -38,6 +38,15 @@ interface QuizDao {
     @Query("SELECT * FROM quiz_mistakes ORDER BY id DESC LIMIT :limit")
     suspend fun getRecentMistakes(limit: Int = 20): List<QuizMistakeEntity>
 
+    @Query("SELECT * FROM quiz_mistakes WHERE remedialCardId IS NULL ORDER BY id DESC")
+    suspend fun getUnremediedMistakes(): List<QuizMistakeEntity>
+
+    @Query("SELECT * FROM quiz_mistakes WHERE concept = :concept ORDER BY id DESC")
+    suspend fun getMistakesForConcept(concept: String): List<QuizMistakeEntity>
+
+    @Query("UPDATE quiz_mistakes SET remedialCardId = :cardId WHERE id = :mistakeId")
+    suspend fun updateRemedialCardId(mistakeId: Long, cardId: Long): Int
+
     @Query("SELECT COUNT(*) FROM quiz_results")
     suspend fun getTotalQuizCount(): Int
 }

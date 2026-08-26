@@ -44,6 +44,8 @@ import com.quovex.ui.auth.AuthScreen
 import com.quovex.ui.auth.AuthViewModel
 import com.quovex.ui.community.CommunityScreen
 import com.quovex.ui.community.CommunityViewModel
+import com.quovex.ui.community.StudyRoomLiveScreen
+import com.quovex.ui.community.StudyRoomLiveViewModel
 import com.quovex.ui.dashboard.DashboardScreen
 import com.quovex.ui.dashboard.DashboardViewModel
 import com.quovex.ui.decks.DeckOverviewScreen
@@ -199,7 +201,12 @@ fun QuovexNavGraph(
                     },
                     onAiChatClick = { navController.navigate(QuovexRoute.AiChat.createRoute()) },
                     onAiNoteParserClick = { navController.navigate(QuovexRoute.AddMaterial.route) },
-                    onLibraryClick = { navController.navigate(QuovexRoute.KnowledgeHub.route) }
+                    onLibraryClick = { navController.navigate(QuovexRoute.KnowledgeHub.route) },
+                    onStudyPlannerClick = { navController.navigate(QuovexRoute.StudyPlanner.route) },
+                    onNavigateToPaywall = { navController.navigate(QuovexRoute.PremiumPaywall.route) },
+                    onAnalyticsClick = { navController.navigate(QuovexRoute.Analytics.route) },
+                    onDailyDiagnosticQuizClick = { navController.navigate(QuovexRoute.DailyDiagnosticQuiz.route) },
+                    onStreakClick = { navController.navigate(QuovexRoute.Streak.route) }
                 )
             }
 
@@ -242,21 +249,23 @@ fun QuovexNavGraph(
                     is MaterialUiState.Inferred -> {
                         SubjectInferenceScreen(
                             inference = state.inference,
-                            initialTitle = state.inference.topic,
+                            initialTitle = state.initialTitle,
                             onConfirm = { subject, topic, title ->
-                                materialViewModel.confirmAndTransform(
-                                    materialId = state.materialId,
+                                materialViewModel.confirmAndSynthesize(
                                     confirmedSubject = subject,
                                     confirmedTopic = topic,
                                     confirmedTitle = title,
-                                    rawText = state.rawText
+                                    rawText = state.rawText,
+                                    inputType = state.inputType,
+                                    sourceUrl = state.sourceUrl,
+                                    confidence = state.inference.confidence
                                 )
                             }
                         )
                     }
                     is MaterialUiState.Success -> {
-                        androidx.compose.runtime.LaunchedEffect(state.materialId) {
-                            val id = state.materialId
+                        androidx.compose.runtime.LaunchedEffect(state.material.id) {
+                            val id = state.material.id
                             materialViewModel.resetState()
                             navController.navigate(QuovexRoute.MaterialDetail.createRoute(id)) {
                                 popUpTo(QuovexRoute.KnowledgeHub.route)
@@ -280,15 +289,47 @@ fun QuovexNavGraph(
             // --- IMPORT URL ---
             composable(QuovexRoute.ImportUrl.route) {
                 val materialViewModel: MaterialViewModel = hiltViewModel()
-                ImportUrlScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onImportUrl = { url, type ->
-                        materialViewModel.processRawText(title = url, rawText = "Extracting URL: $url", inputType = type)
-                        navController.navigate(QuovexRoute.AddMaterial.route) {
-                            popUpTo(QuovexRoute.AddMaterial.route) { inclusive = true }
+                val materialUiState by materialViewModel.uiState.collectAsState()
+
+                when (val state = materialUiState) {
+                    is MaterialUiState.Processing -> {
+                        ProcessingScreen(message = state.progressMessage)
+                    }
+                    is MaterialUiState.Inferred -> {
+                        SubjectInferenceScreen(
+                            inference = state.inference,
+                            initialTitle = state.initialTitle,
+                            onConfirm = { subject, topic, title ->
+                                materialViewModel.confirmAndSynthesize(
+                                    confirmedSubject = subject,
+                                    confirmedTopic = topic,
+                                    confirmedTitle = title,
+                                    rawText = state.rawText,
+                                    inputType = state.inputType,
+                                    sourceUrl = state.sourceUrl,
+                                    confidence = state.inference.confidence
+                                )
+                            }
+                        )
+                    }
+                    is MaterialUiState.Success -> {
+                        androidx.compose.runtime.LaunchedEffect(state.material.id) {
+                            val id = state.material.id
+                            materialViewModel.resetState()
+                            navController.navigate(QuovexRoute.MaterialDetail.createRoute(id)) {
+                                popUpTo(QuovexRoute.KnowledgeHub.route)
+                            }
                         }
                     }
-                )
+                    else -> {
+                        ImportUrlScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            onImportUrl = { url, type ->
+                                materialViewModel.importUrlContent(url, type)
+                            }
+                        )
+                    }
+                }
             }
 
             // --- MATERIAL DETAIL ---
@@ -389,7 +430,26 @@ fun QuovexNavGraph(
             // --- COMMUNITY ---
             composable(QuovexRoute.Community.route) {
                 val communityViewModel: CommunityViewModel = hiltViewModel()
-                CommunityScreen(viewModel = communityViewModel)
+                CommunityScreen(
+                    viewModel = communityViewModel,
+                    onNavigateToRoom = { roomId ->
+                        navController.navigate(QuovexRoute.StudyRoomLive.createRoute(roomId))
+                    }
+                )
+            }
+
+            // --- STUDY ROOM LIVE ---
+            composable(
+                route = QuovexRoute.StudyRoomLive.route,
+                arguments = listOf(
+                    navArgument("roomId") { type = NavType.StringType }
+                )
+            ) {
+                val studyRoomLiveViewModel: StudyRoomLiveViewModel = hiltViewModel()
+                StudyRoomLiveScreen(
+                    viewModel = studyRoomLiveViewModel,
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
 
             // --- PROFILE ---
@@ -397,6 +457,9 @@ fun QuovexNavGraph(
                 val profileViewModel: ProfileViewModel = hiltViewModel()
                 ProfileScreen(
                     viewModel = profileViewModel,
+                    onNavigateToPaywall = {
+                        navController.navigate(QuovexRoute.PremiumPaywall.route)
+                    },
                     onSignedOut = {
                         navController.navigate(QuovexRoute.Auth.route) {
                             popUpTo(QuovexRoute.Dashboard.route) { inclusive = true }
@@ -541,6 +604,56 @@ fun QuovexNavGraph(
                     onStudyFlashcards = { deckId ->
                         navController.navigate(QuovexRoute.FlashcardPlayer.createRoute(deckId.toInt(), reviewAll = true))
                     }
+                )
+            }
+
+            // --- AI STUDY PLANNER & EXAM ROADMAP ---
+            composable(QuovexRoute.StudyPlanner.route) {
+                val plannerViewModel: com.quovex.ui.planner.StudyPlannerViewModel = hiltViewModel()
+                com.quovex.ui.planner.StudyPlannerScreen(
+                    viewModel = plannerViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onStartFocusSession = { subject, topic, minutes ->
+                        navController.navigate(QuovexRoute.Timer.route)
+                    }
+                )
+            }
+
+            // --- GOOGLE PLAY BILLING & PREMIUM SUBSCRIPTION PAYWALL ---
+            composable(QuovexRoute.PremiumPaywall.route) {
+                val paywallViewModel: com.quovex.ui.premium.PremiumPaywallViewModel = hiltViewModel()
+                com.quovex.ui.premium.PremiumPaywallScreen(
+                    viewModel = paywallViewModel,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            // --- PERFORMANCE ANALYTICS & WEEKLY PDF REPORT CENTER ---
+            composable(QuovexRoute.Analytics.route) {
+                val analyticsViewModel: com.quovex.ui.analytics.AnalyticsViewModel = hiltViewModel()
+                com.quovex.ui.analytics.AnalyticsScreen(
+                    viewModel = analyticsViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToPaywall = { navController.navigate(QuovexRoute.PremiumPaywall.route) }
+                )
+            }
+
+            // --- DAILY DIAGNOSTIC QUIZ & REMEDIAL MASTERY ---
+            composable(QuovexRoute.DailyDiagnosticQuiz.route) {
+                val dailyQuizViewModel: com.quovex.ui.quiz.DailyDiagnosticQuizViewModel = hiltViewModel()
+                com.quovex.ui.quiz.DailyDiagnosticQuizScreen(
+                    viewModel = dailyQuizViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToFlashcards = { navController.navigate(QuovexRoute.KnowledgeHub.route) }
+                )
+            }
+
+            // --- STREAK PROTECTION & RESILIENCE CEMETERY ---
+            composable(QuovexRoute.Streak.route) {
+                val streakViewModel: com.quovex.ui.streak.StreakViewModel = hiltViewModel()
+                com.quovex.ui.streak.StreakScreen(
+                    viewModel = streakViewModel,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }

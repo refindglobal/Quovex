@@ -44,3 +44,19 @@
 
 # --- Compose ---
 -keep class androidx.compose.** { *; }
+
+# --- Google Play Billing Client ---
+-keep class com.android.billingclient.api.** { *; }
+-dontwarn com.android.billingclient.**
+
+# --- Google ML Kit Face Detection & CameraX ---
+-keep class com.google.mlkit.vision.face.** { *; }
+-keep class androidx.camera.** { *; }
+-dontwarn com.google.mlkit.**
+-dontwarn androidx.camera.**
+
+# --- Google Mobile Ads (AdMob) ---
+-keep class com.google.android.gms.ads.** { *; }
+-dontwarn com.google.android.gms.ads.**
+
+

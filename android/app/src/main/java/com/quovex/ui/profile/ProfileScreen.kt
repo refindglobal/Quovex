@@ -55,6 +55,7 @@ import com.quovex.ui.components.QuovexTopAppBar
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel,
+    onNavigateToPaywall: () -> Unit = {},
     onSignedOut: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -140,14 +141,15 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(QuovexTheme.spacing.base))
 
-                    // XP and Level Progress
+                    // XP and Scholar Level Progress
+                    val scholarInfo = state.scholarLevelInfo
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         QuovexChip(
-                            label = "Level ${state.userProfile.level}",
+                            label = "Level ${scholarInfo.rank.level} • ${scholarInfo.rank.title}",
                             isSelected = true,
                             leadingIcon = {
                                 Icon(
@@ -160,7 +162,11 @@ fun ProfileScreen(
                         )
 
                         Text(
-                            text = "${state.userProfile.xp} / ${(state.userProfile.level) * 500} XP",
+                            text = if (scholarInfo.nextRank != null) {
+                                "${scholarInfo.currentXp} XP (${scholarInfo.xpRequiredForNextLevel} to ${scholarInfo.nextRank.title})"
+                            } else {
+                                "${scholarInfo.currentXp} XP (Grandmaster)"
+                            },
                             style = QuovexTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = colors.primary
@@ -170,10 +176,68 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(QuovexTheme.spacing.sm))
 
                     QuovexLinearProgressIndicator(
-                        progress = ((state.userProfile.xp % 500) / 500f).coerceIn(0.1f, 1f),
+                        progress = scholarInfo.progressPercent.coerceIn(0.05f, 1f),
                         height = 8.dp,
                         color = colors.primary,
                         trackColor = colors.surfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(QuovexTheme.spacing.base))
+
+            // --- PRO MEMBERSHIP CARD ---
+            QuovexCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onNavigateToPaywall),
+                backgroundColor = colors.surfaceElevated,
+                borderColor = colors.primary,
+                borderWidth = 1.5.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(QuovexTheme.spacing.base),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(colors.primaryGlow, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = colors.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(QuovexTheme.spacing.md))
+                        Column {
+                            Text(
+                                text = "Quovex Pro Membership",
+                                style = QuovexTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.textPrimary
+                            )
+                            Text(
+                                text = "Unlimited AI tutoring, PDF OCR & soundscapes",
+                                style = QuovexTheme.typography.bodySmall,
+                                color = colors.textSecondary
+                            )
+                        }
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Upgrade to Pro",
+                        tint = colors.primary
                     )
                 }
             }
@@ -261,9 +325,26 @@ fun ProfileScreen(
                 }
             }
 
+            // --- 3. ACHIEVEMENTS SECTION ---
+            if (state.achievements.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(QuovexTheme.spacing.xl))
+
+                QuovexSectionHeader(
+                    title = "Scholar Achievements"
+                )
+
+                Spacer(modifier = Modifier.height(QuovexTheme.spacing.xs))
+
+                Column(verticalArrangement = Arrangement.spacedBy(QuovexTheme.spacing.sm)) {
+                    state.achievements.forEach { badge ->
+                        com.quovex.ui.components.AchievementBadgeCard(badge = badge)
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(QuovexTheme.spacing.xl))
 
-            // --- 3. REFERRAL BANNER ---
+            // --- 4. REFERRAL BANNER ---
             QuovexCard(
                 modifier = Modifier.fillMaxWidth(),
                 backgroundColor = colors.primaryGlow,

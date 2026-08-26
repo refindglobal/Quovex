@@ -2,6 +2,43 @@
 
 ---
 
+## [v3.7.0] — 2026-08-25 — Phase 12: Retention Engine, Dashboard Analytics & Gamification
+
+**Type:** Native Android Retention, Spaced Repetition Gamification, Advanced Telemetry & RPG Progression.
+
+### Highlights
+- **Anti-Duolingo Streak System & Room DB Migration v4**:
+  - Migrated Room DB to version 4 with `user_stats` table tracking atomic streak days, longest streak record, rescue tokens count, and last study timestamp.
+  - Implemented 1 weekly free rescue token protection saving streaks from accidental resets.
+  - Added dynamic streak flame chip and rescue token display (`🪙 1 Rescue Token`) directly in the Dashboard header.
+  - Dynamic "Streak at Risk!" alert banner with instant 1-tap rescue restore when `canUseRescueToken` triggers.
+- **Deep Work & Consistency Analytics**:
+  - **28-Day Consistency Heatmap Grid**: Visual 4-week calendar heatmap showing intensity levels (0 to 4) based on real focus minutes logged, weekday columns (M–S), and current day focus border.
+  - **30-Day Subject Breakdown**: Visual segmented distribution bar and ranked subject summary calculating real proportion of time dedicated across Physics, Chemistry, Mathematics, Biology, and General Focus.
+  - **Dynamic Exam Countdown Card**: Live countdown widget for target competitive exams (e.g., JEE Advanced, NEET, CBSE Class 12) with motivational guidance.
+- **Scholar Rank RPG Progression & XP Rewards**:
+  - 5 Tier Scholar Rank progression system: **Novice Scholar** (0–499 XP), **Apprentice Scholar** (500–1499 XP), **Scholar** (1500–3499 XP), **Expert Scholar** (3500–7499 XP), and **Master Scholar** (7500+ XP).
+  - XP awards natively calculated and granted across learning milestones: +2 XP/min for focus sessions, +10 XP for correct quiz answers, +5 XP for flashcard reviews, and streak milestone bonuses.
+  - Animated progress bar to next scholar rank rendered in Profile and Settings screen.
+- **Scholar Achievements Engine**:
+  - 7 core achievement badges evaluated from local Room DB entities:
+    - *First Step*: Complete first deep focus study session (Unlocked).
+    - *Week of Fire*: Maintain a 7-day active study streak (1/7 days).
+    - *Iron Discipline*: Maintain a 30-day active study streak (1/30 days).
+    - *10-Hour Scholar*: Log 10 hours of focused deep study.
+    - *Deep Work Titan*: Log 50 hours of focused deep study.
+    - *Deck Architect*: Create or transform 3 flashcard decks (Unlocked).
+    - *Active Recall Master*: Complete 5 active recall quizzes.
+  - Dynamic progress indicators for in-progress badges and emerald badge highlights for unlocked achievements.
+- **Automated Morning Briefing Service**:
+  - Integrated `MorningBriefingWorker.kt` scheduled via Android Jetpack `WorkManager` at 07:00 AM daily.
+  - Emits local system notifications with daily target focus hours, streak status, and motivational study guidance.
+- **Comprehensive Unit Testing Suite**:
+  - Added 27 new tests for Phase 12 logic with 100% pass rate (**218 total unit tests passing in `:app:testDebugUnitTest`**).
+  - Live verified on Android emulator with debug APK installation and high-res screen captures.
+
+---
+
 ## [v3.6.0] — 2026-08-25 — Phase 11.2: Admin Storage Layer Hardening & Firestore Persistence
 
 **Type:** Production Persistence, Storage Architecture Hardening, Audit Trail Security.

@@ -4,13 +4,18 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quovex.data.ocr.MlKitOcrHelper
+import com.quovex.domain.model.DoubtFollowUpMessage
 import com.quovex.domain.model.DomainImageInput
+import com.quovex.domain.model.LearningMaterial
 import com.quovex.domain.model.NoteInputType
-import com.quovex.domain.model.NoteItem
 import com.quovex.domain.model.NoteProcessingStatus
+import com.quovex.domain.model.StructuredDoubtSolution
+import com.quovex.domain.model.SubjectCatalog
+import com.quovex.domain.model.SubjectCategory
+import com.quovex.domain.repository.AIRepository
 import com.quovex.domain.repository.QuovexRepository
+import com.quovex.domain.usecase.AskDoubtFollowUpUseCase
 import com.quovex.domain.usecase.GetConfiguredSubjectsUseCase
-import com.quovex.domain.usecase.SaveNoteUseCase
 import com.quovex.domain.usecase.SolveImageDoubtUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,20 +32,25 @@ data class ImageDoubtUiState(
     val availableSubjects: List<String> = listOf("Physics", "Chemistry", "Mathematics", "Biology", "General"),
     val questionText: String = "",
     val isSolving: Boolean = false,
-    val isSavingAsNote: Boolean = false,
+    val isSavingAsMaterial: Boolean = false,
     val isCreatingFlashcards: Boolean = false,
     val solutionText: String? = null,
+    val structuredSolution: StructuredDoubtSolution? = null,
     val solutionProvider: String? = null,
-    val savedNoteId: Long? = null,
+    val savedMaterialId: Long? = null,
     val flashcardsCreatedMessage: String? = null,
+    val followUpMessages: List<DoubtFollowUpMessage> = emptyList(),
+    val followUpInputText: String = "",
+    val isSendingFollowUp: Boolean = false,
     val error: String? = null
 )
 
 @HiltViewModel
 class ImageDoubtViewModel @Inject constructor(
     private val solveImageDoubtUseCase: SolveImageDoubtUseCase,
-    private val saveNoteUseCase: SaveNoteUseCase,
+    private val askDoubtFollowUpUseCase: AskDoubtFollowUpUseCase,
     private val repository: QuovexRepository,
+    private val aiRepository: AIRepository,
     private val getConfiguredSubjectsUseCase: GetConfiguredSubjectsUseCase,
     private val mlKitOcrHelper: MlKitOcrHelper
 ) : ViewModel() {
@@ -72,8 +82,11 @@ class ImageDoubtViewModel @Inject constructor(
             it.copy(
                 capturedBitmap = bitmap,
                 solutionText = null,
+                structuredSolution = null,
+                followUpMessages = emptyList(),
+                followUpInputText = "",
                 error = null,
-                savedNoteId = null,
+                savedMaterialId = null,
                 flashcardsCreatedMessage = null
             )
         }
@@ -81,6 +94,10 @@ class ImageDoubtViewModel @Inject constructor(
 
     fun onQuestionTextChanged(text: String) {
         _uiState.update { it.copy(questionText = text) }
+    }
+
+    fun onFollowUpInputChanged(text: String) {
+        _uiState.update { it.copy(followUpInputText = text) }
     }
 
     fun selectSubject(subject: String) {
@@ -92,8 +109,11 @@ class ImageDoubtViewModel @Inject constructor(
             it.copy(
                 capturedBitmap = null,
                 solutionText = null,
+                structuredSolution = null,
+                followUpMessages = emptyList(),
+                followUpInputText = "",
                 error = null,
-                savedNoteId = null
+                savedMaterialId = null
             )
         }
     }
@@ -111,6 +131,8 @@ class ImageDoubtViewModel @Inject constructor(
 
             // Extract text from image on-device via ML Kit
             val ocrText = mlKitOcrHelper.extractTextFromBitmap(bitmap).getOrDefault("").trim()
+            android.util.Log.i("QuovexOCR", "ML Kit on-device OCR extracted (${ocrText.length} chars): $ocrText")
+
             val userText = _uiState.value.questionText.trim()
             val queryText = buildString {
                 if (userText.isNotBlank()) {
@@ -118,9 +140,9 @@ class ImageDoubtViewModel @Inject constructor(
                 }
                 if (ocrText.isNotBlank()) {
                     if (isNotEmpty()) append("\n\n")
-                    append("Extracted from image:\n$ocrText")
+                    append("Extracted text from problem image:\n$ocrText")
                 }
-            }.ifBlank { "Please explain and solve the concepts associated with this study material." }
+            }.ifBlank { "Please identify the problem, state the governing concept, and provide step-by-step reasoning with formulas and common pitfalls." }
 
             // Compress image to JPEG <= 512KB
             val bytes = compressBitmapToBytes(bitmap, maxKb = 512)
@@ -133,10 +155,12 @@ class ImageDoubtViewModel @Inject constructor(
             )
 
             result.onSuccess { solution ->
+                val structured = solution.toStructured(_uiState.value.selectedSubject)
                 _uiState.update {
                     it.copy(
                         isSolving = false,
                         solutionText = solution.solution,
+                        structuredSolution = structured,
                         solutionProvider = solution.provider
                     )
                 }
@@ -151,50 +175,143 @@ class ImageDoubtViewModel @Inject constructor(
         }
     }
 
-    fun saveSolutionAsNote(onSuccess: (noteId: Long) -> Unit) {
-        val solution = _uiState.value.solutionText ?: return
-        val subject = _uiState.value.selectedSubject
-        val question = _uiState.value.questionText.ifBlank { "Problem Solution" }
+    fun sendFollowUpMessage(customPrompt: String? = null) {
+        val promptToSend = (customPrompt ?: _uiState.value.followUpInputText).trim()
+        if (promptToSend.isBlank()) return
+        if (_uiState.value.isSendingFollowUp) return
+
+        val solutionContext = _uiState.value.solutionText ?: return
+        val problemContext = _uiState.value.questionText
+
+        val userMessage = DoubtFollowUpMessage(isUser = true, text = promptToSend)
+        val currentMessages = _uiState.value.followUpMessages + userMessage
+
+        _uiState.update {
+            it.copy(
+                followUpMessages = currentMessages,
+                followUpInputText = "",
+                isSendingFollowUp = true,
+                error = null
+            )
+        }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSavingAsNote = true, error = null) }
-            try {
-                val note = NoteItem(
-                    title = "Doubt Solved: $question",
-                    subject = subject,
-                    content = solution,
-                    status = NoteProcessingStatus.READY,
-                    inputType = NoteInputType.SCAN
+            val result = askDoubtFollowUpUseCase(
+                subject = _uiState.value.selectedSubject,
+                problemContext = problemContext,
+                solutionContext = solutionContext,
+                previousMessages = currentMessages,
+                newQuestion = promptToSend
+            )
+
+            result.onSuccess { aiResponse ->
+                val assistantMessage = DoubtFollowUpMessage(isUser = false, text = aiResponse)
+                _uiState.update {
+                    it.copy(
+                        followUpMessages = it.followUpMessages + assistantMessage,
+                        isSendingFollowUp = false
+                    )
+                }
+            }.onFailure { error ->
+                val assistantMessage = DoubtFollowUpMessage(
+                    isUser = false,
+                    text = "Quovex AI is temporarily busy. Please try asking your follow-up again."
                 )
-                val noteId = saveNoteUseCase(note)
-                _uiState.update { it.copy(isSavingAsNote = false, savedNoteId = noteId) }
-                onSuccess(noteId)
+                _uiState.update {
+                    it.copy(
+                        followUpMessages = it.followUpMessages + assistantMessage,
+                        isSendingFollowUp = false,
+                        error = error.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun saveSolutionAsMaterial(onSuccess: (materialId: Long) -> Unit) {
+        val solution = _uiState.value.solutionText ?: return
+        val structured = _uiState.value.structuredSolution
+        val subject = _uiState.value.selectedSubject
+        val question = _uiState.value.questionText.ifBlank { structured?.coreConcept ?: "Visual Problem Solution" }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSavingAsMaterial = true, error = null) }
+            try {
+                val subjectCategory = SubjectCatalog.findByName(subject)?.category ?: SubjectCategory.OTHER
+                val material = LearningMaterial(
+                    title = "Doubt Solved: ${question.take(60)}",
+                    subject = subject,
+                    subjectCategory = subjectCategory,
+                    topic = structured?.coreConcept?.take(50) ?: "Problem Solving",
+                    summary = structured?.problemSummary ?: solution.take(400),
+                    keyPoints = (structured?.steps ?: emptyList()).take(6),
+                    formulas = structured?.formulas ?: emptyList(),
+                    inputType = NoteInputType.SCAN,
+                    status = NoteProcessingStatus.READY
+                )
+                val materialId = repository.insertMaterial(material)
+                _uiState.update { it.copy(isSavingAsMaterial = false, savedMaterialId = materialId) }
+                onSuccess(materialId)
             } catch (e: Exception) {
-                _uiState.update { it.copy(isSavingAsNote = false, error = e.message ?: "Failed to save note.") }
+                _uiState.update { it.copy(isSavingAsMaterial = false, error = e.message ?: "Failed to save to Knowledge Hub.") }
             }
         }
     }
 
     fun createFlashcardDeck() {
         val solution = _uiState.value.solutionText ?: return
+        val structured = _uiState.value.structuredSolution
         val subject = _uiState.value.selectedSubject
+        val question = _uiState.value.questionText.ifBlank { structured?.coreConcept ?: "Academic Doubt" }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isCreatingFlashcards = true, error = null) }
             try {
                 val deckId = repository.insertDeck(
-                    title = "AI Doubt - $subject",
+                    title = "Flashcards: $subject Doubt",
                     subject = subject
                 )
-                repository.insertFlashcard(
-                    deckId = deckId.toInt(),
-                    frontContent = "Problem Concept ($subject)",
-                    backContent = solution.take(800)
+
+                // Generate structured atomic flashcards using Groq gpt-oss-20b JSON schema pipeline
+                val prompt = "Extract 1 to 3 atomic study flashcards from this academic problem and step-by-step solution.\n\nProblem:\n$question\n\nSolution:\n$solution"
+                val summarizeResult = aiRepository.summarizeNote(
+                    rawText = prompt,
+                    subject = subject
                 )
+
+                var cardsCreated = 0
+                summarizeResult.onSuccess { summaryResult ->
+                    if (summaryResult.flashcards.isNotEmpty()) {
+                        summaryResult.flashcards.forEach { cardDto ->
+                            val formulaSuffix = if (!cardDto.formula.isNullOrBlank()) {
+                                "\n\nFormula: ${cardDto.formula}"
+                            } else ""
+                            repository.insertFlashcard(
+                                deckId = deckId.toInt(),
+                                frontContent = cardDto.question,
+                                backContent = "${cardDto.answer}$formulaSuffix"
+                            )
+                            cardsCreated++
+                        }
+                    }
+                }
+
+                // Fallback if AI returned no cards
+                if (cardsCreated == 0) {
+                    val formulaText = structured?.formulas?.firstOrNull()?.latex
+                    val formulaSuffix = if (!formulaText.isNullOrBlank()) "\n\nFormula: $formulaText" else ""
+                    repository.insertFlashcard(
+                        deckId = deckId.toInt(),
+                        frontContent = "Key Formula & Concept ($subject): ${question.take(50)}",
+                        backContent = "${structured?.coreConcept ?: solution.take(300)}$formulaSuffix"
+                    )
+                    cardsCreated = 1
+                }
+
                 _uiState.update {
                     it.copy(
                         isCreatingFlashcards = false,
-                        flashcardsCreatedMessage = "Created 1 card in Flashcards Library!"
+                        flashcardsCreatedMessage = "Created $cardsCreated atomic card${if (cardsCreated > 1) "s" else ""} in Flashcards Library!"
                     )
                 }
             } catch (e: Exception) {

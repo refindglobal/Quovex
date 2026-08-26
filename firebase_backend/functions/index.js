@@ -196,15 +196,35 @@ async function callAiWithFailover({
 
 function extractJson(text) {
     if (!text) return null;
-    const clean = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    let clean = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    // Remove outer code fences if present
+    clean = clean.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```$/, '').trim();
+
+    // 1. Direct parse attempt
     try {
         return JSON.parse(clean);
-    } catch {
-        const match = clean.match(/\{[\s\S]*\}/);
-        if (match) {
+    } catch (e1) {}
+
+    // 2. Extract largest outer JSON object
+    const firstBrace = clean.indexOf('{');
+    const lastBrace = clean.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        const jsonCandidate = clean.slice(firstBrace, lastBrace + 1);
+        try {
+            return JSON.parse(jsonCandidate);
+        } catch (e2) {
+            // 3. Fix unescaped backslashes inside JSON strings (very common with LaTeX)
             try {
-                return JSON.parse(match[0]);
-            } catch (e) {}
+                // Escape backslashes that are not valid JSON escape sequences: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
+                const fixed = jsonCandidate.replace(/\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})/g, '\\\\');
+                return JSON.parse(fixed);
+            } catch (e3) {
+                try {
+                    // Strip all single backslashes except quotes
+                    const stripped = jsonCandidate.replace(/\\(?!")/g, '');
+                    return JSON.parse(stripped);
+                } catch (e4) {}
+            }
         }
     }
     return null;

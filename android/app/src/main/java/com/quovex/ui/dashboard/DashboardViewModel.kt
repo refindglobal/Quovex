@@ -5,12 +5,24 @@ import androidx.lifecycle.viewModelScope
 import com.quovex.data.local.SessionStateManager
 import com.quovex.data.local.UserPreferencesManager
 import com.quovex.domain.model.ActiveSessionState
+import com.quovex.domain.model.DailyStudyTask
 import com.quovex.domain.model.DueFlashcardsSummary
+import com.quovex.domain.model.ExamCountdown
+import com.quovex.domain.model.HeatmapDay
 import com.quovex.domain.model.JumpBackInItem
 import com.quovex.domain.model.RecentActivityItem
+import com.quovex.domain.model.ScholarLevelInfo
+import com.quovex.domain.model.ScholarRank
+import com.quovex.domain.model.StreakInfo
+import com.quovex.domain.model.StudyPlan
+import com.quovex.domain.model.StudyRecommendation
+import com.quovex.domain.model.SubjectStudyTime
 import com.quovex.domain.model.UserProfile
 import com.quovex.domain.model.WeeklyDayProgress
+import com.quovex.domain.usecase.GetDailyStudyRecommendationUseCase
 import com.quovex.domain.usecase.GetDashboardStatsUseCase
+import com.quovex.domain.usecase.ObserveDailyScheduleUseCase
+import com.quovex.domain.usecase.UseRescueTokenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +54,16 @@ data class DashboardUiState(
     val dueFlashcards: DueFlashcardsSummary = DueFlashcardsSummary(0),
     val jumpBackInItem: JumpBackInItem? = null,
     val recentActivities: List<RecentActivityItem> = emptyList(),
-    val activeSession: ActiveSessionState = ActiveSessionState()
+    val activeSession: ActiveSessionState = ActiveSessionState(),
+    val streakInfo: StreakInfo = StreakInfo(),
+    val scholarLevelInfo: ScholarLevelInfo = ScholarLevelInfo(ScholarRank.NOVICE, 0L, 0L, 500L, 0f, ScholarRank.APPRENTICE),
+    val heatmapGrid: List<HeatmapDay> = emptyList(),
+    val subjectBreakdown: List<SubjectStudyTime> = emptyList(),
+    val examCountdown: ExamCountdown = ExamCountdown("JEE Advanced", 90, "May 24, 2027", "Consistency is key."),
+    val todayStudyTasks: List<DailyStudyTask> = emptyList(),
+    val activeStudyPlan: StudyPlan? = null,
+    val dailyRecommendation: StudyRecommendation? = null,
+    val isAdFree: Boolean = false
 ) {
     val isLoading: Boolean get() = status is DashboardUiStatus.Loading
     val isError: Boolean get() = status is DashboardUiStatus.Error
@@ -52,8 +73,12 @@ data class DashboardUiState(
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val getDashboardStatsUseCase: GetDashboardStatsUseCase,
+    private val useRescueTokenUseCase: UseRescueTokenUseCase,
     private val userPreferencesManager: UserPreferencesManager,
-    private val sessionStateManager: SessionStateManager
+    private val sessionStateManager: SessionStateManager,
+    private val observeDailyScheduleUseCase: ObserveDailyScheduleUseCase,
+    private val getDailyStudyRecommendationUseCase: GetDailyStudyRecommendationUseCase,
+    private val observeUserEntitlementUseCase: com.quovex.domain.usecase.ObserveUserEntitlementUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -76,6 +101,21 @@ class DashboardViewModel @Inject constructor(
                 _uiState.update { it.copy(activeSession = session) }
             }
         }
+        viewModelScope.launch {
+            observeDailyScheduleUseCase.observeTodayTasks().collect { tasks ->
+                _uiState.update { it.copy(todayStudyTasks = tasks) }
+            }
+        }
+        viewModelScope.launch {
+            observeDailyScheduleUseCase.observeActivePlan().collect { plan ->
+                _uiState.update { it.copy(activeStudyPlan = plan) }
+            }
+        }
+        viewModelScope.launch {
+            observeUserEntitlementUseCase().collect { entitlement ->
+                _uiState.update { it.copy(isAdFree = entitlement.isAdFree) }
+            }
+        }
     }
 
     fun loadDashboardData() {
@@ -84,6 +124,7 @@ class DashboardViewModel @Inject constructor(
                 val hour = LocalTime.now().hour
                 val greeting = calculateGreeting(hour)
                 val data = getDashboardStatsUseCase()
+                val recommendation = getDailyStudyRecommendationUseCase.execute(data.userProfile.targetExam)
 
                 _uiState.update {
                     it.copy(
@@ -102,7 +143,13 @@ class DashboardViewModel @Inject constructor(
                         dueFlashcards = data.dueFlashcards,
                         jumpBackInItem = data.jumpBackInItem,
                         recentActivities = data.recentActivities,
-                        activeSession = data.activeSession
+                        activeSession = data.activeSession,
+                        streakInfo = data.streakInfo,
+                        scholarLevelInfo = data.scholarLevelInfo,
+                        heatmapGrid = data.heatmapGrid,
+                        subjectBreakdown = data.subjectBreakdown,
+                        examCountdown = data.examCountdown,
+                        dailyRecommendation = recommendation
                     )
                 }
             } catch (e: Exception) {
@@ -111,6 +158,17 @@ class DashboardViewModel @Inject constructor(
                         status = DashboardUiStatus.Error(e.message ?: "Failed to load dashboard data")
                     )
                 }
+            }
+        }
+    }
+
+    fun useRescueToken() {
+        viewModelScope.launch {
+            try {
+                useRescueTokenUseCase()
+                loadDashboardData()
+            } catch (e: Exception) {
+                // Ignore or log error
             }
         }
     }

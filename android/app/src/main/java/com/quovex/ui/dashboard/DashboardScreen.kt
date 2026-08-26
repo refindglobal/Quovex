@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -54,12 +55,15 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.quovex.R
 import com.quovex.domain.model.RecentActivityItem
 import com.quovex.theme.QuovexTheme
+import com.quovex.ui.components.ExamCountdownCard
+import com.quovex.ui.components.HeatmapCalendar
 import com.quovex.ui.components.QuovexButton
 import com.quovex.ui.components.QuovexButtonVariant
 import com.quovex.ui.components.QuovexCard
@@ -68,6 +72,7 @@ import com.quovex.ui.components.QuovexEmptyState
 import com.quovex.ui.components.QuovexErrorState
 import com.quovex.ui.components.QuovexLoading
 import com.quovex.ui.components.QuovexSectionHeader
+import com.quovex.ui.components.SubjectBreakdownChart
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -79,7 +84,12 @@ fun DashboardScreen(
     onDeckClick: (Int) -> Unit = {},
     onAiChatClick: () -> Unit = {},
     onAiNoteParserClick: () -> Unit = {},
-    onLibraryClick: () -> Unit = {}
+    onLibraryClick: () -> Unit = {},
+    onStudyPlannerClick: () -> Unit = {},
+    onNavigateToPaywall: () -> Unit = {},
+    onAnalyticsClick: () -> Unit = {},
+    onDailyDiagnosticQuizClick: () -> Unit = {},
+    onStreakClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
@@ -198,19 +208,78 @@ fun DashboardScreen(
                             }
                         }
 
-                        // Streak Chip
-                        QuovexChip(
-                            label = "${state.streakDays} Day Streak",
-                            isSelected = true,
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.LocalFireDepartment,
-                                    contentDescription = "Streak flame",
-                                    tint = colors.warning,
-                                    modifier = Modifier.size(18.dp)
+                        // Streak Chip & Rescue Token (Clickable to Streak & Cemetery Screen)
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            modifier = Modifier
+                                .clip(QuovexTheme.shapes.medium)
+                                .clickable(onClick = onStreakClick)
+                                .padding(4.dp)
+                        ) {
+                            QuovexChip(
+                                label = state.streakInfo.milestoneTitle ?: "${state.streakDays} Day Streak",
+                                isSelected = true,
+                                onClick = onStreakClick,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.LocalFireDepartment,
+                                        contentDescription = "Streak flame",
+                                        tint = colors.warning,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            )
+
+                            if (state.streakInfo.rescueTokens > 0) {
+                                Spacer(modifier = Modifier.height(QuovexTheme.spacing.xxs))
+                                Text(
+                                    text = "🪙 ${state.streakInfo.rescueTokens} Rescue Token",
+                                    style = QuovexTheme.typography.labelSmall,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.primary
                                 )
                             }
-                        )
+                        }
+                    }
+
+                    // Rescue Token Alert Banner (if missed yesterday and can restore)
+                    if (state.streakInfo.canUseRescueToken) {
+                        Spacer(modifier = Modifier.height(QuovexTheme.spacing.md))
+                        QuovexCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            backgroundColor = colors.warning.copy(alpha = 0.15f),
+                            borderColor = colors.warning.copy(alpha = 0.5f)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(QuovexTheme.spacing.base),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Streak at Risk!",
+                                        style = QuovexTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.warning
+                                    )
+                                    Text(
+                                        text = "You missed yesterday. Spend 1 Rescue Token to keep your streak alive.",
+                                        style = QuovexTheme.typography.bodySmall,
+                                        color = colors.textPrimary
+                                    )
+                                }
+
+                                QuovexButton(
+                                    text = "Restore",
+                                    onClick = { viewModel.useRescueToken() },
+                                    variant = QuovexButtonVariant.Primary,
+                                    height = 36.dp
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(QuovexTheme.spacing.xl))
@@ -321,6 +390,99 @@ fun DashboardScreen(
                             )
                         }
                     )
+
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.base))
+
+                    // ── 3B. EXAM COUNTDOWN ──────────────────────────────────────────
+                    ExamCountdownCard(countdown = state.examCountdown)
+
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.base))
+
+                    // ── 3C. AI STUDY PLAN ROADMAP WIDGET ────────────────────────────
+                    val activePlan = state.activeStudyPlan
+                    val todayTasks = state.todayStudyTasks
+
+                    QuovexCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onStudyPlannerClick),
+                        backgroundColor = colors.surface,
+                        borderColor = colors.border
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(QuovexTheme.spacing.base)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = colors.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = if (activePlan != null) "TODAY'S STUDY PLAN" else "AI STUDY PLANNER",
+                                        style = QuovexTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.primary,
+                                        letterSpacing = 1.1.sp
+                                    )
+                                }
+
+                                Text(
+                                    text = if (activePlan != null) "Roadmap →" else "Create Plan →",
+                                    style = QuovexTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.primary
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            if (activePlan != null) {
+                                val completedCount = todayTasks.count { it.isCompleted }
+                                Text(
+                                    text = "${activePlan.targetExam} • $completedCount/${todayTasks.size} tasks done today",
+                                    style = QuovexTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.textPrimary
+                                )
+                                val nextTask = todayTasks.firstOrNull { !it.isCompleted }
+                                if (nextTask != null) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Next: ${nextTask.taskType.icon} ${nextTask.topic} (${nextTask.estimatedMinutes}m)",
+                                        style = QuovexTheme.typography.bodySmall,
+                                        color = colors.textSecondary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = "Synthesize a personalized day-by-day exam roadmap",
+                                    style = QuovexTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.textPrimary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "AI balances chapter theory, active recall, and problem solving",
+                                    style = QuovexTheme.typography.bodySmall,
+                                    color = colors.textSecondary
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(QuovexTheme.spacing.xl))
 
@@ -536,7 +698,21 @@ fun DashboardScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.xl))
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.md))
+
+                    // ── 5B. CONSISTENCY HEATMAP (28 DAYS) ───────────────────────────
+                    if (state.heatmapGrid.isNotEmpty()) {
+                        HeatmapCalendar(days = state.heatmapGrid)
+                        Spacer(modifier = Modifier.height(QuovexTheme.spacing.md))
+                    }
+
+                    // ── 5C. SUBJECT BREAKDOWN (30 DAYS) ─────────────────────────────
+                    if (state.subjectBreakdown.isNotEmpty()) {
+                        SubjectBreakdownChart(breakdown = state.subjectBreakdown)
+                        Spacer(modifier = Modifier.height(QuovexTheme.spacing.md))
+                    }
+
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.base))
 
                     // ── 6. FLASHCARD DUE REMINDER ──────────────────────────────────
                     QuovexSectionHeader(
@@ -624,6 +800,118 @@ fun DashboardScreen(
                             state.recentActivities.forEach { activity ->
                                 RecentActivityCard(activity = activity)
                             }
+                        }
+                    }
+
+                    // ── 7A. DAILY DIAGNOSTIC QUIZ (MODULE C: Q-001) ───────────
+                    QuovexCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onDailyDiagnosticQuizClick,
+                        backgroundColor = colors.surface,
+                        borderColor = colors.primary.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(QuovexTheme.spacing.base),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(colors.primary.copy(alpha = 0.2f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.School,
+                                        contentDescription = "Daily Quiz",
+                                        tint = colors.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(QuovexTheme.spacing.md))
+                                Column {
+                                    Text(
+                                        text = "Today's Daily Diagnostic Quiz",
+                                        style = QuovexTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.textPrimary
+                                    )
+                                    Text(
+                                        text = "5 questions from today's topics • Auto-remedial queueing",
+                                        style = QuovexTheme.typography.bodySmall,
+                                        color = colors.textSecondary
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "Start →",
+                                style = QuovexTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.primary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.md))
+
+                    // ── 7B. PERFORMANCE ANALYTICS & INSIGHTS CTA ──────────────────
+                    QuovexCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onAnalyticsClick,
+                        backgroundColor = colors.surface,
+                        borderColor = colors.primary.copy(alpha = 0.4f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(QuovexTheme.spacing.base),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(colors.primary.copy(alpha = 0.15f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.AutoAwesome,
+                                        contentDescription = "Analytics",
+                                        tint = colors.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(QuovexTheme.spacing.md))
+                                Column {
+                                    Text(
+                                        text = "Study Analytics & Performance",
+                                        style = QuovexTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.textPrimary
+                                    )
+                                    Text(
+                                        text = "24h Productivity curve, AI insights & Weekly PDF",
+                                        style = QuovexTheme.typography.bodySmall,
+                                        color = colors.textSecondary
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "View →",
+                                style = QuovexTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.primary
+                            )
                         }
                     }
 
@@ -735,6 +1023,14 @@ fun DashboardScreen(
                                 )
                             }
                         }
+                    }
+
+                    // ── 9. GOOGLE ADMOB BANNER (FREE TIER ONLY) ───────────────────
+                    if (!state.isAdFree) {
+                        Spacer(modifier = Modifier.height(QuovexTheme.spacing.md))
+                        com.quovex.ui.components.QuovexBannerAd(
+                            isAdFree = state.isAdFree
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(QuovexTheme.spacing.xxxl))

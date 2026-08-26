@@ -83,6 +83,7 @@ dependencies {
   // Local tests
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
+  testImplementation(libs.mockk)
 
   // Instrumented tests
   androidTestImplementation(libs.androidx.test.core)
@@ -116,6 +117,13 @@ dependencies {
   implementation(libs.android.pdf.viewer)
   implementation(libs.pdfbox.android)
 
+  // ML Kit Face Detection & CameraX for AI Focus & Drowsiness Tracking
+  implementation(libs.mlkit.face.detection)
+  implementation(libs.androidx.camera.core)
+  implementation(libs.androidx.camera.camera2)
+  implementation(libs.androidx.camera.lifecycle)
+  implementation(libs.androidx.camera.view)
+
   // ML Kit Document Scanner — BETA (16.0.0-beta1)
   // Provides: auto edge detection, perspective correction, multi-page, crop, rotate
   // No OCR dependency — scanner is image-based only
@@ -137,4 +145,13 @@ dependencies {
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
   implementation(libs.androidx.hilt.navigation.compose)
+
+  // WorkManager (Morning Briefing & Background Jobs)
+  implementation(libs.work.runtime.ktx)
+
+  // Google Play Billing v6
+  implementation(libs.play.billing)
+
+  // Google Mobile Ads (AdMob)
+  implementation(libs.play.services.ads)
 }

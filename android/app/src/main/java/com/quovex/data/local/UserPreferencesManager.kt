@@ -24,7 +24,8 @@ open class UserPreferencesManager(
             xp = 0,
             level = 1,
             isOnboarded = true,
-            email = "student@quovex.app"
+            email = "student@quovex.app",
+            rescueTokens = 1
         )
         return UserProfile(
             id = p.getString("user_id", "user_1") ?: "user_1",
@@ -36,7 +37,8 @@ open class UserPreferencesManager(
             xp = p.getInt("user_xp", 0),
             level = p.getInt("user_level", 1),
             isOnboarded = p.getBoolean("is_onboarded", true),
-            email = p.getString("user_email", "student@quovex.app") ?: "student@quovex.app"
+            email = p.getString("user_email", "student@quovex.app") ?: "student@quovex.app",
+            rescueTokens = p.getInt("rescue_tokens", 1)
         )
     }
 
@@ -52,6 +54,7 @@ open class UserPreferencesManager(
             putInt("user_level", profile.level)
             putBoolean("is_onboarded", profile.isOnboarded)
             putString("user_email", profile.email)
+            putInt("rescue_tokens", profile.rescueTokens)
             apply()
         }
         _userProfile.value = profile
@@ -80,6 +83,20 @@ open class UserPreferencesManager(
         saveUserProfile(updated)
     }
 
+    open fun spendRescueToken(): Boolean {
+        val current = _userProfile.value
+        if (current.rescueTokens <= 0) return false
+        val updated = current.copy(rescueTokens = current.rescueTokens - 1)
+        saveUserProfile(updated)
+        return true
+    }
+
+    open fun grantRescueToken(amount: Int = 1) {
+        val current = _userProfile.value
+        val updated = current.copy(rescueTokens = (current.rescueTokens + amount).coerceAtMost(5))
+        saveUserProfile(updated)
+    }
+
     open fun resetProfileForNewUser() {
         val fresh = UserProfile(
             id = "user_${System.currentTimeMillis()}",
@@ -91,7 +108,8 @@ open class UserPreferencesManager(
             xp = 0,
             level = 1,
             isOnboarded = false,
-            email = "student@quovex.app"
+            email = "student@quovex.app",
+            rescueTokens = 1
         )
         saveUserProfile(fresh)
     }
