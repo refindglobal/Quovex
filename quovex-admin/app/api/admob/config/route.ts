@@ -75,9 +75,12 @@ export async function POST(req: Request) {
 
     // Record audit log
     adminStore.logAudit({
-      action: 'SETTINGS_UPDATE',
-      performedBy: auth.admin?.email || 'admin',
-      target: 'config/admob',
+      action: 'SETTINGS_CHANGE',
+      actorUid: auth.admin?.uid || 'admin_sys',
+      actorEmail: auth.admin?.email || 'admin@quovex.ai',
+      actorRole: auth.admin?.role || 'ADMIN',
+      targetId: 'config/admob',
+      targetType: 'SETTINGS',
       details: `Updated AdMob config: adsEnabled=${updatedConfig.adsEnabled}, banner=${updatedConfig.bannerAdUnitId.slice(0, 15)}...`,
     });
 
