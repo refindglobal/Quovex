@@ -74,8 +74,8 @@ export async function POST(req: Request) {
     await db.collection('config').doc('admob').set(updatedConfig, { merge: true });
 
     // Record audit log
-    await adminStore.recordAuditLog({
-      action: 'UPDATE_ADMOB_CONFIG',
+    adminStore.logAudit({
+      action: 'SETTINGS_UPDATE',
       performedBy: auth.admin?.email || 'admin',
       target: 'config/admob',
       details: `Updated AdMob config: adsEnabled=${updatedConfig.adsEnabled}, banner=${updatedConfig.bannerAdUnitId.slice(0, 15)}...`,
