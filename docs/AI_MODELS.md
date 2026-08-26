@@ -43,8 +43,9 @@
 | **Note Summarization** | Groq | `openai/gpt-oss-20b` | Summary + key points + formulas |
 | **Flashcard Generation** | Groq | `openai/gpt-oss-20b` | JSON schema mode — fast, structured |
 | **Quiz Generation** | Groq | `openai/gpt-oss-20b` | JSON schema mode — MCQ generation |
-| **Study Plan Generation** | Cerebras | `gpt-oss-120b` | 128K context for full plans |
-| **Study Plan Replan** | Cerebras | `gpt-oss-120b` | Same — needs full context |
+| **Study Plan Generation** | Groq | `openai/gpt-oss-20b` | Primary (4-key round-robin); fast structured roadmap |
+| **Study Plan (Groq fallback)** | Groq | `qwen/qwen3.6-27b` | If gpt-oss-20b hits rate limit |
+| **Study Plan (Cerebras failover)** | Cerebras | `gpt-oss-120b` | If all Groq keys exhausted (128K context fallback) |
 | **Image Doubt Solver** | Groq | `qwen/qwen3.6-27b` | Primary multimodal vision model |
 | **Image Doubt (fallback)** | Cerebras | `gemma-4-31b` | Cerebras vision failover |
 | **Motivational Quotes** | Groq | `openai/gpt-oss-20b` | Quick, simple generation |
@@ -57,23 +58,16 @@
 ## 🔄 Key Rotation Strategy Per Feature
 
 ```
-AI Chat requests:
+AI Chat / Classification / Summarization / Flashcards / Quiz / Study Plan:
   → Try Groq gpt-oss-20b (Key 1 → 2 → 3 → 4 round-robin)
-  → On 429: cooldown 60 min, try next key
+  → On 429: cooldown 60 min, try next key in pool
   → All gpt-oss-20b exhausted → Groq qwen3.6-27b
-  → All Groq keys exhausted → Cerebras gpt-oss-120b
+  → All Groq keys exhausted → Cerebras gpt-oss-120b (128K context failover)
 
-Image Doubt (vision — most expensive):
-  → Groq gpt-oss-120b (dedicated pool, 4 keys)
-  → On 429: Cerebras gemma-4-31b
-
-Classification + Summarization + Flashcards + Quiz:
-  → Groq gpt-oss-20b (round-robin)
-  → On failure: next key in pool
-
-Study Plan (Cerebras first — needs 128K context):
-  → Cerebras gpt-oss-120b (Key 1 → 2 → 3 → 4)
-  → On failure: Groq groq/compound (fallback, lower context)
+Image Doubt (multimodal vision):
+  → Try Groq qwen3.6-27b (Key 1 → 2 → 3 → 4 round-robin)
+  → On 429: cooldown 60 min, try next key in pool
+  → All Groq vision exhausted → Cerebras gemma-4-31b (vision failover)
 ```
 
 ---
