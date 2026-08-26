@@ -5,7 +5,8 @@ import com.quovex.domain.repository.QuovexRepository
 import javax.inject.Inject
 
 class ReviewCardUseCase @Inject constructor(
-    private val repository: QuovexRepository
+    private val repository: QuovexRepository,
+    private val awardXpUseCase: AwardXpUseCase
 ) {
     /**
      * Processes a card review using the SM-2 algorithm and persists the result.
@@ -19,6 +20,10 @@ class ReviewCardUseCase @Inject constructor(
      * @return The updated [FlashcardItem] with new SM-2 scheduling state, or null if card not found.
      */
     suspend operator fun invoke(cardId: Long, quality: Int): FlashcardItem? {
-        return repository.processCardReview(cardId, quality)
+        val result = repository.processCardReview(cardId, quality)
+        if (result != null) {
+            awardXpUseCase(5L)
+        }
+        return result
     }
 }

@@ -3,8 +3,13 @@ package com.quovex.domain.usecase
 import com.quovex.data.local.UserPreferencesManager
 import com.quovex.domain.model.ActiveSessionState
 import com.quovex.domain.model.DueFlashcardsSummary
+import com.quovex.domain.model.ExamCountdown
+import com.quovex.domain.model.HeatmapDay
 import com.quovex.domain.model.JumpBackInItem
 import com.quovex.domain.model.RecentActivityItem
+import com.quovex.domain.model.ScholarLevelInfo
+import com.quovex.domain.model.StreakInfo
+import com.quovex.domain.model.SubjectStudyTime
 import com.quovex.domain.model.UserProfile
 import com.quovex.domain.model.WeeklyDayProgress
 import com.quovex.domain.repository.QuovexRepository
@@ -32,12 +37,20 @@ data class DashboardData(
     val dueFlashcards: DueFlashcardsSummary,
     val jumpBackInItem: JumpBackInItem?,
     val recentActivities: List<RecentActivityItem>,
-    val activeSession: ActiveSessionState
+    val activeSession: ActiveSessionState,
+    val streakInfo: StreakInfo,
+    val scholarLevelInfo: ScholarLevelInfo,
+    val heatmapGrid: List<HeatmapDay>,
+    val subjectBreakdown: List<SubjectStudyTime>,
+    val examCountdown: ExamCountdown
 )
 
 class GetDashboardStatsUseCase @Inject constructor(
     private val repository: QuovexRepository,
-    private val userPreferencesManager: UserPreferencesManager
+    private val userPreferencesManager: UserPreferencesManager,
+    private val calculateStreakUseCase: CalculateStreakUseCase,
+    private val getScholarLevelUseCase: GetScholarLevelUseCase,
+    private val studyAnalyticsUseCase: StudyAnalyticsUseCase
 ) {
     suspend operator fun invoke(zoneId: ZoneId = ZoneId.systemDefault()): DashboardData {
         val profile = userPreferencesManager.userProfile.value
@@ -119,6 +132,13 @@ class GetDashboardStatsUseCase @Inject constructor(
         // Active Session
         val activeSession = repository.getActiveSessionState().first()
 
+        // Phase 12 Analytics, Streak & Scholar Progression
+        val streakInfo = calculateStreakUseCase(currentTimeMillis = currentTime, zoneId = zoneId)
+        val scholarLevelInfo = getScholarLevelUseCase(totalXp)
+        val heatmapGrid = studyAnalyticsUseCase.getHeatmapGrid(zoneId = zoneId, weeksCount = 4)
+        val subjectBreakdown = studyAnalyticsUseCase.getSubjectBreakdown(zoneId = zoneId, days = 30)
+        val examCountdown = studyAnalyticsUseCase.getExamCountdown(zoneId = zoneId)
+
         return DashboardData(
             userProfile = profile,
             todayFocusMinutes = todayMinutes,
@@ -127,13 +147,18 @@ class GetDashboardStatsUseCase @Inject constructor(
             isGoalCompleted = isGoalCompleted,
             isGoalExceeded = isGoalExceeded,
             hasGoal = hasGoal,
-            streakDays = profile.streakDays,
+            streakDays = streakInfo.currentStreak,
             totalXp = totalXp,
             weeklyProgress = weeklyProgress,
             dueFlashcards = dueSummary,
             jumpBackInItem = jumpBackInItem,
             recentActivities = recentSessions,
-            activeSession = activeSession
+            activeSession = activeSession,
+            streakInfo = streakInfo,
+            scholarLevelInfo = scholarLevelInfo,
+            heatmapGrid = heatmapGrid,
+            subjectBreakdown = subjectBreakdown,
+            examCountdown = examCountdown
         )
     }
 }

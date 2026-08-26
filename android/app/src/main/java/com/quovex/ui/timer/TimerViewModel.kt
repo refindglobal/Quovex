@@ -6,11 +6,24 @@ import androidx.lifecycle.viewModelScope
 import com.quovex.data.local.SessionStateManager
 import com.quovex.data.service.TimerForegroundService
 import com.quovex.domain.model.ActiveSessionState
+import com.quovex.domain.model.AppCategory
+import com.quovex.domain.model.DistractionShieldState
+import com.quovex.domain.model.FocusFrameResult
 import com.quovex.domain.model.FocusMode
+import com.quovex.domain.model.FocusTrackingState
 import com.quovex.domain.model.SessionStatus
 import com.quovex.domain.model.SessionSummary
+import com.quovex.domain.model.SoundscapePreset
+import com.quovex.domain.model.SoundscapeState
+import com.quovex.domain.usecase.ControlFocusDetectionUseCase
+import com.quovex.domain.usecase.ControlSoundscapeUseCase
 import com.quovex.domain.usecase.GetConfiguredSubjectsUseCase
+import com.quovex.domain.usecase.GetInstalledAppsUseCase
+import com.quovex.domain.usecase.ObserveBlockedAppsUseCase
+import com.quovex.domain.usecase.ObserveFocusDetectionUseCase
+import com.quovex.domain.usecase.ObserveSoundscapeUseCase
 import com.quovex.domain.usecase.StartFocusSessionUseCase
+import com.quovex.domain.usecase.ToggleBlockedAppUseCase
 import com.quovex.domain.util.FocusTimerEngine
 import com.quovex.domain.util.TimerFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,6 +47,11 @@ data class TimerUiState(
     val strictFocusEnabled: Boolean = true,
     val isCustomDurationDialogOpen: Boolean = false,
     val isEndEarlyDialogOpen: Boolean = false,
+    val isSoundscapeSheetOpen: Boolean = false,
+    val isDistractionShieldSheetOpen: Boolean = false,
+    val soundscapeState: SoundscapeState = SoundscapeState(),
+    val focusTrackingState: FocusTrackingState = FocusTrackingState(),
+    val distractionShieldState: DistractionShieldState = DistractionShieldState(),
     val activeSession: ActiveSessionState = ActiveSessionState(),
     val latestSummary: SessionSummary? = null,
     val errorMessage: String? = null
@@ -59,7 +77,14 @@ data class TimerUiState(
 class TimerViewModel @Inject constructor(
     private val getConfiguredSubjectsUseCase: GetConfiguredSubjectsUseCase,
     private val startFocusSessionUseCase: StartFocusSessionUseCase,
-    private val sessionStateManager: SessionStateManager
+    private val sessionStateManager: SessionStateManager,
+    private val observeSoundscapeUseCase: ObserveSoundscapeUseCase,
+    private val controlSoundscapeUseCase: ControlSoundscapeUseCase,
+    private val observeFocusDetectionUseCase: ObserveFocusDetectionUseCase,
+    private val controlFocusDetectionUseCase: ControlFocusDetectionUseCase,
+    private val observeBlockedAppsUseCase: ObserveBlockedAppsUseCase,
+    private val toggleBlockedAppUseCase: ToggleBlockedAppUseCase,
+    private val getInstalledAppsUseCase: GetInstalledAppsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TimerUiState())
@@ -69,6 +94,9 @@ class TimerViewModel @Inject constructor(
         observeConfiguredSubjects()
         observeActiveSession()
         observeSessionSummary()
+        observeSoundscape()
+        observeFocusDetection()
+        observeDistractionShield()
     }
 
     private fun observeConfiguredSubjects() {
@@ -99,6 +127,30 @@ class TimerViewModel @Inject constructor(
         viewModelScope.launch {
             sessionStateManager.latestSummary.collect { summary ->
                 _uiState.update { it.copy(latestSummary = summary) }
+            }
+        }
+    }
+
+    private fun observeSoundscape() {
+        viewModelScope.launch {
+            observeSoundscapeUseCase().collect { soundState ->
+                _uiState.update { it.copy(soundscapeState = soundState) }
+            }
+        }
+    }
+
+    private fun observeFocusDetection() {
+        viewModelScope.launch {
+            observeFocusDetectionUseCase().collect { focusState ->
+                _uiState.update { it.copy(focusTrackingState = focusState) }
+            }
+        }
+    }
+
+    private fun observeDistractionShield() {
+        viewModelScope.launch {
+            observeBlockedAppsUseCase().collect { shieldState ->
+                _uiState.update { it.copy(distractionShieldState = shieldState) }
             }
         }
     }
@@ -140,6 +192,81 @@ class TimerViewModel @Inject constructor(
         _uiState.update { it.copy(strictFocusEnabled = !it.strictFocusEnabled) }
     }
 
+    fun toggleCameraFocusDetection() {
+        val nextState = !_uiState.value.focusTrackingState.isEnabled
+        viewModelScope.launch {
+            controlFocusDetectionUseCase.setTrackingEnabled(nextState)
+        }
+    }
+
+    fun updateCameraPermission(granted: Boolean) {
+        controlFocusDetectionUseCase.updateCameraPermission(granted)
+    }
+
+    fun onFrameAnalyzed(result: FocusFrameResult) {
+        controlFocusDetectionUseCase.processFrame(result)
+    }
+
+    fun openSoundscapeSheet() {
+        _uiState.update { it.copy(isSoundscapeSheetOpen = true) }
+    }
+
+    fun closeSoundscapeSheet() {
+        _uiState.update { it.copy(isSoundscapeSheetOpen = false) }
+    }
+
+    fun selectSoundscapePreset(preset: SoundscapePreset) {
+        viewModelScope.launch {
+            controlSoundscapeUseCase.selectPreset(preset)
+        }
+    }
+
+    fun setSoundscapeVolume(volume: Float) {
+        viewModelScope.launch {
+            controlSoundscapeUseCase.setVolume(volume)
+        }
+    }
+
+    fun toggleSoundscapeAutoPlay(enabled: Boolean) {
+        viewModelScope.launch {
+            controlSoundscapeUseCase.setAutoPlay(enabled)
+        }
+    }
+
+    fun toggleSoundscapePlay() {
+        controlSoundscapeUseCase.togglePlay()
+    }
+
+    // Distraction Shield actions
+    fun openDistractionShieldSheet() {
+        viewModelScope.launch {
+            getInstalledAppsUseCase()
+            _uiState.update { it.copy(isDistractionShieldSheetOpen = true) }
+        }
+    }
+
+    fun closeDistractionShieldSheet() {
+        _uiState.update { it.copy(isDistractionShieldSheetOpen = false) }
+    }
+
+    fun toggleShield(enabled: Boolean) {
+        viewModelScope.launch {
+            toggleBlockedAppUseCase.setShieldEnabled(enabled)
+        }
+    }
+
+    fun toggleAppBlocked(packageName: String, isBlocked: Boolean) {
+        viewModelScope.launch {
+            toggleBlockedAppUseCase.toggleApp(packageName, isBlocked)
+        }
+    }
+
+    fun toggleCategoryBlocked(category: AppCategory, isBlocked: Boolean) {
+        viewModelScope.launch {
+            toggleBlockedAppUseCase.setCategoryBlocked(category, isBlocked)
+        }
+    }
+
     fun startSession(context: Context) {
         val state = _uiState.value
         val result = startFocusSessionUseCase(
@@ -149,7 +276,7 @@ class TimerViewModel @Inject constructor(
         )
 
         result.onSuccess {
-            TimerForegroundService.startService(context)
+            TimerForegroundService.start(context)
         }.onFailure { error ->
             _uiState.update { it.copy(errorMessage = error.message ?: "Failed to start session") }
         }
@@ -165,7 +292,7 @@ class TimerViewModel @Inject constructor(
 
     fun confirmEndEarly(context: Context) {
         _uiState.update { it.copy(isEndEarlyDialogOpen = false) }
-        TimerForegroundService.stopService(context)
+        TimerForegroundService.stop(context)
     }
 
     fun dismissSummary() {

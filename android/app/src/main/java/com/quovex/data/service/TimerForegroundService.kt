@@ -9,7 +9,11 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
 import com.quovex.data.local.SessionStateManager
+import com.quovex.domain.model.SoundscapePresets
+import com.quovex.domain.repository.FocusDetectionRepository
+import com.quovex.domain.repository.SoundscapeRepository
 import com.quovex.domain.usecase.EndFocusSessionUseCase
+import com.quovex.data.service.FocusNotificationHelper
 import com.quovex.domain.util.FocusTimerEngine
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -31,39 +35,16 @@ class TimerForegroundService : Service() {
     @Inject
     lateinit var endFocusSessionUseCase: EndFocusSessionUseCase
 
-    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    @Inject
+    lateinit var soundscapeRepository: SoundscapeRepository
+
+    @Inject
+    lateinit var focusDetectionRepository: FocusDetectionRepository
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var tickerJob: Job? = null
 
-    companion object {
-        const val ACTION_START = "com.quovex.action.START_TIMER"
-        const val ACTION_STOP = "com.quovex.action.STOP_TIMER"
-        const val ACTION_CANCEL = "com.quovex.action.CANCEL_TIMER"
-
-        fun startService(context: Context) {
-            val intent = Intent(context, TimerForegroundService::class.java).apply {
-                action = ACTION_START
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
-        }
-
-        fun stopService(context: Context) {
-            val intent = Intent(context, TimerForegroundService::class.java).apply {
-                action = ACTION_STOP
-            }
-            context.startService(intent)
-        }
-
-        fun cancelService(context: Context) {
-            val intent = Intent(context, TimerForegroundService::class.java).apply {
-                action = ACTION_CANCEL
-            }
-            context.startService(intent)
-        }
-    }
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -76,7 +57,6 @@ class TimerForegroundService : Service() {
             ACTION_STOP -> handleStop(isCompleted = false)
             ACTION_CANCEL -> handleStop(isCompleted = false)
             else -> {
-                // If service was restarted by system, check if session is still active
                 val session = sessionStateManager.activeSession.value
                 if (session.isActive) {
                     handleStart()
@@ -115,6 +95,18 @@ class TimerForegroundService : Service() {
             serviceType
         )
 
+        // Trigger ambient soundscape auto-play if enabled
+        val soundState = soundscapeRepository.soundscapeState.value
+        if (soundState.isAutoPlayWithTimerEnabled && soundState.selectedPreset != SoundscapePresets.NONE) {
+            soundscapeRepository.play()
+        }
+
+        // Start camera tracking if enabled
+        if (focusDetectionRepository.focusTrackingState.value.isEnabled) {
+            focusDetectionRepository.resetSession()
+            focusDetectionRepository.setCameraActive(true)
+        }
+
         startTicker()
     }
 
@@ -144,13 +136,25 @@ class TimerForegroundService : Service() {
 
                 if (remaining <= 0 || FocusTimerEngine.isTimerFinished(session.endTimeMillis, now)) {
                     if (sessionStateManager.tryClaimCompletion()) {
-                        endFocusSessionUseCase(isCompleted = true, endTimeMillis = now)
+                        val focusState = focusDetectionRepository.focusTrackingState.value
+                        endFocusSessionUseCase(
+                            isCompleted = true,
+                            endTimeMillis = now,
+                            focusScore = if (focusState.isEnabled) focusState.focusScore else null,
+                            distractionsCount = focusState.distractionsCount,
+                            drowsinessCount = focusState.drowsinessCount,
+                            cameraTrackingEnabled = focusState.isEnabled
+                        )
                     }
                     break
                 }
 
                 delay(1000L)
             }
+
+            // Pause soundscape and camera tracking when session finishes
+            soundscapeRepository.pause()
+            focusDetectionRepository.setCameraActive(false)
 
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -159,24 +163,57 @@ class TimerForegroundService : Service() {
 
     private fun handleStop(isCompleted: Boolean) {
         tickerJob?.cancel()
+        soundscapeRepository.pause()
+        focusDetectionRepository.setCameraActive(false)
+
         val session = sessionStateManager.activeSession.value
         if (session.isActive) {
             serviceScope.launch {
-                endFocusSessionUseCase(isCompleted = isCompleted)
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
+                val focusState = focusDetectionRepository.focusTrackingState.value
+                endFocusSessionUseCase(
+                    isCompleted = isCompleted,
+                    endTimeMillis = System.currentTimeMillis(),
+                    focusScore = if (focusState.isEnabled) focusState.focusScore else null,
+                    distractionsCount = focusState.distractionsCount,
+                    drowsinessCount = focusState.drowsinessCount,
+                    cameraTrackingEnabled = focusState.isEnabled
+                )
             }
-        } else {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
         }
+
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override fun onDestroy() {
-        tickerJob?.cancel()
-        serviceScope.cancel()
         super.onDestroy()
+        tickerJob?.cancel()
+        soundscapeRepository.pause()
+        focusDetectionRepository.setCameraActive(false)
+        serviceScope.cancel()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    companion object {
+        const val ACTION_START = "com.quovex.action.START_TIMER"
+        const val ACTION_STOP = "com.quovex.action.STOP_TIMER"
+        const val ACTION_CANCEL = "com.quovex.action.CANCEL_TIMER"
+
+        fun start(context: Context) {
+            val intent = Intent(context, TimerForegroundService::class.java).apply {
+                action = ACTION_START
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
+        fun stop(context: Context) {
+            val intent = Intent(context, TimerForegroundService::class.java).apply {
+                action = ACTION_STOP
+            }
+            context.startService(intent)
+        }
+    }
 }
