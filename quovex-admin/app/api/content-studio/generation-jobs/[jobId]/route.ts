@@ -18,15 +18,15 @@ export async function GET(
     );
   }
 
-  const book = studioStore.books.get(job.bookId);
+  const book = await studioStore.getBookAsync(job.bookId);
   const evidencePack = job.evidencePackId
-    ? studioStore.evidencePacks.get(job.evidencePackId)
+    ? await studioStore.getEvidencePackAsync(job.evidencePackId)
     : undefined;
   const blueprint = job.editorialBlueprintId
-    ? studioStore.blueprints.get(job.editorialBlueprintId)
+    ? await studioStore.getBlueprintAsync(job.editorialBlueprintId)
     : undefined;
   const validationReport = job.validationReportId
-    ? studioStore.validationReports.get(job.validationReportId)
+    ? await studioStore.getValidationReportAsync(job.validationReportId)
     : undefined;
 
   return NextResponse.json({

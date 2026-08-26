@@ -29,8 +29,19 @@ import { ValidatorEngine } from './validator-engine';
 import { getAdminFirestore } from '../firebase-admin';
 
 /**
- * Production-grade Persistent Storage Layer backed by Google Cloud Firestore
+ * Production-grade Persistent Storage Layer backed by Google Cloud Firestore.
+ *
+ * Durability contract:
+ * - Every write is immediately persisted to Firestore. The in-memory Map is a
+ *   write-through cache only — it is NOT the source of truth.
+ * - On process restart, jobs are NOT in memory. getJobAsync() always falls back
+ *   to Firestore on cache miss, so pipeline state is recoverable.
+ * - recoverStuckJobs() scans Firestore for GENERATING jobs stalled beyond
+ *   STUCK_JOB_THRESHOLD_MS and marks them FAILED with a clear admin-facing message.
+ *   Call on server startup and via POST /api/content-studio/recover-stuck-jobs.
  */
+const STUCK_JOB_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes without a stage update
+
 class ContentStudioStore {
   public jobs: Map<string, ContentGenerationJob> = new Map();
   public books: Map<string, QuovexOriginalBook> = new Map();
@@ -141,6 +152,110 @@ class ContentStudioStore {
     return null;
   }
 
+  public async getEvidencePackAsync(packId: string): Promise<EvidencePack | null> {
+    if (this.evidencePacks.has(packId)) {
+      return this.evidencePacks.get(packId)!;
+    }
+    try {
+      const db = getAdminFirestore();
+      const snap = await db.collection('evidence_packs').doc(packId).get();
+      if (snap.exists) {
+        const pack = snap.data() as EvidencePack;
+        this.evidencePacks.set(pack.packId, pack);
+        return pack;
+      }
+    } catch (e: any) {
+      console.warn(`Firestore getEvidencePackAsync warning (${packId}):`, e.message);
+    }
+    return null;
+  }
+
+  public async getBlueprintAsync(blueprintId: string): Promise<EditorialBlueprint | null> {
+    if (this.blueprints.has(blueprintId)) {
+      return this.blueprints.get(blueprintId)!;
+    }
+    try {
+      const db = getAdminFirestore();
+      const snap = await db.collection('editorial_blueprints').doc(blueprintId).get();
+      if (snap.exists) {
+        const bp = snap.data() as EditorialBlueprint;
+        this.blueprints.set(bp.blueprintId, bp);
+        return bp;
+      }
+    } catch (e: any) {
+      console.warn(`Firestore getBlueprintAsync warning (${blueprintId}):`, e.message);
+    }
+    return null;
+  }
+
+  public async getValidationReportAsync(reportId: string): Promise<ContentValidationReport | null> {
+    if (this.validationReports.has(reportId)) {
+      return this.validationReports.get(reportId)!;
+    }
+    try {
+      const db = getAdminFirestore();
+      const snap = await db.collection('validation_reports').doc(reportId).get();
+      if (snap.exists) {
+        const report = snap.data() as ContentValidationReport;
+        this.validationReports.set(report.reportId, report);
+        return report;
+      }
+    } catch (e: any) {
+      console.warn(`Firestore getValidationReportAsync warning (${reportId}):`, e.message);
+    }
+    return null;
+  }
+
+  /**
+   * Scans Firestore for jobs stuck in GENERATING status for > 30 minutes,
+   * marking them as FAILED with actionable recovery instructions for admins.
+   */
+  public async recoverStuckJobs(): Promise<{ recovered: number; jobIds: string[] }> {
+    const recoveredIds: string[] = [];
+    try {
+      const db = getAdminFirestore();
+      const staleThreshold = Date.now() - STUCK_JOB_THRESHOLD_MS;
+
+      const snap = await db
+        .collection('content_generation_jobs')
+        .where('status', '==', 'GENERATING')
+        .where('updatedAt', '<', staleThreshold)
+        .get();
+
+      for (const doc of snap.docs) {
+        const job = doc.data() as ContentGenerationJob;
+        const staleMinutes = Math.round((Date.now() - job.updatedAt) / 60000);
+
+        const updatedJob: ContentGenerationJob = {
+          ...job,
+          status: 'FAILED',
+          error: `Auto-recovery: Process restart detected. Job was stuck in stage "${job.stage}" for ${staleMinutes} minutes without activity. Please retry generation from the Content Studio Jobs panel.`,
+          updatedAt: Date.now(),
+          stageLogs: [
+            ...(job.stageLogs || []),
+            {
+              stage: job.stage,
+              timestamp: Date.now(),
+              message: `RECOVERY: Job marked FAILED after ${staleMinutes}m of inactivity following server restart. Admin may retry.`
+            }
+          ]
+        };
+
+        await db
+          .collection('content_generation_jobs')
+          .doc(job.jobId)
+          .set(this.sanitizeForFirestore(updatedJob), { merge: true });
+
+        this.jobs.set(job.jobId, updatedJob);
+        recoveredIds.push(job.jobId);
+        console.log(`[ContentStudio] Recovered stuck job ${job.jobId} from stage ${job.stage}`);
+      }
+    } catch (e: any) {
+      console.error('[ContentStudio] recoverStuckJobs error:', e.message);
+    }
+    return { recovered: recoveredIds.length, jobIds: recoveredIds };
+  }
+
   public async loadAllFromFirestore(): Promise<void> {
     try {
       const db = getAdminFirestore();
@@ -205,13 +320,14 @@ export class ContentPipeline {
     // Run the pipeline worker asynchronously (does NOT block the caller)
     this.runPipelineWorker(jobId, bookId, request).catch(async (err) => {
       console.error(`Pipeline worker failed for job ${jobId}:`, err);
-      const currentJob = studioStore.jobs.get(jobId);
+      const currentJob = await studioStore.getJobAsync(jobId);
       if (currentJob) {
         const isAiUnavailable = err?.message?.includes('AI_UNAVAILABLE') || err?.message?.includes('AI');
         currentJob.status = isAiUnavailable ? 'FAILED_AI_UNAVAILABLE' : 'FAILED';
         currentJob.stage = isAiUnavailable ? 'FAILED_AI_UNAVAILABLE' : currentJob.stage;
         currentJob.error = err.message || 'Unknown pipeline failure';
         currentJob.updatedAt = Date.now();
+        currentJob.stageLogs = currentJob.stageLogs || [];
         currentJob.stageLogs.push({
           stage: isAiUnavailable ? 'FAILED_AI_UNAVAILABLE' : currentJob.stage,
           timestamp: Date.now(),
@@ -229,11 +345,12 @@ export class ContentPipeline {
    */
   public async runPipelineWorker(jobId: string, bookId: string, request: BookRequestInput): Promise<void> {
     const updateStage = async (stage: GenerationStage, progress: number, logMsg: string) => {
-      const j = studioStore.jobs.get(jobId);
+      const j = await studioStore.getJobAsync(jobId);
       if (!j) return;
       j.stage = stage;
       j.progressPercentage = progress;
       j.updatedAt = Date.now();
+      j.stageLogs = j.stageLogs || [];
       j.stageLogs.push({
         stage,
         timestamp: Date.now(),
@@ -251,8 +368,11 @@ export class ContentPipeline {
     await studioStore.saveEvidencePack(evidencePack);
 
     await updateStage('EVIDENCE_PACK', 30, `Evidence Pack (${evidencePack.packId}) assembled with ${evidencePack.items.length} verified citations.`);
-    const job = studioStore.jobs.get(jobId);
-    if (job) job.evidencePackId = evidencePack.packId;
+    const jobAfterEvidence = await studioStore.getJobAsync(jobId);
+    if (jobAfterEvidence) {
+      jobAfterEvidence.evidencePackId = evidencePack.packId;
+      await studioStore.saveJob(jobAfterEvidence);
+    }
 
     // Stage 4 & 5: Multi-Agent Debate & Editorial Blueprint Synthesis
     await updateStage('DEBATE', 40, 'Multi-agent debate initiated: Architect (pedagogy) vs Challenger (rigor & misconceptions).');
@@ -260,7 +380,11 @@ export class ContentPipeline {
     await studioStore.saveBlueprint(blueprint);
 
     await updateStage('SYNTHESIS', 50, `Editorial Blueprint synthesized with ${blueprint.synthesisChapterPlan.length} chapters.`);
-    if (job) job.editorialBlueprintId = blueprint.blueprintId;
+    const jobAfterBlueprint = await studioStore.getJobAsync(jobId);
+    if (jobAfterBlueprint) {
+      jobAfterBlueprint.editorialBlueprintId = blueprint.blueprintId;
+      await studioStore.saveJob(jobAfterBlueprint);
+    }
 
     // Stage 6 & 7: Chapter Outlining & Original Writing
     await updateStage('OUTLINE', 55, 'Structuring chapters, section hierarchies, and difficulty progression curve.');
@@ -283,7 +407,11 @@ export class ContentPipeline {
     await studioStore.saveValidationReport(validationReport);
     draftBook.validationReport = validationReport;
 
-    if (job) job.validationReportId = validationReport.reportId;
+    const jobAfterValidation = await studioStore.getJobAsync(jobId);
+    if (jobAfterValidation) {
+      jobAfterValidation.validationReportId = validationReport.reportId;
+      await studioStore.saveJob(jobAfterValidation);
+    }
 
     // Stage 16: Ready for Human Review
     draftBook.approvalStatus = 'READY_FOR_REVIEW';
@@ -292,12 +420,13 @@ export class ContentPipeline {
 
     await updateStage('READY_FOR_REVIEW', 100, `Generation complete! Overall validation score: ${validationReport.overallScore}/100. Staged for human editorial review.`);
 
-    if (job) {
-      job.status = 'READY_FOR_REVIEW';
-      job.stage = 'READY_FOR_REVIEW';
-      job.progressPercentage = 100;
-      job.completedAt = Date.now();
-      await studioStore.saveJob(job);
+    const finalJob = await studioStore.getJobAsync(jobId);
+    if (finalJob) {
+      finalJob.status = 'READY_FOR_REVIEW';
+      finalJob.stage = 'READY_FOR_REVIEW';
+      finalJob.progressPercentage = 100;
+      finalJob.completedAt = Date.now();
+      await studioStore.saveJob(finalJob);
     }
   }
 
