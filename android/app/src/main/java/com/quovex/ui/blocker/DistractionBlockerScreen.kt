@@ -349,7 +349,7 @@ fun DistractionBlockerContent(
                     item {
                         QuovexChip(
                             label = "All (${shieldState.installedApps.size})",
-                            selected = selectedCategoryFilter == null,
+                            isSelected = selectedCategoryFilter == null,
                             onClick = { selectedCategoryFilter = null }
                         )
                     }
@@ -358,7 +358,7 @@ fun DistractionBlockerContent(
                         if (count > 0) {
                             QuovexChip(
                                 label = "${category.iconEmoji} ${category.title} ($count)",
-                                selected = selectedCategoryFilter == category,
+                                isSelected = selectedCategoryFilter == category,
                                 onClick = { selectedCategoryFilter = category }
                             )
                         }
