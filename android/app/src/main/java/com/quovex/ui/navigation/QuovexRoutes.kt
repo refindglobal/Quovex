@@ -87,5 +87,8 @@ sealed class QuovexRoute(val route: String) {
 
     // Streak Protection & Resilience Cemetery
     object Streak : QuovexRoute("streak")
+
+    // Distraction Blocker & App Restriction Shield Settings
+    object DistractionBlocker : QuovexRoute("distraction_blocker")
 }
 

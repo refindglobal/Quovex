@@ -460,6 +460,9 @@ fun QuovexNavGraph(
                     onNavigateToPaywall = {
                         navController.navigate(QuovexRoute.PremiumPaywall.route)
                     },
+                    onNavigateToBlocker = {
+                        navController.navigate(QuovexRoute.DistractionBlocker.route)
+                    },
                     onSignedOut = {
                         navController.navigate(QuovexRoute.Auth.route) {
                             popUpTo(QuovexRoute.Dashboard.route) { inclusive = true }
@@ -653,6 +656,15 @@ fun QuovexNavGraph(
                 val streakViewModel: com.quovex.ui.streak.StreakViewModel = hiltViewModel()
                 com.quovex.ui.streak.StreakScreen(
                     viewModel = streakViewModel,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            // --- DISTRACTION BLOCKER & APP RESTRICTION SHIELD ---
+            composable(QuovexRoute.DistractionBlocker.route) {
+                val blockerViewModel: com.quovex.ui.blocker.DistractionBlockerViewModel = hiltViewModel()
+                com.quovex.ui.blocker.DistractionBlockerScreen(
+                    viewModel = blockerViewModel,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

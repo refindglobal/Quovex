@@ -56,6 +56,7 @@ import com.quovex.ui.components.QuovexTopAppBar
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     onNavigateToPaywall: () -> Unit = {},
+    onNavigateToBlocker: () -> Unit = {},
     onSignedOut: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -437,7 +438,8 @@ fun ProfileScreen(
                     ProfileOptionRow(
                         icon = Icons.Filled.Security,
                         title = "Strict App Blocker",
-                        subtitle = "Accessibility permissions active"
+                        subtitle = "Accessibility & app restriction shield",
+                        onClick = onNavigateToBlocker
                     )
                 }
             }
@@ -448,23 +450,25 @@ fun ProfileScreen(
             QuovexCard(
                 modifier = Modifier.fillMaxWidth(),
                 backgroundColor = colors.surface,
-                borderColor = colors.error.copy(alpha = 0.5f),
-                onClick = { viewModel.signOut(onSignedOut) }
+                elevation = QuovexTheme.elevation.low,
+                onClick = onSignedOut
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(QuovexTheme.spacing.base),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(QuovexTheme.spacing.base),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Logout,
-                        contentDescription = "Sign Out",
+                        contentDescription = "Sign out",
                         tint = colors.error,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(QuovexTheme.spacing.sm))
                     Text(
-                        text = "Sign Out / Switch Account",
+                        text = "Sign Out",
                         style = QuovexTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = colors.error
@@ -481,14 +485,15 @@ fun ProfileScreen(
 private fun ProfileOptionRow(
     icon: ImageVector,
     title: String,
-    subtitle: String
+    subtitle: String,
+    onClick: () -> Unit = {}
 ) {
     val colors = QuovexTheme.colors
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { }
+            .clickable(onClick = onClick)
             .padding(horizontal = QuovexTheme.spacing.base, vertical = QuovexTheme.spacing.md),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
