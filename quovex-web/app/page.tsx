@@ -21,6 +21,7 @@ import {
 import { QuovexButton } from '@/components/ui/QuovexButton';
 import { QuovexCard } from '@/components/ui/QuovexCard';
 import { QuovexBadge } from '@/components/ui/QuovexBadge';
+import { ASSETS } from '@/lib/assets';
 
 export default function LandingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
@@ -31,8 +32,12 @@ export default function LandingPage() {
       <header className="fixed top-0 left-0 right-0 h-20 bg-background/80 backdrop-blur-xl border-b border-border z-50 transition-colors duration-200">
         <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-container border border-primary/40 flex items-center justify-center text-primary font-extrabold text-xl shadow-glow">
-              Q
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0 shadow-glow">
+              <img
+                src={ASSETS.brand.emblem}
+                alt="Quovex Logo"
+                className="w-8 h-8 object-contain"
+              />
             </div>
             <div>
               <span className="text-xl font-black tracking-tight text-text-primary">QUOVEX</span>
@@ -217,8 +222,12 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <QuovexCard hoverEffect>
-            <div className="w-12 h-12 rounded-2xl bg-primary-container text-primary flex items-center justify-center mb-5 shadow-glow-sm">
-              <Timer className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5 p-2 shadow-glow-sm">
+              <img
+                src={ASSETS.icons3d.stopwatch}
+                alt="Focus Engine"
+                className="w-10 h-10 object-contain"
+              />
             </div>
             <h3 className="text-title font-bold text-text-primary mb-2">Focus Engine & Soundscapes</h3>
             <p className="text-body text-text-secondary leading-relaxed">
@@ -227,8 +236,12 @@ export default function LandingPage() {
           </QuovexCard>
 
           <QuovexCard hoverEffect>
-            <div className="w-12 h-12 rounded-2xl bg-primary-container text-primary flex items-center justify-center mb-5 shadow-glow-sm">
-              <Bot className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5 p-2 shadow-glow-sm">
+              <img
+                src={ASSETS.icons3d.robotMascot}
+                alt="AI Tutor"
+                className="w-10 h-10 object-contain"
+              />
             </div>
             <h3 className="text-title font-bold text-text-primary mb-2">Quovex AI Doubt Solver</h3>
             <p className="text-body text-text-secondary leading-relaxed">
@@ -237,8 +250,12 @@ export default function LandingPage() {
           </QuovexCard>
 
           <QuovexCard hoverEffect>
-            <div className="w-12 h-12 rounded-2xl bg-primary-container text-primary flex items-center justify-center mb-5 shadow-glow-sm">
-              <Sparkles className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5 p-2 shadow-glow-sm">
+              <img
+                src={ASSETS.icons3d.flashcards}
+                alt="SM-2 Flashcards"
+                className="w-10 h-10 object-contain"
+              />
             </div>
             <h3 className="text-title font-bold text-text-primary mb-2">SM-2 Spaced Repetition</h3>
             <p className="text-body text-text-secondary leading-relaxed">
@@ -247,8 +264,12 @@ export default function LandingPage() {
           </QuovexCard>
 
           <QuovexCard hoverEffect>
-            <div className="w-12 h-12 rounded-2xl bg-primary-container text-primary flex items-center justify-center mb-5 shadow-glow-sm">
-              <BookOpen className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5 p-2 shadow-glow-sm">
+              <img
+                src={ASSETS.icons3d.metallicBook}
+                alt="NCERT Library"
+                className="w-10 h-10 object-contain"
+              />
             </div>
             <h3 className="text-title font-bold text-text-primary mb-2">NCERT & Originals Hub</h3>
             <p className="text-body text-text-secondary leading-relaxed">
@@ -257,8 +278,12 @@ export default function LandingPage() {
           </QuovexCard>
 
           <QuovexCard hoverEffect>
-            <div className="w-12 h-12 rounded-2xl bg-primary-container text-primary flex items-center justify-center mb-5 shadow-glow-sm">
-              <Flame className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5 p-2 shadow-glow-sm">
+              <img
+                src={ASSETS.icons3d.flameBurning}
+                alt="Streak Protection"
+                className="w-10 h-10 object-contain"
+              />
             </div>
             <h3 className="text-title font-bold text-text-primary mb-2">Streak Protection & XP</h3>
             <p className="text-body text-text-secondary leading-relaxed">
@@ -267,8 +292,12 @@ export default function LandingPage() {
           </QuovexCard>
 
           <QuovexCard hoverEffect>
-            <div className="w-12 h-12 rounded-2xl bg-primary-container text-primary flex items-center justify-center mb-5 shadow-glow-sm">
-              <Users className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5 p-2 shadow-glow-sm">
+              <img
+                src={ASSETS.icons3d.studyTable}
+                alt="Study Rooms"
+                className="w-10 h-10 object-contain"
+              />
             </div>
             <h3 className="text-title font-bold text-text-primary mb-2">Live Virtual Study Rooms</h3>
             <p className="text-body text-text-secondary leading-relaxed">
@@ -404,8 +433,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div>
             <div className="flex items-center justify-center md:justify-start gap-2">
-              <div className="w-6 h-6 rounded-lg bg-primary-container text-primary font-bold text-xs flex items-center justify-center">
-                Q
+              <div className="w-7 h-7 rounded-lg overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center p-0.5 shadow-sm">
+                <img
+                  src={ASSETS.brand.emblem}
+                  alt="Quovex Logo"
+                  className="w-5 h-5 object-contain"
+                />
               </div>
               <span className="font-extrabold text-text-primary">QUOVEX</span>
             </div>

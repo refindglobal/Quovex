@@ -60,7 +60,6 @@ export default function FlashcardPlayerPage({ params }: { params: Promise<{ deck
       currentCard.easeFactor || 2.5
     );
 
-    // Save updated SM-2 schedule to Firestore
     await saveFlashcard(currentUser.uid, deckId, {
       ...currentCard,
       repetitions: sm2Result.repetitions,
@@ -103,26 +102,26 @@ export default function FlashcardPlayerPage({ params }: { params: Promise<{ deck
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto p-12 text-center text-xs text-text-secondary">
-        Loading deck cards...
+      <div className="max-w-2xl mx-auto p-12 text-center text-xs text-text-secondary">
+        Loading flashcards...
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-12 pb-24">
-      {/* Header */}
+    <div className="max-w-2xl mx-auto space-y-6 pb-20">
+      {/* Top Controls */}
       <div className="flex items-center justify-between">
-        <Link href="/app/flashcards" className="inline-flex items-center gap-2 text-label font-bold text-text-secondary hover:text-text-primary transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back to Decks
+        <Link href="/app/flashcards" className="inline-flex items-center gap-1.5 text-xs font-bold text-text-secondary hover:text-text-primary transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Decks
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {cards.length > 0 && !isFinished && (
-            <span className="text-body font-mono text-text-secondary font-bold">
+            <span className="text-xs font-mono text-text-secondary font-bold">
               Card {currentIndex + 1} of {cards.length}
             </span>
           )}
-          <QuovexButton size="lg" variant="secondary" onClick={() => setIsAddingCard(true)} leftIcon={<Plus className="w-5 h-5" />}>
+          <QuovexButton size="sm" variant="secondary" onClick={() => setIsAddingCard(true)} leftIcon={<Plus className="w-3.5 h-3.5" />}>
             Add Card
           </QuovexButton>
         </div>
@@ -130,8 +129,8 @@ export default function FlashcardPlayerPage({ params }: { params: Promise<{ deck
 
       {cards.length === 0 ? (
         /* Empty Deck State */
-        <QuovexCard className="p-16 text-center space-y-6 shadow-sm">
-          <div className="w-24 h-24 relative mx-auto opacity-80">
+        <QuovexCard className="p-10 text-center space-y-4 shadow-sm">
+          <div className="w-16 h-16 relative mx-auto opacity-80">
             <Image
               src={ASSETS.icons3d.flashcards}
               alt="Empty Deck"
@@ -141,83 +140,83 @@ export default function FlashcardPlayerPage({ params }: { params: Promise<{ deck
             />
           </div>
           <div>
-            <h3 className="text-headline font-bold text-text-primary">This Deck is Empty</h3>
-            <p className="text-body text-text-secondary mt-2 max-w-sm mx-auto">
+            <h3 className="text-base font-bold text-text-primary">This Deck is Empty</h3>
+            <p className="text-xs text-text-secondary mt-1 max-w-xs mx-auto">
               Add your first active recall question or formula to start spaced repetition training.
             </p>
           </div>
-          <QuovexButton variant="primary" size="lg" onClick={() => setIsAddingCard(true)} leftIcon={<Plus className="w-5 h-5" />}>
+          <QuovexButton variant="primary" size="sm" onClick={() => setIsAddingCard(true)} leftIcon={<Plus className="w-4 h-4" />}>
             Add First Card
           </QuovexButton>
         </QuovexCard>
       ) : !isFinished && card ? (
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* Main Flippable Flashcard */}
           <div
             onClick={() => setIsFlipped(!isFlipped)}
-            className="min-h-[400px] bg-surface-elevated border border-primary/30 rounded-3xl p-10 sm:p-16 flex flex-col justify-between shadow-glow-lg cursor-pointer select-none transition-all duration-300 hover:border-primary/60"
+            className="min-h-[320px] sm:min-h-[360px] bg-surface-elevated border border-primary/30 rounded-2xl p-6 sm:p-10 flex flex-col justify-between shadow-sm cursor-pointer select-none transition-all duration-200 hover:border-primary/60"
           >
             <div className="flex items-center justify-between">
-              <QuovexBadge variant={isFlipped ? 'gold' : 'emerald'} size="lg">
+              <QuovexBadge variant={isFlipped ? 'gold' : 'emerald'} size="sm">
                 {isFlipped ? 'ANSWER / DERIVATION' : 'QUESTION / PROMPT'}
               </QuovexBadge>
-              <span className="text-label text-text-secondary flex items-center gap-1.5">
-                <RotateCw className="w-4 h-4" /> Tap card to flip
+              <span className="text-xs text-text-secondary flex items-center gap-1">
+                <RotateCw className="w-3.5 h-3.5" /> Tap to flip
               </span>
             </div>
 
-            <div className="my-12 text-center">
-              <div className="text-headline sm:text-display font-semibold leading-relaxed">
+            <div className="my-6 text-center">
+              <div className="text-base sm:text-lg font-semibold leading-relaxed">
                 <LatexRenderer content={isFlipped ? card.backContent : card.frontContent} />
               </div>
             </div>
 
-            <div className="text-center text-body text-text-secondary">
-              {isFlipped ? 'Grade your recall below to update SM-2 schedule' : 'Formulate the answer in your mind before flipping'}
+            <div className="text-center text-xs text-text-secondary">
+              {isFlipped ? 'Grade recall difficulty to update SM-2 schedule' : 'Formulate the solution mentally before flipping'}
             </div>
           </div>
 
           {/* SM-2 Grading Buttons (Only visible when flipped) */}
           {isFlipped ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 animate-in fade-in duration-150">
               <button
                 onClick={() => handleGrade(0)}
-                className="p-4 rounded-2xl bg-error-container hover:bg-error-container/80 border border-error/30 text-error font-semibold text-body transition-all active:scale-95 text-center shadow-sm"
+                className="p-3 rounded-xl bg-error-container hover:bg-error-container/80 border border-error/30 text-error font-semibold text-xs transition-all active:scale-95 text-center shadow-xs"
               >
                 <span className="block font-bold">Again</span>
-                <span className="text-label text-text-secondary font-normal">&lt;1 min</span>
+                <span className="text-[10px] text-text-secondary">&lt;1 min</span>
               </button>
 
               <button
                 onClick={() => handleGrade(3)}
-                className="p-4 rounded-2xl bg-warning-container hover:bg-warning-container/80 border border-warning/30 text-warning font-semibold text-body transition-all active:scale-95 text-center shadow-sm"
+                className="p-3 rounded-xl bg-warning-container hover:bg-warning-container/80 border border-warning/30 text-warning font-semibold text-xs transition-all active:scale-95 text-center shadow-xs"
               >
                 <span className="block font-bold">Hard</span>
-                <span className="text-label text-text-secondary font-normal">1 day</span>
+                <span className="text-[10px] text-text-secondary">1 day</span>
               </button>
 
               <button
                 onClick={() => handleGrade(4)}
-                className="p-4 rounded-2xl bg-primary-container hover:bg-primary-container/80 border border-primary/30 text-primary font-semibold text-body transition-all active:scale-95 text-center shadow-sm"
+                className="p-3 rounded-xl bg-primary-container hover:bg-primary-container/80 border border-primary/30 text-primary font-semibold text-xs transition-all active:scale-95 text-center shadow-xs"
               >
                 <span className="block font-bold">Good</span>
-                <span className="text-label text-text-secondary font-normal">3 days</span>
+                <span className="text-[10px] text-text-secondary">3 days</span>
               </button>
 
               <button
                 onClick={() => handleGrade(5)}
-                className="p-4 rounded-2xl bg-[rgba(33,150,243,0.15)] hover:bg-[#2196F3]/20 border border-[#2196F3]/30 text-[#2196F3] font-semibold text-body transition-all active:scale-95 text-center shadow-sm"
+                className="p-3 rounded-xl bg-[rgba(33,150,243,0.15)] hover:bg-[#2196F3]/20 border border-[#2196F3]/30 text-[#2196F3] font-semibold text-xs transition-all active:scale-95 text-center shadow-xs"
               >
                 <span className="block font-bold">Easy</span>
-                <span className="text-label text-text-secondary font-normal">6 days</span>
+                <span className="text-[10px] text-text-secondary">6 days</span>
               </button>
             </div>
           ) : (
             <QuovexButton
-              size="lg"
-              className="w-full text-title py-4 shadow-glow-sm"
+              size="md"
+              className="w-full text-xs sm:text-sm py-3 shadow-glow-xs"
               onClick={() => setIsFlipped(true)}
-              rightIcon={<RotateCw className="w-5 h-5" />}
+              rightIcon={<RotateCw className="w-4 h-4" />}
             >
               Reveal Answer
             </QuovexButton>
@@ -225,27 +224,27 @@ export default function FlashcardPlayerPage({ params }: { params: Promise<{ deck
         </div>
       ) : (
         /* Finished Review Session */
-        <QuovexCard className="p-16 text-center space-y-8 shadow-glow-sm">
-          <div className="w-20 h-20 rounded-2xl bg-primary-container text-primary flex items-center justify-center mx-auto shadow-glow">
-            <Award className="w-10 h-10" />
+        <QuovexCard className="p-10 text-center space-y-6 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-primary-container text-primary flex items-center justify-center mx-auto shadow-sm">
+            <Award className="w-7 h-7" />
           </div>
 
           <div>
-            <h2 className="text-display font-bold text-text-primary">Daily Review Complete!</h2>
-            <p className="text-body text-text-secondary mt-3">
+            <h2 className="text-xl font-bold text-text-primary">Daily Review Complete!</h2>
+            <p className="text-xs text-text-secondary mt-1.5">
               You reviewed {cards.length} flashcard{cards.length === 1 ? '' : 's'} today. Spaced Repetition dates have been updated in the cloud.
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-warning-container border border-warning/30 text-warning text-body font-bold">
-            <Sparkles className="w-5 h-5" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-warning-container/40 border border-warning/30 text-warning text-xs font-bold">
+            <Sparkles className="w-4 h-4" />
             <span>+30 Scholar XP Earned</span>
           </div>
 
-          <div className="pt-6 flex flex-col sm:flex-row justify-center gap-4">
+          <div className="pt-3 flex justify-center gap-3">
             <QuovexButton
               variant="secondary"
-              size="lg"
+              size="md"
               onClick={() => {
                 setCurrentIndex(0);
                 setIsFlipped(false);
@@ -255,7 +254,7 @@ export default function FlashcardPlayerPage({ params }: { params: Promise<{ deck
               Review Again
             </QuovexButton>
             <Link href="/app/flashcards">
-              <QuovexButton size="lg">Return to Decks</QuovexButton>
+              <QuovexButton size="md">Return to Decks</QuovexButton>
             </Link>
           </div>
         </QuovexCard>
@@ -264,43 +263,43 @@ export default function FlashcardPlayerPage({ params }: { params: Promise<{ deck
       {/* Add Card Modal */}
       {isAddingCard && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <form onSubmit={handleCreateCard} className="bg-surface border border-border rounded-3xl max-w-lg w-full p-8 space-y-6 shadow-2xl animate-in zoom-in-95">
+          <form onSubmit={handleCreateCard} className="bg-surface border border-border rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
             <div>
-              <h3 className="text-headline font-black text-text-primary">Add Flashcard</h3>
-              <p className="text-body text-text-secondary mt-1">LaTeX math syntax $...$ is fully supported</p>
+              <h3 className="text-base font-bold text-text-primary">Add Flashcard</h3>
+              <p className="text-xs text-text-secondary mt-0.5">LaTeX math syntax $...$ is fully supported</p>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
-                <label className="block text-label font-bold text-text-secondary mb-2">Front (Prompt/Question)</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1">Front (Prompt/Question)</label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   placeholder="e.g. State Carnot cycle efficiency formula"
                   value={newFront}
                   onChange={(e) => setNewFront(e.target.value)}
-                  className="w-full bg-surface-variant border border-border rounded-xl p-4 text-body text-text-primary focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all"
+                  className="w-full bg-surface-variant border border-border rounded-xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-label font-bold text-text-secondary mb-2">Back (Answer/Derivation)</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1">Back (Answer/Derivation)</label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   placeholder="e.g. $$\eta = 1 - \frac{T_C}{T_H}$$"
                   value={newBack}
                   onChange={(e) => setNewBack(e.target.value)}
-                  className="w-full bg-surface-variant border border-border rounded-xl p-4 text-body text-text-primary focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all font-mono"
+                  className="w-full bg-surface-variant border border-border rounded-xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:border-primary transition-all font-mono"
                   required
                 />
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
-              <QuovexButton variant="secondary" size="lg" className="flex-1" onClick={() => setIsAddingCard(false)}>
+            <div className="flex gap-2 pt-2">
+              <QuovexButton variant="secondary" size="md" className="flex-1" onClick={() => setIsAddingCard(false)}>
                 Cancel
               </QuovexButton>
-              <QuovexButton type="submit" variant="primary" size="lg" className="flex-1">
+              <QuovexButton type="submit" variant="primary" size="md" className="flex-1">
                 Save Card
               </QuovexButton>
             </div>

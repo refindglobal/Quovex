@@ -4,6 +4,11 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Quovex Admin — Content Studio & Demand Intelligence',
   description: 'Internal authoring and editorial control plane for Quovex Originals',
+  icons: {
+    icon: '/assets/brand/emblem.png',
+    shortcut: '/assets/brand/emblem.png',
+    apple: '/assets/brand/emblem.png',
+  },
 };
 
 export default function RootLayout({

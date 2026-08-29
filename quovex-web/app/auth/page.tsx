@@ -106,8 +106,12 @@ export default function AuthPage() {
       <div className="w-full max-w-md relative z-10">
         {step === 'auth' ? (
           <QuovexCard className="p-8 text-center space-y-6">
-            <div className="w-12 h-12 rounded-2xl bg-primary-container border border-primary/40 flex items-center justify-center text-primary font-bold text-2xl mx-auto shadow-glow">
-              Q
+            <div className="w-14 h-14 rounded-2xl overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center p-1 mx-auto shadow-glow">
+              <img
+                src="/assets/brand/emblem.png"
+                alt="Quovex Logo"
+                className="w-10 h-10 object-contain"
+              />
             </div>
 
             <div>

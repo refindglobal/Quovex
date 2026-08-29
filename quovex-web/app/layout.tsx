@@ -31,6 +31,11 @@ export const metadata: Metadata = {
     description: 'One platform replaces 5 study apps. Free on Android + Web.',
     images: ['/assets/brand/hero_mockup.png'],
   },
+  icons: {
+    icon: '/assets/brand/emblem.png',
+    shortcut: '/assets/brand/emblem.png',
+    apple: '/assets/brand/emblem.png',
+  },
   robots: {
     index: true,
     follow: true,

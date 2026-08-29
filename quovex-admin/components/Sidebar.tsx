@@ -81,8 +81,15 @@ export default function Sidebar() {
         {/* Brand Header */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-border/80 sticky top-0 bg-[#0C120F] z-10">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#00C896]/20 border border-[#00C896]/40 flex items-center justify-center">
-              <Layers className="w-4 h-4 text-[#00C896]" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden bg-[#00C896]/10 border border-[#00C896]/30 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(0,200,150,0.25)]">
+              <img
+                src="/assets/brand/emblem.png"
+                alt="Quovex Logo"
+                className="w-7 h-7 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
             </div>
             <span className="font-bold tracking-tight text-white flex items-center gap-1.5 text-base">
               QUOVEX <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-[#00C896]/10 text-[#00C896] border border-[#00C896]/20">Admin</span>
@@ -151,8 +158,12 @@ export default function Sidebar() {
       {/* ── Mobile Top Header Bar ────────────────────────────────────────── */}
       <header className="md:hidden flex items-center justify-between h-14 px-4 bg-[#0C120F] border-b border-border fixed top-0 left-0 right-0 z-40">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[#00C896]/20 border border-[#00C896]/40 flex items-center justify-center">
-            <Layers className="w-3.5 h-3.5 text-[#00C896]" />
+          <div className="w-7 h-7 rounded-lg overflow-hidden bg-[#00C896]/10 border border-[#00C896]/30 flex items-center justify-center shrink-0">
+            <img
+              src="/assets/brand/emblem.png"
+              alt="Quovex Logo"
+              className="w-6 h-6 object-contain"
+            />
           </div>
           <span className="font-bold tracking-tight text-white text-sm">
             QUOVEX <span className="text-[9px] uppercase font-semibold px-1 py-0.2 rounded bg-[#00C896]/10 text-[#00C896]">Admin</span>

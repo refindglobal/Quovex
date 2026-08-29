@@ -43,8 +43,12 @@ export default function AppLayout({
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-text-primary flex flex-col items-center justify-center gap-4 transition-colors duration-200">
-        <div className="w-12 h-12 rounded-2xl bg-primary-container border border-primary/40 flex items-center justify-center text-primary font-bold text-xl animate-pulse shadow-glow">
-          Q
+        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center p-1.5 animate-pulse shadow-glow">
+          <img
+            src="/assets/brand/emblem.png"
+            alt="Quovex Logo"
+            className="w-10 h-10 object-contain"
+          />
         </div>
         <p className="text-xs text-text-secondary font-medium tracking-wide">
           Syncing with Quovex Cloud...

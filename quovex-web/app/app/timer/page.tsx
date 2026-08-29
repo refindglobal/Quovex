@@ -19,7 +19,7 @@ import {
   Square,
 } from 'lucide-react';
 import { getCurrentUser } from '@/lib/firebase/auth';
-import { saveUserSession, subscribeToUserProfile } from '@/lib/firebase/firestore';
+import { saveUserSession } from '@/lib/firebase/firestore';
 import { QuovexButton } from '@/components/ui/QuovexButton';
 import { QuovexCard } from '@/components/ui/QuovexCard';
 import { QuovexBadge } from '@/components/ui/QuovexBadge';
@@ -30,24 +30,23 @@ import { WebFocusShield } from '@/components/timer/WebFocusShield';
 import { ASSETS } from '@/lib/assets';
 
 const PRESETS = [
-  { id: 'pomodoro', name: 'Pomodoro', focusMinutes: 25, breakMinutes: 5, description: 'Classic 25/5 interval' },
-  { id: 'deep_work', name: 'Deep Work', focusMinutes: 50, breakMinutes: 10, description: '50m intense grind' },
-  { id: 'long_deep_work', name: 'Long Deep Work', focusMinutes: 90, breakMinutes: 15, description: '90m marathon study' },
-  { id: 'custom', name: 'Custom Preset', focusMinutes: 30, breakMinutes: 5, description: 'User-configured' },
+  { id: 'pomodoro', name: 'Pomodoro', focusMinutes: 25, breakMinutes: 5, description: '25/5 interval' },
+  { id: 'deep_work', name: 'Deep Work', focusMinutes: 50, breakMinutes: 10, description: '50m grind' },
+  { id: 'long_deep_work', name: 'Marathon', focusMinutes: 90, breakMinutes: 15, description: '90m focus' },
+  { id: 'custom', name: 'Custom', focusMinutes: 30, breakMinutes: 5, description: 'User-configured' },
 ];
 
 const SOUNDSCAPES = [
-  { id: 'none', title: 'Silence / None', icon: ASSETS.icons3d.stopwatch, freq: 0 },
-  { id: 'rain', title: 'Forest Rain & Storm', icon: ASSETS.icons3d.soundscapeRain, freq: 174 },
-  { id: 'cafe', title: 'Cafe Ambience', icon: ASSETS.icons3d.soundscapeCoffee, freq: 285 },
-  { id: 'clock', title: 'Deep Work Clock', icon: ASSETS.icons3d.soundscapeClock, freq: 432 },
-  { id: 'fire', title: 'Emerald Fireplace', icon: ASSETS.icons3d.flameBurning, freq: 528 },
+  { id: 'none', title: 'Silence', icon: ASSETS.icons3d.stopwatch, freq: 0 },
+  { id: 'rain', title: 'Forest Rain', icon: ASSETS.icons3d.soundscapeRain, freq: 174 },
+  { id: 'cafe', title: 'Cafe Vibes', icon: ASSETS.icons3d.soundscapeCoffee, freq: 285 },
+  { id: 'clock', title: 'Focus Clock', icon: ASSETS.icons3d.soundscapeClock, freq: 432 },
+  { id: 'fire', title: 'Fireplace', icon: ASSETS.icons3d.flameBurning, freq: 528 },
 ];
 
 const SUBJECTS = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'General Study', 'Revision'];
 
 export default function TimerPage() {
-  // Screen state: 'SETUP' | 'ACTIVE' | 'SUMMARY'
   const [screenState, setScreenState] = useState<'SETUP' | 'ACTIVE' | 'SUMMARY'>('SETUP');
   
   // Timer Configuration
@@ -83,7 +82,6 @@ export default function TimerPage() {
   const oscillatorNodeRef = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
 
-  // Initialize Web Worker for background ticking
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -109,7 +107,6 @@ export default function TimerPage() {
     };
   }, []);
 
-  // Web Audio ambient soundscape engine
   const startSoundscape = (soundId: string) => {
     stopSoundscape();
     if (soundId === 'none' || isSoundMuted) return;
@@ -189,7 +186,7 @@ export default function TimerPage() {
   };
 
   const handleCancelSession = () => {
-    if (confirm('Are you sure you want to cancel this focus session early?')) {
+    if (confirm('Cancel this focus session early?')) {
       handlePauseSession();
       setScreenState('SETUP');
       setRemainingSeconds(focusDurationMinutes * 60);
@@ -200,7 +197,6 @@ export default function TimerPage() {
     handlePauseSession();
 
     const elapsedMinutes = Math.max(1, Math.round((totalSessionSeconds - remainingSeconds) / 60));
-    // Calculate real focus score from distractions
     const score = Math.max(50, Math.min(100, 100 - (distractionsCount * 5)));
     const baseBonus = elapsedMinutes * 2;
     const focusBonus = score >= 85 ? 50 : 0;
@@ -216,7 +212,6 @@ export default function TimerPage() {
     setCompletedSummary(summary);
     setScreenState('SUMMARY');
 
-    // Save session to Firestore
     if (currentUser) {
       await saveUserSession(currentUser.uid, {
         id: `sess_${Date.now()}`,
@@ -237,34 +232,34 @@ export default function TimerPage() {
   const progress = totalSessionSeconds > 0 ? (totalSessionSeconds - remainingSeconds) / totalSessionSeconds : 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12 pb-24">
+    <div className="max-w-4xl mx-auto space-y-6 pb-20">
       {/* ── SCREEN 1: TIMER SETUP ─────────────────────────────────────────── */}
       {screenState === 'SETUP' && (
-        <div className="space-y-8 animate-in fade-in">
+        <div className="space-y-5 animate-in fade-in">
           <div>
-            <h1 className="text-display text-text-primary flex items-center gap-4">
-              <Timer className="w-10 h-10 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2.5">
+              <Timer className="w-7 h-7 text-primary" />
               Focus Engine
             </h1>
-            <p className="text-section text-text-secondary mt-2">
-              Select your academic subject, focus interval, and ambient binaural soundscape.
+            <p className="text-xs sm:text-sm text-text-secondary mt-1">
+              Select academic stream, focus interval, and ambient soundscape.
             </p>
           </div>
 
           {/* Subject Selector */}
-          <QuovexCard className="space-y-4">
-            <h3 className="text-label text-text-secondary uppercase tracking-wider">
-              1. SELECT SUBJECT
+          <QuovexCard className="p-4 sm:p-5 space-y-3 shadow-sm">
+            <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+              1. Select Subject Stream
             </h3>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {SUBJECTS.map((subj) => (
                 <button
                   key={subj}
                   onClick={() => setSelectedSubject(subj)}
-                  className={`px-5 py-2.5 rounded-xl text-body font-bold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     selectedSubject === subj
-                      ? 'bg-primary-container text-primary border border-primary shadow-glow'
-                      : 'bg-surface-variant text-text-secondary border border-border hover:text-text-primary hover:border-primary/50'
+                      ? 'bg-primary-container text-primary border border-primary shadow-xs'
+                      : 'bg-surface-variant text-text-secondary border border-border hover:text-text-primary'
                   }`}
                 >
                   {subj}
@@ -274,41 +269,40 @@ export default function TimerPage() {
           </QuovexCard>
 
           {/* Preset Selector */}
-          <QuovexCard className="space-y-4">
-            <h3 className="text-label text-text-secondary uppercase tracking-wider">
-              2. FOCUS INTERVAL PRESET
+          <QuovexCard className="p-4 sm:p-5 space-y-3 shadow-sm">
+            <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+              2. Focus Interval Preset
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {PRESETS.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => handleSelectPreset(p)}
-                  className={`p-5 rounded-2xl border text-left transition-all ${
+                  className={`p-3.5 rounded-xl border text-left transition-all ${
                     selectedPresetId === p.id
-                      ? 'bg-primary-container border-primary shadow-glow'
+                      ? 'bg-primary-container border-primary text-primary font-bold shadow-xs'
                       : 'bg-surface-variant border-border hover:border-primary/40'
                   }`}
                 >
-                  <span className={`text-title block ${selectedPresetId === p.id ? 'text-primary' : 'text-text-primary'}`}>
+                  <span className={`text-xs sm:text-sm block ${selectedPresetId === p.id ? 'text-primary font-bold' : 'text-text-primary'}`}>
                     {p.name}
                   </span>
-                  <span className="text-body font-bold text-text-secondary block mt-2">
-                    {p.focusMinutes}m Focus • {p.breakMinutes}m Break
+                  <span className="text-[11px] text-text-secondary block mt-1">
+                    {p.focusMinutes}m Focus • {p.breakMinutes}m
                   </span>
-                  <p className="text-caption text-text-tertiary mt-1">{p.description}</p>
                 </button>
               ))}
             </div>
           </QuovexCard>
 
           {/* Ambient Soundscapes */}
-          <QuovexCard className="space-y-6">
+          <QuovexCard className="p-4 sm:p-5 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <h3 className="text-label text-text-secondary uppercase tracking-wider">
-                3. 3D AMBIENT SOUNDSCAPE
+              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                3. Ambient Soundscape
               </h3>
-              <div className="flex items-center gap-3">
-                <span className="text-label text-text-secondary">VOL</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-text-secondary font-bold">VOL</span>
                 <input
                   type="range"
                   min={0}
@@ -316,23 +310,23 @@ export default function TimerPage() {
                   step={0.05}
                   value={soundscapeVolume}
                   onChange={(e) => setSoundscapeVolume(Number(e.target.value))}
-                  className="w-32 accent-primary bg-surface-variant cursor-pointer"
+                  className="w-24 accent-primary bg-surface-variant cursor-pointer h-1.5 rounded-lg"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
               {SOUNDSCAPES.map((snd) => (
                 <button
                   key={snd.id}
                   onClick={() => setSelectedSoundscape(snd.id)}
-                  className={`p-4 rounded-2xl border flex flex-col items-center gap-3 text-center transition-all ${
+                  className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 text-center transition-all ${
                     selectedSoundscape === snd.id
-                      ? 'bg-primary-container border-primary shadow-glow'
+                      ? 'bg-primary-container border-primary shadow-xs'
                       : 'bg-surface-variant border-border hover:border-primary/40'
                   }`}
                 >
-                  <div className="w-12 h-12 relative">
+                  <div className="w-8 h-8 relative">
                     <Image
                       src={snd.icon}
                       alt={snd.title}
@@ -341,7 +335,7 @@ export default function TimerPage() {
                       unoptimized
                     />
                   </div>
-                  <span className={`text-label ${selectedSoundscape === snd.id ? 'text-primary font-bold' : 'text-text-secondary'}`}>
+                  <span className={`text-[10px] ${selectedSoundscape === snd.id ? 'text-primary font-bold' : 'text-text-secondary'}`}>
                     {snd.title}
                   </span>
                 </button>
@@ -353,9 +347,9 @@ export default function TimerPage() {
           <QuovexButton
             variant="primary"
             size="lg"
-            className="w-full py-5 text-title shadow-glow-lg"
+            className="w-full py-3.5 text-sm sm:text-base font-bold shadow-glow"
             onClick={handleStartSession}
-            leftIcon={<Play className="w-6 h-6 fill-current" />}
+            leftIcon={<Play className="w-5 h-5 fill-current" />}
           >
             Start Focus Session ({focusDurationMinutes} Minutes)
           </QuovexButton>
@@ -364,18 +358,16 @@ export default function TimerPage() {
 
       {/* ── SCREEN 2: ACTIVE TIMER ────────────────────────────────────────── */}
       {screenState === 'ACTIVE' && (
-        <div className="space-y-12 animate-in zoom-in-95 pt-8">
-          {/* Active Header Tag */}
+        <div className="space-y-6 animate-in zoom-in-95 pt-4">
           <div className="flex items-center justify-between">
-            <QuovexBadge variant="emerald" size="lg">
+            <QuovexBadge variant="emerald" size="md">
               {selectedSubject.toUpperCase()} FOCUS
             </QuovexBadge>
-            <QuovexBadge variant="muted" size="md">
-              {selectedPresetId.toUpperCase()} MODE
+            <QuovexBadge variant="muted" size="sm">
+              {selectedPresetId.toUpperCase()}
             </QuovexBadge>
           </div>
 
-          {/* Circular Visualizer Arc */}
           <CircularTimerArc
             progress={progress}
             formattedTime={formattedTime}
@@ -383,31 +375,30 @@ export default function TimerPage() {
             isPlaying={isRunning}
           />
 
-          {/* Play / Pause / Cancel Controls */}
-          <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center justify-center gap-4">
             {isRunning ? (
               <QuovexButton
                 variant="secondary"
-                size="lg"
+                size="md"
                 onClick={handlePauseSession}
-                leftIcon={<Pause className="w-5 h-5" />}
+                leftIcon={<Pause className="w-4 h-4" />}
               >
-                Pause Session
+                Pause
               </QuovexButton>
             ) : (
               <QuovexButton
                 variant="primary"
-                size="lg"
+                size="md"
                 onClick={handleResumeSession}
-                leftIcon={<Play className="w-5 h-5 fill-current" />}
+                leftIcon={<Play className="w-4 h-4 fill-current" />}
               >
-                Resume Focus
+                Resume
               </QuovexButton>
             )}
 
             <QuovexButton
               variant="danger"
-              size="lg"
+              size="md"
               onClick={handleCancelSession}
               leftIcon={<Square className="w-4 h-4 fill-current" />}
             >
@@ -415,7 +406,6 @@ export default function TimerPage() {
             </QuovexButton>
           </div>
 
-          {/* Web Focus Shield Card */}
           <WebFocusShield
             isActive={isRunning}
             onDistractionDetected={(count) => setDistractionsCount(count)}
@@ -437,7 +427,6 @@ export default function TimerPage() {
         />
       )}
 
-      {/* Custom Duration Dialog */}
       {isCustomModalOpen && (
         <CustomDurationModal
           initialFocusMinutes={focusDurationMinutes}

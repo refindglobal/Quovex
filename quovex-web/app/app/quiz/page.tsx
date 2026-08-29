@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   HelpCircle,
   CheckCircle2,
@@ -19,14 +18,12 @@ import {
   saveFlashcardDeck,
   saveFlashcard,
   saveQuizResult,
-  subscribeToUserProfile,
   FlashcardDeck,
 } from '@/lib/firebase/firestore';
 import { QuovexButton } from '@/components/ui/QuovexButton';
 import { QuovexCard } from '@/components/ui/QuovexCard';
 import { QuovexBadge } from '@/components/ui/QuovexBadge';
 import { LatexRenderer } from '@/components/ui/LatexRenderer';
-import { ASSETS } from '@/lib/assets';
 
 interface Question {
   id: string;
@@ -129,7 +126,6 @@ export default function DiagnosticQuizPage() {
     }
 
     if (currentUser) {
-      // Save quiz history record
       await saveQuizResult(currentUser.uid, {
         id: `quiz_${Date.now()}`,
         subject: 'Multi-Disciplinary Diagnostic',
@@ -167,7 +163,6 @@ export default function DiagnosticQuizPage() {
 
       await saveFlashcardDeck(currentUser.uid, deck);
 
-      // Create SM-2 remedial cards with easeFactor 2.1
       for (let i = 0; i < mistakes.length; i++) {
         const m = mistakes[i];
         await saveFlashcard(currentUser.uid, remedialDeckId, {
@@ -193,41 +188,48 @@ export default function DiagnosticQuizPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-12 pb-24">
+    <div className="max-w-3xl mx-auto space-y-6 pb-20">
       {/* Header */}
-      <div>
-        <h1 className="text-display font-black text-text-primary flex items-center gap-4">
-          <HelpCircle className="w-10 h-10 text-primary" />
-          Daily Diagnostic MCQ Quiz
-        </h1>
-        <p className="text-section text-text-secondary mt-2">
-          5 adaptive multi-disciplinary questions with step-by-step misconception diagnostics.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2.5">
+              <HelpCircle className="w-7 h-7 text-primary" />
+              Daily Diagnostic MCQ Quiz
+            </h1>
+            <QuovexBadge variant="fire" size="sm">Adaptive</QuovexBadge>
+          </div>
+          <p className="text-xs sm:text-sm text-text-secondary mt-1">
+            5 multi-disciplinary questions targeting exam traps & misconception remedies.
+          </p>
+        </div>
       </div>
 
       {!isFinished ? (
-        <QuovexCard className="p-8 sm:p-12 space-y-8 shadow-sm">
-          <div className="flex items-center justify-between border-b border-border pb-5">
+        <QuovexCard className="p-5 sm:p-8 space-y-6 shadow-sm">
+          {/* Progress Header */}
+          <div className="flex items-center justify-between border-b border-border pb-3">
             <QuovexBadge variant="emerald" size="md">{currentQ.subject}</QuovexBadge>
-            <span className="text-body font-mono text-text-secondary font-bold">
+            <span className="text-xs sm:text-sm font-mono text-text-secondary font-bold">
               Question {currentIndex + 1} of {questions.length}
             </span>
           </div>
 
-          <div className="text-headline font-semibold text-text-primary leading-relaxed">
+          {/* Question Text with Math */}
+          <div className="text-sm sm:text-base font-semibold text-text-primary leading-relaxed">
             <LatexRenderer content={currentQ.question} />
           </div>
 
           {/* Options */}
-          <div className="space-y-4 pt-4">
+          <div className="space-y-3 pt-2">
             {currentQ.options.map((opt, idx) => {
-              let optionStyle = 'bg-surface-variant border-border text-text-primary hover:bg-surface-elevated';
+              let optionStyle = 'bg-surface-variant/80 border-border text-text-primary hover:bg-surface-elevated';
 
               if (isAnswered) {
                 if (idx === currentQ.correctIndex) {
-                  optionStyle = 'bg-success-container border-success text-success font-bold shadow-sm';
+                  optionStyle = 'bg-success-container text-success border-success font-bold shadow-xs';
                 } else if (idx === selectedOption) {
-                  optionStyle = 'bg-error-container border-error text-error font-bold shadow-sm';
+                  optionStyle = 'bg-error-container text-error border-error font-bold shadow-xs';
                 }
               }
 
@@ -235,20 +237,20 @@ export default function DiagnosticQuizPage() {
                 <div
                   key={idx}
                   onClick={() => handleSelectOption(idx)}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between text-body ${optionStyle}`}
+                  className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 text-xs sm:text-sm ${optionStyle}`}
                 >
-                  <div className="flex items-center gap-4">
-                    <span className="w-8 h-8 rounded-xl bg-surface flex items-center justify-center text-body font-mono font-bold text-text-secondary shadow-sm">
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="w-6 h-6 rounded-lg bg-surface flex items-center justify-center text-xs font-mono font-bold text-text-secondary shadow-xs shrink-0">
                       {String.fromCharCode(65 + idx)}
                     </span>
-                    <LatexRenderer content={opt} />
+                    <LatexRenderer content={opt} className="flex-1" />
                   </div>
 
                   {isAnswered && idx === currentQ.correctIndex && (
-                    <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                   )}
                   {isAnswered && idx === selectedOption && idx !== currentQ.correctIndex && (
-                    <XCircle className="w-5 h-5 text-error shrink-0" />
+                    <XCircle className="w-4 h-4 text-error shrink-0" />
                   )}
                 </div>
               );
@@ -257,71 +259,71 @@ export default function DiagnosticQuizPage() {
 
           {/* Explanation Banner */}
           {isAnswered && (
-            <div className="p-6 rounded-2xl bg-surface-variant border border-border space-y-3 animate-in fade-in shadow-sm mt-4">
-              <span className={`text-label font-black uppercase tracking-wider block flex items-center gap-2 ${selectedOption === currentQ.correctIndex ? 'text-success' : 'text-error'}`}>
-                {selectedOption === currentQ.correctIndex ? <><CheckCircle2 className="w-4 h-4" /> Correct Derivation</> : <><XCircle className="w-4 h-4" /> Misconception Breakdown</>}
+            <div className="p-4 rounded-xl bg-surface-variant border border-border space-y-2 animate-in fade-in shadow-xs">
+              <span className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${selectedOption === currentQ.correctIndex ? 'text-success' : 'text-error'}`}>
+                {selectedOption === currentQ.correctIndex ? <><CheckCircle2 className="w-3.5 h-3.5" /> Correct Derivation</> : <><XCircle className="w-3.5 h-3.5" /> Misconception Analysis</>}
               </span>
-              <div className="text-body text-text-secondary leading-relaxed">
+              <div className="text-xs sm:text-sm text-text-secondary leading-relaxed">
                 <LatexRenderer content={currentQ.explanation} />
               </div>
             </div>
           )}
 
           {isAnswered && (
-            <div className="pt-4 flex justify-end">
-              <QuovexButton size="lg" onClick={handleNext} rightIcon={<ArrowRight className="w-5 h-5" />}>
-                {currentIndex < questions.length - 1 ? 'Next Question' : 'View Quiz Summary'}
+            <div className="pt-2 flex justify-end">
+              <QuovexButton size="md" onClick={handleNext} rightIcon={<ArrowRight className="w-4 h-4" />}>
+                {currentIndex < questions.length - 1 ? 'Next Question' : 'View Summary'}
               </QuovexButton>
             </div>
           )}
         </QuovexCard>
       ) : (
         /* Quiz Complete Screen */
-        <QuovexCard className="p-10 sm:p-16 text-center space-y-8 shadow-glow-sm">
-          <div className="w-20 h-20 rounded-2xl bg-primary-container text-primary flex items-center justify-center mx-auto shadow-glow">
-            <Award className="w-10 h-10" />
+        <QuovexCard className="p-8 sm:p-12 text-center space-y-6 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-primary-container text-primary flex items-center justify-center mx-auto shadow-sm">
+            <Award className="w-8 h-8" />
           </div>
 
           <div>
-            <h2 className="text-display font-bold text-text-primary">Diagnostic Quiz Complete!</h2>
-            <div className="text-[3rem] font-black text-primary my-4 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-text-primary">Diagnostic Quiz Complete!</h2>
+            <div className="text-4xl font-black text-primary my-3 tracking-tight">
               {score} / {questions.length}
             </div>
-            <p className="text-body font-bold text-text-secondary">
+            <p className="text-xs sm:text-sm text-text-secondary font-medium">
               Accuracy: {Math.round((score / questions.length) * 100)}% • +40 Scholar XP Awarded
             </p>
           </div>
 
           {/* Remedial Flashcard Synthesis Block */}
           {mistakes.length > 0 && (
-            <div className="p-6 rounded-2xl bg-surface-variant border border-border text-body text-text-primary space-y-4 text-left shadow-sm">
-              <div className="font-bold text-warning flex items-center gap-3">
-                <Sparkles className="w-5 h-5" />
+            <div className="p-5 rounded-2xl bg-surface-variant border border-border text-xs sm:text-sm text-text-primary space-y-3 text-left shadow-xs">
+              <div className="font-bold text-warning flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
                 <span>Identified {mistakes.length} High-Yield Exam Misconception{mistakes.length === 1 ? '' : 's'}</span>
               </div>
               <p className="text-text-secondary leading-relaxed">
-                Synthesize custom SM-2 flashcards targeting these exact questions to permanently close your concept gaps.
+                Synthesize custom SM-2 flashcards targeting these questions to close your concept gaps.
               </p>
 
               {!remedialGenerated ? (
                 <QuovexButton
-                  size="lg"
+                  size="md"
                   variant="primary"
-                  className="w-full sm:w-auto mt-2"
+                  className="w-full sm:w-auto mt-1"
                   onClick={handleGenerateRemedialDeck}
                   isLoading={isGeneratingRemedial}
                   leftIcon={<Sparkles className="w-4 h-4" />}
                 >
-                  Synthesize "🎯 Remedial Concepts & Traps" Deck
+                  Synthesize Remedial Flashcard Deck
                 </QuovexButton>
               ) : (
-                <div className="space-y-3 pt-2">
-                  <div className="p-4 rounded-xl bg-success-container text-success font-bold text-body flex items-center gap-3 shadow-sm">
-                    <CheckCircle2 className="w-5 h-5 shrink-0" />
-                    <span>Deck Synthesized! {mistakes.length} remedial flashcards added to SM-2 queue.</span>
+                <div className="space-y-3 pt-1">
+                  <div className="p-3 rounded-xl bg-success-container text-success font-bold text-xs flex items-center gap-2 shadow-xs">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>Deck Synthesized! {mistakes.length} cards added to SM-2 spaced repetition queue.</span>
                   </div>
                   <Link href="/app/flashcards/remedial_traps">
-                    <QuovexButton size="lg" variant="primary" className="w-full mt-3">
+                    <QuovexButton size="md" variant="primary" className="w-full">
                       Review Remedial Deck Now →
                     </QuovexButton>
                   </Link>
@@ -330,9 +332,9 @@ export default function DiagnosticQuizPage() {
             </div>
           )}
 
-          <div className="pt-4 flex justify-center gap-4">
+          <div className="pt-2 flex justify-center gap-3">
             <Link href="/app/dashboard">
-              <QuovexButton variant="secondary" size="lg">Return to Hub</QuovexButton>
+              <QuovexButton variant="secondary" size="md">Return to Hub</QuovexButton>
             </Link>
           </div>
         </QuovexCard>

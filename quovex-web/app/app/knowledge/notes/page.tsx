@@ -9,10 +9,7 @@ import {
   Trash2, 
   Sparkles, 
   ArrowLeft, 
-  Upload, 
   CheckCircle2, 
-  BookOpen,
-  Layers,
 } from 'lucide-react';
 import { getCurrentUser } from '@/lib/firebase/auth';
 import { 
@@ -84,8 +81,6 @@ export default function NotesLibraryPage() {
 
     try {
       const deckId = `deck_${Date.now()}`;
-      
-      // Auto-extract lines or paragraphs as card prompts
       const lines = note.content.split('\n').filter(l => l.trim().length > 10);
       const cardCount = Math.max(1, Math.min(5, lines.length));
 
@@ -100,7 +95,6 @@ export default function NotesLibraryPage() {
 
       await saveFlashcardDeck(currentUser.uid, newDeck);
 
-      // Create individual cards
       for (let i = 0; i < cardCount; i++) {
         const line = lines[i] || note.content;
         await saveFlashcard(currentUser.uid, deckId, {
@@ -123,62 +117,62 @@ export default function NotesLibraryPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-24">
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <Link href="/app/knowledge" className="inline-flex items-center gap-2 text-label font-bold text-text-secondary hover:text-text-primary mb-3 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Back to Knowledge Hub
+          <Link href="/app/knowledge" className="inline-flex items-center gap-1.5 text-xs font-bold text-text-secondary hover:text-text-primary mb-1 transition-colors">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Knowledge Hub
           </Link>
-          <h1 className="text-display font-black text-text-primary flex items-center gap-4">
-            <FileText className="w-10 h-10 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2.5">
+            <FileText className="w-7 h-7 text-primary" />
             Learning Materials Library
           </h1>
-          <p className="text-section text-text-secondary mt-2">
-            Personal notes, textbook excerpts, and formula cheat sheets synchronized with Android.
+          <p className="text-xs sm:text-sm text-text-secondary mt-1">
+            Personal notes, textbook excerpts, and formula cheat sheets.
           </p>
         </div>
 
         <QuovexButton
-          size="lg"
+          size="sm"
           onClick={() => setIsCreating(!isCreating)}
-          leftIcon={<Plus className="w-5 h-5" />}
+          leftIcon={<Plus className="w-4 h-4" />}
         >
-          {isCreating ? 'Cancel' : 'New Note / PDF'}
+          {isCreating ? 'Cancel' : 'New Note'}
         </QuovexButton>
       </div>
 
       {successMsg && (
-        <div className="p-4 rounded-2xl bg-success-container border border-success/30 text-body text-success font-bold flex items-center gap-3 animate-in fade-in shadow-sm">
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-success-container border border-success/30 text-xs sm:text-sm text-success font-bold flex items-center gap-2.5 animate-in fade-in shadow-xs">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* New Note Form */}
       {isCreating && (
-        <QuovexCard className="p-8 space-y-6 border-primary/30 animate-in fade-in shadow-glow-sm">
-          <h3 className="font-bold text-text-primary text-title">Add New Learning Material</h3>
-          <form onSubmit={handleCreateNote} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <QuovexCard className="p-5 sm:p-6 space-y-4 border-primary/30 animate-in fade-in shadow-sm">
+          <h3 className="font-bold text-text-primary text-sm sm:text-base">Add New Learning Material</h3>
+          <form onSubmit={handleCreateNote} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-label font-bold text-text-secondary mb-2">Title</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1">Title</label>
                 <input
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g. Modern Physics Formulas & Traps"
-                  className="w-full bg-surface-variant border border-border rounded-xl px-4 py-3 text-body text-text-primary focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all"
+                  className="w-full bg-surface-variant border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-label font-bold text-text-secondary mb-2">Subject</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1">Subject</label>
                 <select
                   value={newSubject}
                   onChange={(e) => setNewSubject(e.target.value)}
-                  className="w-full bg-surface-variant border border-border rounded-xl px-4 py-3 text-body text-text-primary focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all"
+                  className="w-full bg-surface-variant border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-text-primary focus:outline-none focus:border-primary transition-all"
                 >
                   {SUBJECTS.map((s) => (
                     <option key={s} value={s}>{s}</option>
@@ -188,22 +182,22 @@ export default function NotesLibraryPage() {
             </div>
 
             <div>
-              <label className="block text-label font-bold text-text-secondary mb-2">Material Content / LaTeX Notes</label>
+              <label className="block text-xs font-bold text-text-secondary mb-1">Material Content / LaTeX Notes</label>
               <textarea
-                rows={8}
+                rows={6}
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
                 placeholder="Paste formulas with LaTeX ($...$), summary points, or textbook excerpts..."
-                className="w-full bg-surface-variant border border-border rounded-xl p-4 text-body text-text-primary focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all font-mono"
+                className="w-full bg-surface-variant border border-border rounded-xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:border-primary transition-all font-mono"
                 required
               />
             </div>
 
-            <div className="flex justify-end gap-3">
-              <QuovexButton variant="ghost" size="lg" type="button" onClick={() => setIsCreating(false)}>
+            <div className="flex justify-end gap-2">
+              <QuovexButton variant="ghost" size="sm" type="button" onClick={() => setIsCreating(false)}>
                 Cancel
               </QuovexButton>
-              <QuovexButton size="lg" type="submit" isLoading={loading}>
+              <QuovexButton size="sm" type="submit" isLoading={loading}>
                 Save Material
               </QuovexButton>
             </div>
@@ -211,10 +205,10 @@ export default function NotesLibraryPage() {
         </QuovexCard>
       )}
 
-      {/* Notes Grid or True Empty State */}
+      {/* Notes Grid or Empty State */}
       {notes.length === 0 ? (
-        <QuovexCard className="text-center py-16 px-8 max-w-md mx-auto space-y-6">
-          <div className="w-32 h-32 relative mx-auto opacity-90">
+        <QuovexCard className="text-center py-12 px-6 max-w-sm mx-auto space-y-4 shadow-sm">
+          <div className="w-20 h-20 relative mx-auto opacity-80">
             <Image
               src={ASSETS.illustrations.emptyNotes}
               alt="No Learning Materials"
@@ -224,52 +218,53 @@ export default function NotesLibraryPage() {
             />
           </div>
           <div>
-            <h3 className="text-title font-bold text-text-primary">No Learning Materials Saved Yet</h3>
-            <p className="text-body text-text-secondary mt-2">
-              Add your first note or upload study content to automatically generate flashcards and quizzes.
+            <h3 className="text-sm sm:text-base font-bold text-text-primary">No Notes Saved Yet</h3>
+            <p className="text-xs text-text-secondary mt-1">
+              Add your first note to automatically synthesize SM-2 flashcard decks.
             </p>
           </div>
-          <QuovexButton size="lg" className="mt-4 w-full" onClick={() => setIsCreating(true)} leftIcon={<Plus className="w-5 h-5" />}>
+          <QuovexButton size="sm" className="mt-2 w-full" onClick={() => setIsCreating(true)} leftIcon={<Plus className="w-4 h-4" />}>
             Create First Note
           </QuovexButton>
         </QuovexCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {notes.map((note) => (
-            <QuovexCard key={note.id} hoverEffect className="space-y-4 flex flex-col justify-between">
+            <QuovexCard key={note.id} hoverEffect className="p-4 space-y-3 flex flex-col justify-between border-border bg-surface">
               <div>
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <QuovexBadge variant="emerald" size="md">{note.subject}</QuovexBadge>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <QuovexBadge variant="emerald" size="sm">{note.subject}</QuovexBadge>
                   <button
                     onClick={async () => {
                       if (currentUser && confirm('Delete this learning note?')) {
                         await deleteUserNote(currentUser.uid, note.id);
                       }
                     }}
-                    className="text-text-secondary hover:text-error p-1.5 rounded-lg hover:bg-error-container transition-colors"
+                    className="text-text-secondary hover:text-error p-1 rounded-lg hover:bg-error-container/20 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                <h3 className="text-title font-bold text-text-primary">{note.title}</h3>
-                <div className="mt-3 text-body text-text-secondary line-clamp-4 leading-relaxed">
+                <h3 className="text-sm font-bold text-text-primary">{note.title}</h3>
+                <div className="mt-2 text-xs text-text-secondary line-clamp-3 leading-relaxed">
                   <LatexRenderer content={note.content} />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-border flex items-center justify-between gap-3 mt-4">
-                <span className="text-caption font-semibold text-text-tertiary">
+              <div className="pt-3 border-t border-border flex items-center justify-between gap-2 mt-3">
+                <span className="text-[10px] font-semibold text-text-secondary">
                   {new Date(note.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </span>
 
                 <QuovexButton
                   variant="outline"
-                  size="md"
+                  size="sm"
                   onClick={() => handleGenerateFlashcards(note)}
-                  leftIcon={<Sparkles className="w-4 h-4" />}
+                  leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+                  className="text-xs"
                 >
-                  Create SM-2 Deck
+                  Make SM-2 Deck
                 </QuovexButton>
               </div>
             </QuovexCard>

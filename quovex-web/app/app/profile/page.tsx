@@ -15,7 +15,6 @@ import {
   Sun,
   Monitor,
   Tag,
-  ArrowRight,
   Clock,
   Award,
   BookOpen,
@@ -57,7 +56,7 @@ export default function ProfilePage() {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const { themeMode, resolvedTheme, setThemeMode } = useTheme();
+  const { themeMode, setThemeMode } = useTheme();
   const currentUser = getCurrentUser();
 
   useEffect(() => {
@@ -81,7 +80,6 @@ export default function ProfilePage() {
     };
   }, [currentUser]);
 
-  // Compute real user statistics
   const totalStudyMinutes = sessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
   const totalStudyHours = (totalStudyMinutes / 60).toFixed(1);
   const avgFocusScore = sessions.length > 0
@@ -90,7 +88,6 @@ export default function ProfilePage() {
 
   const currentXp = profile?.xp || 100;
   
-  // 4 Scholar Ranks matching Android
   const rankInfo = currentXp >= 3500
     ? { name: 'Grandmaster', level: 4, icon: ASSETS.icons3d.rankGrandmaster, nextXp: 5000, progress: 100 }
     : currentXp >= 1500
@@ -146,52 +143,50 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-24">
+    <div className="max-w-4xl mx-auto space-y-6 pb-20">
       {/* ── 1. Hero Identity & Scholar Rank Card ─────────────────────────────── */}
-      <QuovexCard variant="glass" className="relative overflow-hidden p-8 sm:p-12 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
-          <div className="flex items-center gap-6">
+      <QuovexCard className="p-5 sm:p-8 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-4 sm:gap-5">
             {/* Avatar with Click-to-Change */}
-            <div className="relative group cursor-pointer" onClick={() => setIsEditingAvatar(true)}>
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-primary-container border-2 border-primary shadow-glow flex items-center justify-center relative">
+            <div className="relative group cursor-pointer shrink-0" onClick={() => setIsEditingAvatar(true)}>
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-primary-container border-2 border-primary shadow-sm flex items-center justify-center relative">
                 {profile?.avatarId ? (
                   <Image
                     src={ASSETS.avatars(profile.avatarId)}
                     alt="Scholar Avatar"
-                    width={112}
-                    height={112}
+                    width={80}
+                    height={80}
                     className="object-cover transition-transform group-hover:scale-105"
                     unoptimized
                   />
                 ) : (
-                  <span className="text-display font-black text-primary">
+                  <span className="text-xl sm:text-2xl font-black text-primary">
                     {profile?.name ? profile.name.charAt(0).toUpperCase() : 'S'}
                   </span>
                 )}
               </div>
-              <div className="absolute inset-0 rounded-2xl bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-label font-bold transition-opacity">
-                Change Avatar
+              <div className="absolute inset-0 rounded-2xl bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold transition-opacity">
+                Change
               </div>
             </div>
 
             <div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <h1 className="text-display font-black text-text-primary">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-bold text-text-primary">
                   {profile?.name || 'Scholar'}
                 </h1>
-                <div className="self-start sm:self-auto">
-                  {isPro ? (
-                    <QuovexBadge variant="gold" size="lg">PRO VIP</QuovexBadge>
-                  ) : (
-                    <QuovexBadge variant="emerald" size="lg">FREE SCHOLAR</QuovexBadge>
-                  )}
-                </div>
+                {isPro ? (
+                  <QuovexBadge variant="gold" size="sm">PRO VIP</QuovexBadge>
+                ) : (
+                  <QuovexBadge variant="emerald" size="sm">FREE</QuovexBadge>
+                )}
               </div>
-              <p className="text-body text-text-secondary mt-2">{profile?.email}</p>
+              <p className="text-xs text-text-secondary mt-0.5">{profile?.email}</p>
 
               {/* Scholar Rank Chip */}
-              <div className="flex items-center gap-3 mt-4">
-                <div className="w-8 h-8 relative shrink-0 drop-shadow-sm">
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-5 h-5 relative shrink-0">
                   <Image
                     src={rankInfo.icon}
                     alt={rankInfo.name}
@@ -200,40 +195,40 @@ export default function ProfilePage() {
                     unoptimized
                   />
                 </div>
-                <span className="text-body font-extrabold text-primary">
+                <span className="text-xs font-bold text-primary">
                   Level {rankInfo.level} — {rankInfo.name}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex flex-col sm:items-end gap-3 w-full sm:w-auto">
+          {/* Quick Upgrade Button */}
+          <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
             {!isPro && (
               <QuovexButton
                 variant="primary"
-                size="lg"
+                size="sm"
                 onClick={() => setShowUpgradeModal(true)}
-                leftIcon={<Crown className="w-5 h-5" />}
+                leftIcon={<Crown className="w-4 h-4" />}
               >
                 Upgrade to Pro
               </QuovexButton>
             )}
-            <span className="text-label text-text-tertiary font-mono font-bold">
-              UID: {currentUser?.uid.slice(0, 12)}...
+            <span className="text-[10px] text-text-tertiary font-mono">
+              UID: {currentUser?.uid.slice(0, 10)}...
             </span>
           </div>
         </div>
 
         {/* Scholar XP Progression Bar */}
-        <div className="mt-8 pt-6 border-t border-border space-y-3">
-          <div className="flex items-center justify-between text-body">
+        <div className="mt-5 pt-4 border-t border-border space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-text-secondary">Scholar XP Progress</span>
             <span className="font-mono font-bold text-text-primary">{currentXp} / {rankInfo.nextXp} XP</span>
           </div>
-          <div className="w-full h-4 rounded-full bg-surface-variant overflow-hidden border border-border">
+          <div className="w-full h-2.5 rounded-full bg-surface-variant overflow-hidden border border-border">
             <div
-              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 rounded-full shadow-glow"
+              className="h-full bg-primary transition-all duration-500 rounded-full"
               style={{ width: `${rankInfo.progress}%` }}
             />
           </div>
@@ -241,119 +236,119 @@ export default function ProfilePage() {
       </QuovexCard>
 
       {/* ── 2. Real Stats 3-Grid ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <QuovexCard className="flex items-center gap-5 p-6 shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-primary-container border border-primary/40 flex items-center justify-center shrink-0 shadow-sm">
-            <Clock className="w-7 h-7 text-primary" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <QuovexCard className="flex items-center gap-3.5 p-4 shadow-sm">
+          <div className="w-11 h-11 rounded-xl bg-primary-container border border-primary/30 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="text-label text-text-secondary font-bold uppercase tracking-wider mb-1">Focus Hours Logged</p>
-            <p className="text-display font-black text-text-primary">{totalStudyHours} hrs</p>
+            <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Total Focus Time</p>
+            <p className="text-lg font-black text-text-primary">{totalStudyHours} hrs</p>
           </div>
         </QuovexCard>
 
-        <QuovexCard className="flex items-center gap-5 p-6 shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-[rgba(255,107,53,0.15)] border border-streak-fire/40 flex items-center justify-center shrink-0 shadow-sm">
-            <Flame className="w-7 h-7 text-streak-fire fill-streak-fire" />
+        <QuovexCard className="flex items-center gap-3.5 p-4 shadow-sm">
+          <div className="w-11 h-11 rounded-xl bg-[rgba(255,107,53,0.15)] border border-streak-fire/30 flex items-center justify-center shrink-0">
+            <Flame className="w-5 h-5 text-streak-fire fill-streak-fire" />
           </div>
           <div>
-            <p className="text-label text-text-secondary font-bold uppercase tracking-wider mb-1">Active Streak</p>
-            <p className="text-display font-black text-text-primary">{profile?.streakDays || 1} Days</p>
+            <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Active Streak</p>
+            <p className="text-lg font-black text-text-primary">{profile?.streakDays || 1} Days</p>
           </div>
         </QuovexCard>
 
-        <QuovexCard className="flex items-center gap-5 p-6 shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-warning-container border border-warning/40 flex items-center justify-center shrink-0 shadow-sm">
-            <Award className="w-7 h-7 text-warning" />
+        <QuovexCard className="flex items-center gap-3.5 p-4 shadow-sm">
+          <div className="w-11 h-11 rounded-xl bg-warning-container/30 border border-warning/30 flex items-center justify-center shrink-0">
+            <Award className="w-5 h-5 text-warning" />
           </div>
           <div>
-            <p className="text-label text-text-secondary font-bold uppercase tracking-wider mb-1">Average Focus Score</p>
-            <p className="text-display font-black text-text-primary">{avgFocusScore}%</p>
+            <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Average Focus</p>
+            <p className="text-lg font-black text-text-primary">{avgFocusScore}%</p>
           </div>
         </QuovexCard>
       </div>
 
       {/* ── 3. Canonical 3-Mode Theme Selector (Dark / Light / System) ─────── */}
-      <QuovexCard className="space-y-6 p-8 shadow-sm">
+      <QuovexCard className="space-y-4 p-5 sm:p-6 shadow-sm">
         <div>
-          <h2 className="text-title font-bold text-text-primary flex items-center gap-3">
-            <Moon className="w-6 h-6 text-primary" />
-            Appearance & Theme Engine
+          <h2 className="text-sm sm:text-base font-bold text-text-primary flex items-center gap-2">
+            <Moon className="w-4 h-4 text-primary" />
+            Appearance & Theme
           </h2>
-          <p className="text-body text-text-secondary mt-1.5">
-            Choose your preferred interface theme. Synchronized seamlessly across all screens and components.
+          <p className="text-xs text-text-secondary mt-0.5">
+            Synchronized seamlessly across all pages and study components.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={() => setThemeMode('DARK')}
-            className={`p-5 rounded-2xl border flex flex-col items-start gap-3 transition-all text-left ${
+            className={`p-3.5 rounded-xl border flex items-center gap-3 transition-all text-left ${
               themeMode === 'DARK'
-                ? 'bg-primary-container border-primary shadow-glow-sm text-primary font-bold'
-                : 'bg-surface-variant border-border text-text-secondary hover:text-text-primary hover:border-border/80'
+                ? 'bg-primary-container border-primary text-primary font-bold shadow-xs'
+                : 'bg-surface-variant border-border text-text-secondary hover:text-text-primary'
             }`}
           >
-            <Moon className="w-6 h-6 shrink-0" />
+            <Moon className="w-5 h-5 shrink-0" />
             <div>
-              <p className="text-body font-bold text-text-primary">🌙 Cyber Dark</p>
-              <p className="text-label opacity-80 mt-1">Default Emerald palette</p>
+              <p className="text-xs font-bold text-text-primary">🌙 Cyber Dark</p>
+              <p className="text-[10px] opacity-75">Default palette</p>
             </div>
           </button>
 
           <button
             onClick={() => setThemeMode('LIGHT')}
-            className={`p-5 rounded-2xl border flex flex-col items-start gap-3 transition-all text-left ${
+            className={`p-3.5 rounded-xl border flex items-center gap-3 transition-all text-left ${
               themeMode === 'LIGHT'
-                ? 'bg-primary-container border-primary shadow-glow-sm text-primary font-bold'
-                : 'bg-surface-variant border-border text-text-secondary hover:text-text-primary hover:border-border/80'
+                ? 'bg-primary-container border-primary text-primary font-bold shadow-xs'
+                : 'bg-surface-variant border-border text-text-secondary hover:text-text-primary'
             }`}
           >
-            <Sun className="w-6 h-6 shrink-0" />
+            <Sun className="w-5 h-5 shrink-0" />
             <div>
-              <p className="text-body font-bold text-text-primary">☀️ Clean Light</p>
-              <p className="text-label opacity-80 mt-1">Crisp high-contrast day mode</p>
+              <p className="text-xs font-bold text-text-primary">☀️ Clean Light</p>
+              <p className="text-[10px] opacity-75">High-contrast day mode</p>
             </div>
           </button>
 
           <button
             onClick={() => setThemeMode('SYSTEM')}
-            className={`p-5 rounded-2xl border flex flex-col items-start gap-3 transition-all text-left ${
+            className={`p-3.5 rounded-xl border flex items-center gap-3 transition-all text-left ${
               themeMode === 'SYSTEM'
-                ? 'bg-primary-container border-primary shadow-glow-sm text-primary font-bold'
-                : 'bg-surface-variant border-border text-text-secondary hover:text-text-primary hover:border-border/80'
+                ? 'bg-primary-container border-primary text-primary font-bold shadow-xs'
+                : 'bg-surface-variant border-border text-text-secondary hover:text-text-primary'
             }`}
           >
-            <Monitor className="w-6 h-6 shrink-0" />
+            <Monitor className="w-5 h-5 shrink-0" />
             <div>
-              <p className="text-body font-bold text-text-primary">🔄 System Default</p>
-              <p className="text-label opacity-80 mt-1">Follows OS theme automatically</p>
+              <p className="text-xs font-bold text-text-primary">🔄 System Default</p>
+              <p className="text-[10px] opacity-75">Follows OS theme</p>
             </div>
           </button>
         </div>
       </QuovexCard>
 
       {/* ── 4. Study Target & Preferences ─────────────────────────────────── */}
-      <QuovexCard className="space-y-6 p-8 shadow-sm">
+      <QuovexCard className="space-y-4 p-5 sm:p-6 shadow-sm">
         <div>
-          <h2 className="text-title font-bold text-text-primary flex items-center gap-3">
-            <BookOpen className="w-6 h-6 text-primary" />
+          <h2 className="text-sm sm:text-base font-bold text-text-primary flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
             Academic Target & Goals
           </h2>
-          <p className="text-body text-text-secondary mt-1.5">
-            Personalize your AI study coach and diagnostic quizzes to your specific competitive exam.
+          <p className="text-xs text-text-secondary mt-0.5">
+            Calibrate your AI coach and roadmap milestones to your exam.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-label font-bold text-text-secondary uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-text-secondary mb-1">
               Target Competitive Exam
             </label>
             <select
               value={targetExam}
               onChange={(e) => setTargetExam(e.target.value)}
-              className="w-full bg-surface-variant border border-border rounded-xl px-5 py-3.5 text-body text-text-primary font-bold focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all cursor-pointer"
+              className="w-full bg-surface-variant border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-text-primary font-bold focus:outline-none focus:border-primary transition-all cursor-pointer"
             >
               {EXAMS.map((ex) => (
                 <option key={ex} value={ex} className="bg-surface text-text-primary">
@@ -364,7 +359,7 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="block text-label font-bold text-text-secondary uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-text-secondary mb-1">
               Daily Focus Target (Hours)
             </label>
             <input
@@ -373,15 +368,15 @@ export default function ProfilePage() {
               max={16}
               value={dailyGoalHours}
               onChange={(e) => setDailyGoalHours(Number(e.target.value))}
-              className="w-full bg-surface-variant border border-border rounded-xl px-5 py-3.5 text-body text-text-primary font-bold focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all"
+              className="w-full bg-surface-variant border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-text-primary font-bold focus:outline-none focus:border-primary transition-all"
             />
           </div>
         </div>
 
-        <div className="flex justify-end pt-2">
+        <div className="flex justify-end pt-1">
           <QuovexButton
             variant="primary"
-            size="lg"
+            size="sm"
             onClick={handleSavePreferences}
             isLoading={isSavingSettings}
           >
@@ -390,120 +385,117 @@ export default function ProfilePage() {
         </div>
       </QuovexCard>
 
-      {/* ── 5. Promotion Coupon & Entitlement ───────────────────────────────── */}
-      <QuovexCard className="space-y-6 p-8 shadow-sm">
+      {/* ── 5. Promotion Coupon ────────────────────────────────────────────── */}
+      <QuovexCard className="space-y-4 p-5 sm:p-6 shadow-sm">
         <div>
-          <h2 className="text-title font-bold text-text-primary flex items-center gap-3">
-            <Tag className="w-6 h-6 text-primary" />
-            Marketing & Institutional Coupons
+          <h2 className="text-sm sm:text-base font-bold text-text-primary flex items-center gap-2">
+            <Tag className="w-4 h-4 text-primary" />
+            Promo Coupons & Vouchers
           </h2>
-          <p className="text-body text-text-secondary mt-1.5">
-            Redeem official Quovex promo codes, school partner licenses, or founder coupons.
+          <p className="text-xs text-text-secondary mt-0.5">
+            Redeem promo codes, school licenses, or founder passes.
           </p>
         </div>
 
-        <form onSubmit={handleApplyCoupon} className="flex flex-col sm:flex-row gap-4 pt-2">
+        <form onSubmit={handleApplyCoupon} className="flex flex-col sm:flex-row gap-2.5">
           <input
             type="text"
             placeholder="e.g. FOUNDER50 or STUDENT100"
             value={couponCode}
             onChange={(e) => setCouponCode(e.target.value)}
-            className="flex-1 bg-surface-variant border border-border rounded-xl px-5 py-3.5 text-body text-text-primary font-mono font-bold uppercase focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all"
+            className="flex-1 bg-surface-variant border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-text-primary font-mono font-bold uppercase focus:outline-none focus:border-primary transition-all"
           />
           <QuovexButton
             type="submit"
             variant="secondary"
-            size="lg"
+            size="sm"
             isLoading={isValidatingCoupon}
             disabled={!couponCode.trim()}
           >
-            Redeem Coupon
+            Redeem
           </QuovexButton>
         </form>
 
         {couponStatus && (
           <div
-            className={`p-4 rounded-xl text-body font-bold flex items-center gap-3 shadow-sm ${
+            className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs ${
               couponStatus.success
                 ? 'bg-success-container text-success border border-success/30'
                 : 'bg-error-container text-error border border-error/30'
             }`}
           >
-            <CheckCircle2 className="w-5 h-5 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{couponStatus.message}</span>
           </div>
         )}
       </QuovexCard>
 
       {/* ── 6. Referral Program Banner ──────────────────────────────────────── */}
-      <QuovexCard variant="elevated" className="border-primary/40 bg-gradient-to-r from-primary-container/40 to-surface-elevated p-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-glow">
-              <Share2 className="w-7 h-7" />
-            </div>
-            <div>
-              <h3 className="text-title font-bold text-text-primary">Refer a Study Partner — Get 7 Days Pro Free</h3>
-              <p className="text-body text-text-secondary mt-1">Your Referral Code: <span className="font-mono font-bold text-primary">{currentUser?.uid.slice(0, 6).toUpperCase()}</span></p>
-            </div>
+      <QuovexCard className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-primary/30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 text-primary flex items-center justify-center shrink-0">
+            <Share2 className="w-5 h-5" />
           </div>
-          <QuovexButton
-            variant="secondary"
-            size="lg"
-            className="w-full sm:w-auto"
-            onClick={() => {
-              if (navigator.clipboard) {
-                navigator.clipboard.writeText(`Join me on Quovex AI Study Operating System! Use code ${currentUser?.uid.slice(0, 6).toUpperCase()} at https://quovex.online`);
-                alert('Referral link copied to clipboard!');
-              }
-            }}
-          >
-            Copy Link
-          </QuovexButton>
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-text-primary">Refer a Study Partner — 7 Days Pro Free</h3>
+            <p className="text-[11px] text-text-secondary">Your Code: <span className="font-mono font-bold text-primary">{currentUser?.uid.slice(0, 6).toUpperCase()}</span></p>
+          </div>
         </div>
+        <QuovexButton
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(`Join me on Quovex AI Study Operating System! Use code ${currentUser?.uid.slice(0, 6).toUpperCase()} at https://quovex.online`);
+              alert('Referral link copied to clipboard!');
+            }
+          }}
+        >
+          Copy Link
+        </QuovexButton>
       </QuovexCard>
 
       {/* ── 7. Sign Out Action ──────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between pt-8 gap-4 border-t border-border">
-        <span className="text-label font-bold text-text-tertiary">Thought and crafted with precision in Noida, India 🇮🇳</span>
+      <div className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-3 border-t border-border">
+        <span className="text-[11px] text-text-tertiary">Crafted with precision in Noida, India 🇮🇳</span>
         <button
           onClick={() => signOut()}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl text-body font-bold text-error hover:bg-error-container border border-error/20 transition-colors shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-error hover:bg-error-container/20 border border-error/20 transition-colors"
         >
-          <LogOut className="w-5 h-5" />
-          Sign Out of Account
+          <LogOut className="w-3.5 h-3.5" />
+          Sign Out
         </button>
       </div>
 
       {/* ── 8. Avatar Picker Modal ──────────────────────────────────────────── */}
       {isEditingAvatar && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-surface border border-border rounded-3xl max-w-2xl w-full p-8 space-y-8 shadow-2xl animate-in fade-in zoom-in-95">
+          <div className="bg-surface border border-border rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-headline font-black text-text-primary">Choose Your Scholar Avatar</h3>
-                <p className="text-body text-text-secondary mt-1">Select from 12 official transparent illustrated characters</p>
+                <h3 className="text-base font-bold text-text-primary">Choose Your Scholar Avatar</h3>
+                <p className="text-xs text-text-secondary mt-0.5">Select from 12 official illustrated characters</p>
               </div>
               <button
                 onClick={() => setIsEditingAvatar(false)}
-                className="w-10 h-10 rounded-full bg-surface-variant text-text-secondary hover:text-text-primary flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-full bg-surface-variant text-text-secondary hover:text-text-primary flex items-center justify-center transition-colors text-xs"
               >
                 ✕
               </button>
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
               {Array.from({ length: 12 }, (_, i) => i + 1).map((id) => (
                 <button
                   key={id}
                   onClick={() => handleSelectAvatar(id)}
-                  className={`relative p-4 rounded-2xl border transition-all flex flex-col items-center gap-3 ${
+                  className={`p-2 rounded-xl border transition-all flex flex-col items-center gap-1.5 ${
                     profile?.avatarId === id
-                      ? 'bg-primary-container border-primary shadow-glow-sm scale-105'
-                      : 'bg-surface-variant border-border hover:border-primary/50 hover:bg-surface-elevated'
+                      ? 'bg-primary-container border-primary shadow-xs scale-105'
+                      : 'bg-surface-variant border-border hover:border-primary/50'
                   }`}
                 >
-                  <div className="w-20 h-20 relative drop-shadow-md">
+                  <div className="w-12 h-12 relative">
                     <Image
                       src={ASSETS.avatars(id)}
                       alt={`Avatar ${id}`}
@@ -512,7 +504,7 @@ export default function ProfilePage() {
                       unoptimized
                     />
                   </div>
-                  <span className="text-label font-bold text-text-secondary">Avatar #{id}</span>
+                  <span className="text-[10px] font-bold text-text-secondary">#{id}</span>
                 </button>
               ))}
             </div>
@@ -520,40 +512,42 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* ── 9. Upgrade Modal (Phase 18 Foundation) ──────────────────────────── */}
+      {/* ── 9. Upgrade Modal ────────────────────────────────────────────────── */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-surface border border-border rounded-3xl max-w-md w-full p-8 space-y-8 shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 rounded-2xl bg-primary-container border border-primary text-primary flex items-center justify-center mx-auto shadow-glow">
-                <Crown className="w-8 h-8" />
+          <div className="bg-surface border border-border rounded-2xl max-w-sm w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center p-2 mx-auto">
+                <img
+                  src={ASSETS.icons3d.rankGrandmaster}
+                  alt="Pro VIP"
+                  className="w-8 h-8 object-contain"
+                />
               </div>
-              <h3 className="text-headline font-black text-text-primary">Unlock Quovex Pro VIP</h3>
-              <p className="text-body text-text-secondary leading-relaxed px-4">
-                Unlimited AI tutoring, camera focus mode, Quovex Originals, and 7-day streak protection.
+              <h3 className="text-base font-bold text-text-primary">Unlock Quovex Pro VIP</h3>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Unlimited AI tutoring, 6-tier vision proofs, Quovex Originals, and 7-day streak recovery.
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-surface-variant border border-border space-y-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-title font-bold text-text-primary">Pro Annual Plan</p>
-                  <p className="text-body text-text-secondary mt-1">Billed annually (₹83/month)</p>
-                </div>
-                <span className="text-headline font-black text-primary">₹999 / yr</span>
+            <div className="p-3.5 rounded-xl bg-surface-variant border border-border flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-text-primary">Pro Annual Plan</p>
+                <p className="text-[10px] text-text-secondary">Billed annually (₹83/mo)</p>
               </div>
+              <span className="text-sm font-black text-primary">₹999 / yr</span>
             </div>
 
-            <div className="space-y-3 pt-2">
+            <div className="space-y-2 pt-1">
               <QuovexButton
                 variant="primary"
-                size="lg"
+                size="md"
                 className="w-full"
                 onClick={async () => {
                   if (currentUser) {
                     await updateUserProfile(currentUser.uid, { subscriptionTier: 'PRO_ANNUAL' });
                     setShowUpgradeModal(false);
-                    alert('🎉 Welcome to Quovex Pro VIP! All premium capabilities unlocked.');
+                    alert('🎉 Welcome to Quovex Pro VIP!');
                   }
                 }}
               >
@@ -561,8 +555,8 @@ export default function ProfilePage() {
               </QuovexButton>
               <QuovexButton
                 variant="ghost"
-                size="lg"
-                className="w-full text-body"
+                size="sm"
+                className="w-full text-xs"
                 onClick={() => setShowUpgradeModal(false)}
               >
                 Maybe Later

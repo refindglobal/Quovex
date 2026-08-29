@@ -41,8 +41,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-[#111917] border border-border rounded-2xl p-8 shadow-2xl space-y-6">
         {/* Brand */}
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center text-primary">
-            <Layers className="w-6 h-6" />
+          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center p-1.5 shadow-[0_0_20px_rgba(0,200,150,0.3)]">
+            <img
+              src="/assets/brand/emblem.png"
+              alt="Quovex Logo"
+              className="w-10 h-10 object-contain"
+            />
           </div>
           <h1 className="text-xl font-bold text-foreground tracking-tight">Quovex Control Center</h1>
           <p className="text-xs text-muted-foreground">Authorized Administrator Access Only</p>

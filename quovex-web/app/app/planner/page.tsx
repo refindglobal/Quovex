@@ -7,12 +7,8 @@ import {
   Sparkles,
   CheckCircle2,
   Circle,
-  Bot,
   Calendar,
   Clock,
-  ArrowRight,
-  Plus,
-  Compass,
 } from 'lucide-react';
 import { getCurrentUser } from '@/lib/firebase/auth';
 import {
@@ -28,12 +24,9 @@ import { QuovexCard } from '@/components/ui/QuovexCard';
 import { QuovexBadge } from '@/components/ui/QuovexBadge';
 import { ASSETS } from '@/lib/assets';
 
-const DEFAULT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
 export default function StudyPlannerPage() {
   const [profile, setProfile] = useState<any>(null);
   const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
-  const [loading, setLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const currentUser = getCurrentUser();
@@ -158,7 +151,7 @@ export default function StudyPlannerPage() {
 
       await saveStudyPlan(currentUser.uid, plan);
       setIsGenerating(false);
-    }, 1200);
+    }, 1100);
   };
 
   const tasks = studyPlan?.tasks || [];
@@ -166,81 +159,84 @@ export default function StudyPlannerPage() {
   const progressPct = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-24">
+    <div className="max-w-4xl mx-auto space-y-6 pb-20">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-display font-black text-text-primary flex items-center gap-4">
-            <Zap className="w-10 h-10 text-primary" />
-            AI Study Roadmap & Planner
-          </h1>
-          <p className="text-section text-text-secondary mt-2">
-            Weekly dynamic task schedule customized for <span className="text-primary font-bold">{profile?.targetExam || 'JEE Advanced'}</span>.
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2.5">
+              <Zap className="w-7 h-7 text-primary" />
+              AI Study Roadmap & Planner
+            </h1>
+            <QuovexBadge variant="emerald" size="sm">Dynamic</QuovexBadge>
+          </div>
+          <p className="text-xs sm:text-sm text-text-secondary mt-1">
+            Weekly milestone task schedule customized for <strong className="text-primary">{profile?.targetExam || 'JEE Advanced'}</strong>.
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div>
           <QuovexButton
             variant="primary"
-            size="lg"
+            size="sm"
             onClick={handleGeneratePlan}
             isLoading={isGenerating}
-            leftIcon={<Sparkles className="w-5 h-5" />}
+            leftIcon={<Sparkles className="w-4 h-4" />}
           >
-            {tasks.length > 0 ? 'Regenerate Dynamic Plan' : 'Generate AI Study Plan'}
+            {tasks.length > 0 ? 'Regenerate Plan' : 'Generate AI Plan'}
           </QuovexButton>
         </div>
       </div>
 
       {tasks.length > 0 ? (
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* Progress Bar Card */}
-          <QuovexCard className="p-8 space-y-4 shadow-sm">
+          <QuovexCard className="p-4 sm:p-5 space-y-3 shadow-sm">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-primary" />
-                <h3 className="font-bold text-text-primary text-body">Weekly Milestone Progress</h3>
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-text-primary">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span>Weekly Milestone Progress</span>
               </div>
-              <span className="text-label font-bold text-primary font-mono">
-                {completedCount}/{tasks.length} Completed ({progressPct}%)
+              <span className="text-xs font-bold text-primary font-mono">
+                {completedCount}/{tasks.length} Done ({progressPct}%)
               </span>
             </div>
 
-            <div className="h-3 bg-surface-variant rounded-full overflow-hidden border border-border">
+            <div className="h-2.5 bg-surface-variant rounded-full overflow-hidden border border-border">
               <div
-                className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500 shadow-glow"
+                className="h-full bg-primary rounded-full transition-all duration-500 shadow-glow-xs"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
           </QuovexCard>
 
           {/* Tasks List */}
-          <div className="space-y-4">
-            <h2 className="text-title font-bold text-text-primary mb-3">This Week's High-Yield Tasks</h2>
+          <div className="space-y-2.5">
+            <h2 className="text-xs sm:text-sm font-bold text-text-primary">Scheduled Focus Tasks</h2>
             {tasks.map((task) => (
               <div
                 key={task.id}
                 onClick={() => handleToggleTask(task.id, task.isCompleted)}
-                className={`p-5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                   task.isCompleted
-                    ? 'bg-surface-variant/60 border-border/50 opacity-70'
-                    : 'bg-surface border-border hover:border-primary/40 shadow-sm'
+                    ? 'bg-surface-variant/50 border-border/60 opacity-60'
+                    : 'bg-surface border-border hover:border-primary/40 shadow-xs'
                 }`}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <button className="text-primary shrink-0">
                     {task.isCompleted ? (
-                      <CheckCircle2 className="w-6 h-6 fill-primary text-primary-foreground" />
+                      <CheckCircle2 className="w-5 h-5 fill-primary text-primary-foreground" />
                     ) : (
-                      <Circle className="w-6 h-6 text-text-secondary hover:text-primary" />
+                      <Circle className="w-5 h-5 text-text-secondary hover:text-primary" />
                     )}
                   </button>
 
                   <div>
-                    <span className={`text-body font-semibold block ${task.isCompleted ? 'line-through text-text-secondary' : 'text-text-primary'}`}>
+                    <span className={`text-xs sm:text-sm font-semibold block ${task.isCompleted ? 'line-through text-text-secondary' : 'text-text-primary'}`}>
                       {task.title}
                     </span>
-                    <div className="flex items-center gap-2 mt-1.5 text-label text-text-secondary font-bold">
+                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-text-secondary">
                       <span>{task.dayName}</span>
                       <span>•</span>
                       <span>{task.subject}</span>
@@ -248,11 +244,11 @@ export default function StudyPlannerPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-label text-text-secondary font-mono flex items-center gap-1.5 font-bold">
-                    <Clock className="w-4 h-4" /> {task.durationMinutes}m
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <span className="text-xs text-text-secondary font-mono flex items-center gap-1 font-semibold">
+                    <Clock className="w-3.5 h-3.5" /> {task.durationMinutes}m
                   </span>
-                  <QuovexBadge variant={task.priority === 'HIGH' ? 'fire' : 'muted'} size="md">
+                  <QuovexBadge variant={task.priority === 'HIGH' ? 'fire' : 'muted'} size="sm">
                     {task.priority}
                   </QuovexBadge>
                 </div>
@@ -261,9 +257,9 @@ export default function StudyPlannerPage() {
           </div>
         </div>
       ) : (
-        /* Empty State (Zero Fake Tasks) */
-        <QuovexCard className="p-16 text-center space-y-6 max-w-lg mx-auto shadow-sm">
-          <div className="w-32 h-32 relative mx-auto opacity-90">
+        /* Empty State */
+        <QuovexCard className="p-10 sm:p-14 text-center space-y-4 max-w-md mx-auto shadow-sm">
+          <div className="w-20 h-20 relative mx-auto opacity-80">
             <Image
               src={ASSETS.icons3d.calendar}
               alt="No Study Plan"
@@ -273,19 +269,19 @@ export default function StudyPlannerPage() {
             />
           </div>
           <div>
-            <h3 className="text-headline font-bold text-text-primary">No Active Study Roadmap Yet</h3>
-            <p className="text-body text-text-secondary mt-2 max-w-sm mx-auto">
-              Click below to generate a tailored 7-day high-yield study milestone schedule for {profile?.targetExam || 'your competitive exam'}.
+            <h3 className="text-base font-bold text-text-primary">No Active Study Roadmap Yet</h3>
+            <p className="text-xs text-text-secondary mt-1 max-w-xs mx-auto">
+              Generate a tailored 7-day high-yield study milestone schedule for {profile?.targetExam || 'your competitive exam'}.
             </p>
           </div>
-          <div className="pt-4">
+          <div className="pt-2">
             <QuovexButton
               variant="primary"
-              size="lg"
-              className="shadow-glow"
+              size="md"
+              className="shadow-glow-xs"
               onClick={handleGeneratePlan}
               isLoading={isGenerating}
-              leftIcon={<Sparkles className="w-5 h-5" />}
+              leftIcon={<Sparkles className="w-4 h-4" />}
             >
               Generate AI Study Plan
             </QuovexButton>

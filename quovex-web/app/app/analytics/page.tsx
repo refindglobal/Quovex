@@ -24,7 +24,6 @@ import {
 import { QuovexButton } from '@/components/ui/QuovexButton';
 import { QuovexCard } from '@/components/ui/QuovexCard';
 import { QuovexBadge } from '@/components/ui/QuovexBadge';
-import { ASSETS } from '@/lib/assets';
 
 export default function AnalyticsPage() {
   const [sessions, setSessions] = useState<StudySession[]>([]);
@@ -88,27 +87,27 @@ export default function AnalyticsPage() {
       dayName,
       dateNum: d.getDate(),
       mins: dayMins,
-      heightPct: Math.min(100, Math.round((dayMins / 180) * 100)), // scale to 3 hours max
+      heightPct: Math.min(100, Math.round((dayMins / 180) * 100)),
     };
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-24">
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-display font-black text-text-primary flex items-center gap-4">
-            <BarChart3 className="w-10 h-10 text-primary" />
-            Performance Analytics & Diagnostic Metrics
+          <h1 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2.5">
+            <BarChart3 className="w-7 h-7 text-primary" />
+            Performance Analytics
           </h1>
-          <p className="text-section text-text-secondary mt-2">
-            Real-time biometric focus metrics, subject distribution, and active recall velocity.
+          <p className="text-xs sm:text-sm text-text-secondary mt-1">
+            Focus metrics, subject distribution, and diagnostic accuracy trends.
           </p>
         </div>
 
         <QuovexButton
           variant="secondary"
-          size="lg"
+          size="sm"
           onClick={() => {
             const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({ sessions, quizHistory, profile }));
             const downloadAnchor = document.createElement('a');
@@ -118,86 +117,86 @@ export default function AnalyticsPage() {
             downloadAnchor.click();
             downloadAnchor.remove();
           }}
-          leftIcon={<Download className="w-5 h-5" />}
+          leftIcon={<Download className="w-4 h-4" />}
         >
-          Export Study Data
+          Export Data
         </QuovexButton>
       </div>
 
       {/* ── 1. Top 4 Metric KPI Cards ──────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <QuovexCard className="p-6 flex items-center gap-5 shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-primary-container text-primary flex items-center justify-center shrink-0 shadow-sm">
-            <Clock className="w-7 h-7" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <QuovexCard className="p-4 flex items-center gap-3 shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-primary-container text-primary flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-label font-bold text-text-secondary uppercase tracking-wider block mb-1">Total Study Time</span>
-            <h3 className="text-display font-black text-text-primary">{totalHours} hrs</h3>
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider block">Total Focus</span>
+            <h3 className="text-lg sm:text-xl font-black text-text-primary">{totalHours} hrs</h3>
           </div>
         </QuovexCard>
 
-        <QuovexCard className="p-6 flex items-center gap-5 shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-warning-container text-warning flex items-center justify-center shrink-0 shadow-sm">
-            <Award className="w-7 h-7" />
+        <QuovexCard className="p-4 flex items-center gap-3 shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-warning-container/30 text-warning flex items-center justify-center shrink-0">
+            <Award className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-label font-bold text-text-secondary uppercase tracking-wider block mb-1">Average Focus Score</span>
-            <h3 className="text-display font-black text-text-primary">{avgFocusScore}%</h3>
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider block">Avg Focus</span>
+            <h3 className="text-lg sm:text-xl font-black text-text-primary">{avgFocusScore}%</h3>
           </div>
         </QuovexCard>
 
-        <QuovexCard className="p-6 flex items-center gap-5 shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-[rgba(255,107,53,0.15)] text-streak-fire flex items-center justify-center shrink-0 shadow-sm">
-            <Flame className="w-7 h-7 fill-streak-fire" />
+        <QuovexCard className="p-4 flex items-center gap-3 shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-[rgba(255,107,53,0.15)] text-streak-fire flex items-center justify-center shrink-0">
+            <Flame className="w-5 h-5 fill-streak-fire" />
           </div>
           <div>
-            <span className="text-label font-bold text-text-secondary uppercase tracking-wider block mb-1">Current Streak</span>
-            <h3 className="text-display font-black text-text-primary">{profile?.streakDays || 1} Days</h3>
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider block">Streak</span>
+            <h3 className="text-lg sm:text-xl font-black text-text-primary">{profile?.streakDays || 1} Days</h3>
           </div>
         </QuovexCard>
 
-        <QuovexCard className="p-6 flex items-center gap-5 shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-surface-variant text-primary flex items-center justify-center shrink-0 shadow-sm">
-            <TrendingUp className="w-7 h-7" />
+        <QuovexCard className="p-4 flex items-center gap-3 shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-surface-variant text-primary flex items-center justify-center shrink-0">
+            <TrendingUp className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-label font-bold text-text-secondary uppercase tracking-wider block mb-1">Avg Session Length</span>
-            <h3 className="text-display font-black text-text-primary">{avgSessionLength} mins</h3>
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider block">Avg Session</span>
+            <h3 className="text-lg sm:text-xl font-black text-text-primary">{avgSessionLength}m</h3>
           </div>
         </QuovexCard>
       </div>
 
-      {/* ── 2. 7-Day Focus Time Chart & Subject Breakdown ──────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* ── 2. 7-Day Focus Chart & Subject Breakdown ───────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Weekly Focus Bar Chart */}
-        <QuovexCard className="lg:col-span-2 p-8 space-y-8 flex flex-col justify-between shadow-sm">
+        <QuovexCard className="lg:col-span-2 p-5 space-y-4 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-text-primary text-title flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-primary" />
-                Past 7 Days Focus Velocity
+              <h3 className="font-bold text-text-primary text-sm sm:text-base flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-primary" />
+                7-Day Focus Velocity
               </h3>
-              <p className="text-body text-text-secondary mt-1.5">Daily minutes of recorded uninterrupted focus</p>
+              <p className="text-xs text-text-secondary mt-0.5">Daily recorded focus minutes</p>
             </div>
-            <QuovexBadge variant="emerald" size="lg">GOAL: 180M/DAY</QuovexBadge>
+            <QuovexBadge variant="emerald" size="sm">GOAL: 180M/D</QuovexBadge>
           </div>
 
           {/* Bar Chart Graphics */}
-          <div className="grid grid-cols-7 gap-3 sm:gap-6 items-end h-56 pt-6 border-b border-border">
+          <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end h-44 pt-4 border-b border-border">
             {dayBars.map((bar, idx) => (
-              <div key={idx} className="flex flex-col items-center gap-3 h-full justify-end group">
-                <span className="text-label font-mono text-text-secondary font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+              <div key={idx} className="flex flex-col items-center gap-2 h-full justify-end group">
+                <span className="text-[10px] font-mono text-text-secondary font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                   {bar.mins}m
                 </span>
-                <div className="w-full bg-surface-variant rounded-t-xl h-full flex items-end overflow-hidden p-1 border border-border/50 border-b-0">
+                <div className="w-full bg-surface-variant rounded-t-lg h-full flex items-end overflow-hidden p-0.5 border border-border/40 border-b-0">
                   <div
-                    className="w-full bg-gradient-to-t from-primary to-secondary rounded-t-lg transition-all duration-700 shadow-glow"
-                    style={{ height: `${Math.max(8, bar.heightPct)}%` }}
+                    className="w-full bg-primary rounded-t-sm transition-all duration-500"
+                    style={{ height: `${Math.max(6, bar.heightPct)}%` }}
                   />
                 </div>
-                <div className="text-center pb-2">
-                  <span className="text-body font-bold text-text-primary block">{bar.dayName}</span>
-                  <span className="text-label text-text-secondary block font-bold">{bar.dateNum}</span>
+                <div className="text-center pb-1">
+                  <span className="text-xs font-bold text-text-primary block">{bar.dayName}</span>
+                  <span className="text-[10px] text-text-secondary block">{bar.dateNum}</span>
                 </div>
               </div>
             ))}
@@ -205,58 +204,58 @@ export default function AnalyticsPage() {
         </QuovexCard>
 
         {/* Subject Distribution Card */}
-        <QuovexCard className="p-8 space-y-6 flex flex-col justify-between shadow-sm">
+        <QuovexCard className="p-5 space-y-4 flex flex-col justify-between shadow-sm">
           <div>
-            <h3 className="font-bold text-text-primary text-title flex items-center gap-3">
-              <PieChart className="w-5 h-5 text-primary" />
-              Subject Time Distribution
+            <h3 className="font-bold text-text-primary text-sm sm:text-base flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-primary" />
+              Subject Distribution
             </h3>
-            <p className="text-body text-text-secondary mt-1.5">Breakdown across your focus streams</p>
+            <p className="text-xs text-text-secondary mt-0.5">Time across study streams</p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {subjectList.length > 0 ? (
               subjectList.map((item, idx) => (
-                <div key={idx} className="space-y-2">
-                  <div className="flex items-center justify-between text-body font-semibold">
+                <div key={idx} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-text-primary">{item.subject}</span>
                     <span className="text-primary font-mono">{item.mins}m ({item.percentage}%)</span>
                   </div>
-                  <div className="h-2.5 bg-surface-variant rounded-full overflow-hidden border border-border">
+                  <div className="h-2 bg-surface-variant rounded-full overflow-hidden border border-border">
                     <div
-                      className="h-full bg-primary rounded-full transition-all duration-500 shadow-glow"
+                      className="h-full bg-primary rounded-full transition-all duration-500"
                       style={{ width: `${item.percentage}%` }}
                     />
                   </div>
                 </div>
               ))
             ) : (
-              <div className="p-8 text-center text-body text-text-secondary">
-                No subject logs recorded yet. Start a focus session to see distribution.
+              <div className="p-4 text-center text-xs text-text-secondary">
+                No subject logs recorded yet.
               </div>
             )}
           </div>
 
-          <div className="p-4 rounded-xl bg-surface-variant border border-border text-body text-text-secondary leading-relaxed">
-            💡 <strong>Balance Tip:</strong> Allocate at least 30% of study time to high-weightage topics.
+          <div className="p-3 rounded-xl bg-surface-variant border border-border text-xs text-text-secondary leading-relaxed">
+            💡 <strong>Tip:</strong> Allocate at least 30% of study time to high-weightage topics.
           </div>
         </QuovexCard>
       </div>
 
-      {/* ── 3. Diagnostic Quiz History & Accuracy Trend ─────────────────────── */}
-      <QuovexCard className="p-8 space-y-6 shadow-sm">
-        <h3 className="font-bold text-text-primary text-title flex items-center gap-3">
-          <Sparkles className="w-5 h-5 text-primary" />
-          Recent Diagnostic Quiz Performance
+      {/* ── 3. Diagnostic Quiz History ─────────────────────────────────────── */}
+      <QuovexCard className="p-5 space-y-4 shadow-sm">
+        <h3 className="font-bold text-text-primary text-sm sm:text-base flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          Recent Diagnostic Quiz Results
         </h3>
 
         {quizHistory.length > 0 ? (
-          <div className="divide-y divide-border border-t border-border mt-4">
-            {quizHistory.slice(0, 5).map((q) => (
-              <div key={q.id} className="py-5 flex items-center justify-between">
+          <div className="divide-y divide-border border-t border-border mt-2">
+            {quizHistory.slice(0, 4).map((q) => (
+              <div key={q.id} className="py-3 flex items-center justify-between">
                 <div>
-                  <h4 className="font-bold text-text-primary text-title">{q.subject}</h4>
-                  <p className="text-label text-text-secondary mt-1 font-bold">
+                  <h4 className="font-bold text-text-primary text-xs sm:text-sm">{q.subject}</h4>
+                  <p className="text-[10px] text-text-secondary mt-0.5">
                     {new Date(q.timestamp).toLocaleDateString(undefined, {
                       month: 'short',
                       day: 'numeric',
@@ -266,11 +265,11 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <span className="font-mono font-black text-primary text-title">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono font-bold text-primary text-xs sm:text-sm">
                     {q.correctCount} / {q.totalQuestions} ({Math.round((q.correctCount / q.totalQuestions) * 100)}%)
                   </span>
-                  <QuovexBadge variant={q.correctCount === q.totalQuestions ? 'gold' : 'muted'} size="md">
+                  <QuovexBadge variant={q.correctCount === q.totalQuestions ? 'gold' : 'muted'} size="sm">
                     {q.correctCount === q.totalQuestions ? 'PERFECT' : 'EVALUATED'}
                   </QuovexBadge>
                 </div>
@@ -278,8 +277,8 @@ export default function AnalyticsPage() {
             ))}
           </div>
         ) : (
-          <div className="p-10 text-center text-body text-text-secondary">
-            No diagnostic quiz history yet. Take today's quiz to track accuracy trends.
+          <div className="p-6 text-center text-xs text-text-secondary">
+            No diagnostic quiz history yet.
           </div>
         )}
       </QuovexCard>

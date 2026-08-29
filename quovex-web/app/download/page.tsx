@@ -54,8 +54,12 @@ export default function DownloadPage() {
       <header className="h-20 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-container border border-primary/40 flex items-center justify-center text-primary font-extrabold text-xl shadow-glow">
-              Q
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0 shadow-glow">
+              <img
+                src="/assets/brand/emblem.png"
+                alt="Quovex Logo"
+                className="w-8 h-8 object-contain"
+              />
             </div>
             <div>
               <span className="text-xl font-black tracking-tight text-text-primary">QUOVEX</span>
