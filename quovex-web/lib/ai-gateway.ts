@@ -145,6 +145,40 @@ export async function callAiGateway({
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
   if (groqKeys.length === 0 && cerebrasKeys.length === 0) {
+    // Attempt remote proxy through deployed Firebase Cloud Functions where Secret Manager keys are active
+    try {
+      const remoteApiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://us-central1-quovex-f3104.cloudfunctions.net/api';
+      const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+      const userContent = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : JSON.stringify(lastUserMsg?.content || '');
+
+      const remoteRes = await fetch(`${remoteApiUrl}/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userContent,
+          messages,
+          temperature,
+          maxTokens,
+        }),
+      });
+
+      if (remoteRes.ok) {
+        const data = await remoteRes.json();
+        const content = data.reply || data.content || data.plan || data.summary;
+        if (content) {
+          return {
+            success: true,
+            content,
+            provider: data.provider || 'groq',
+            model: data.model || 'openai/gpt-oss-20b',
+            requestId,
+          };
+        }
+      }
+    } catch (remoteErr) {
+      console.warn('Backend Cloud Functions proxy attempt failed:', remoteErr);
+    }
+
     throw new Error(
       'Quovex AI Gateway: No active provider API keys configured in environment (GROQ_API_KEY / CEREBRAS_API_KEY). Please configure your rotated keys in secrets.properties or .env.local.'
     );
