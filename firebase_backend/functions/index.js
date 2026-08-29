@@ -26,35 +26,54 @@ try {
     console.error("Could not load environment config files:", error);
 }
 
-// Extract 4 Groq and 4 Cerebras keys
-const GROQ_KEYS = [
-    process.env.GROQ_API_KEY_1 || envConfig.GROQ_API_KEY_1,
-    process.env.GROQ_API_KEY_2 || envConfig.GROQ_API_KEY_2,
-    process.env.GROQ_API_KEY_3 || envConfig.GROQ_API_KEY_3,
-    process.env.GROQ_API_KEY_4 || envConfig.GROQ_API_KEY_4
-].filter(Boolean);
+function isValidApiKey(key) {
+    if (!key || typeof key !== 'string') return false;
+    const trimmed = key.trim();
+    return trimmed !== '' &&
+           trimmed !== 'your_groq_key_here' &&
+           trimmed !== 'your_cerebras_key_here' &&
+           !trimmed.startsWith('TODO') &&
+           trimmed.length > 15;
+}
 
-const CEREBRAS_KEYS = [
-    process.env.CEREBRAS_API_KEY_1 || envConfig.CEREBRAS_API_KEY_1,
-    process.env.CEREBRAS_API_KEY_2 || envConfig.CEREBRAS_API_KEY_2,
-    process.env.CEREBRAS_API_KEY_3 || envConfig.CEREBRAS_API_KEY_3,
-    process.env.CEREBRAS_API_KEY_4 || envConfig.CEREBRAS_API_KEY_4
-].filter(Boolean);
+function getGroqKeys() {
+    const raw = [
+        process.env.GROQ_API_KEY_1 || envConfig.GROQ_API_KEY_1,
+        process.env.GROQ_API_KEY_2 || envConfig.GROQ_API_KEY_2,
+        process.env.GROQ_API_KEY_3 || envConfig.GROQ_API_KEY_3,
+        process.env.GROQ_API_KEY_4 || envConfig.GROQ_API_KEY_4,
+        process.env.GROQ_API_KEY || envConfig.GROQ_API_KEY
+    ];
+    return raw.filter(isValidApiKey);
+}
+
+function getCerebrasKeys() {
+    const raw = [
+        process.env.CEREBRAS_API_KEY_1 || envConfig.CEREBRAS_API_KEY_1,
+        process.env.CEREBRAS_API_KEY_2 || envConfig.CEREBRAS_API_KEY_2,
+        process.env.CEREBRAS_API_KEY_3 || envConfig.CEREBRAS_API_KEY_3,
+        process.env.CEREBRAS_API_KEY_4 || envConfig.CEREBRAS_API_KEY_4,
+        process.env.CEREBRAS_API_KEY || envConfig.CEREBRAS_API_KEY
+    ];
+    return raw.filter(isValidApiKey);
+}
 
 let groqIndex = 0;
 let cerebrasIndex = 0;
 
 function getNextGroqKey() {
-    if (GROQ_KEYS.length === 0) return null;
-    const key = GROQ_KEYS[groqIndex];
-    groqIndex = (groqIndex + 1) % GROQ_KEYS.length;
+    const keys = getGroqKeys();
+    if (keys.length === 0) return null;
+    const key = keys[groqIndex % keys.length];
+    groqIndex = (groqIndex + 1) % keys.length;
     return key;
 }
 
 function getNextCerebrasKey() {
-    if (CEREBRAS_KEYS.length === 0) return null;
-    const key = CEREBRAS_KEYS[cerebrasIndex];
-    cerebrasIndex = (cerebrasIndex + 1) % CEREBRAS_KEYS.length;
+    const keys = getCerebrasKeys();
+    if (keys.length === 0) return null;
+    const key = keys[cerebrasIndex % keys.length];
+    cerebrasIndex = (cerebrasIndex + 1) % keys.length;
     return key;
 }
 
@@ -1031,8 +1050,21 @@ exports.aggregateDailyDemandSignals = functions.pubsub.schedule('every 24 hours'
     }
 });
 
-// Export Express App as Cloud Function
-exports.api = functions.https.onRequest(app);
+// Export Express App as Cloud Function with Firebase Secret Manager bindings
+exports.api = functions
+    .runWith({
+        secrets: [
+            'GROQ_API_KEY_1',
+            'GROQ_API_KEY_2',
+            'GROQ_API_KEY_3',
+            'GROQ_API_KEY_4',
+            'CEREBRAS_API_KEY_1',
+            'CEREBRAS_API_KEY_2',
+            'CEREBRAS_API_KEY_3',
+            'CEREBRAS_API_KEY_4',
+        ],
+    })
+    .https.onRequest(app);
 
 // Standalone local execution support for emulator/dev testing
 if (require.main === module) {
