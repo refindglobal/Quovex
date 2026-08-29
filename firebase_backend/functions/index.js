@@ -1,4 +1,5 @@
-const functions = require('firebase-functions');
+const { onRequest } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 const express = require('express');
 const cors = require('cors');
@@ -1029,7 +1030,7 @@ app.get('/api/ncert/pdf', handlePdfProxy);
  * CRON: aggregateDailyDemandSignals
  * Runs daily to aggregate search failures and quiz mistakes into Content Studio Demand Intelligence.
  */
-exports.aggregateDailyDemandSignals = functions.pubsub.schedule('every 24 hours').onRun(async (context) => {
+exports.aggregateDailyDemandSignals = onSchedule('every 24 hours', async (event) => {
     try {
         const db = admin.firestore();
         const batch = db.batch();
@@ -1043,28 +1044,27 @@ exports.aggregateDailyDemandSignals = functions.pubsub.schedule('every 24 hours'
         
         await batch.commit();
         console.log("Successfully aggregated daily demand signals.");
-        return null;
     } catch (error) {
         console.error("Error in aggregateDailyDemandSignals:", error);
-        return null;
     }
 });
 
 // Export Express App as Cloud Function with Firebase Secret Manager bindings
-exports.api = functions
-    .runWith({
-        secrets: [
-            'GROQ_API_KEY_1',
-            'GROQ_API_KEY_2',
-            'GROQ_API_KEY_3',
-            'GROQ_API_KEY_4',
-            'CEREBRAS_API_KEY_1',
-            'CEREBRAS_API_KEY_2',
-            'CEREBRAS_API_KEY_3',
-            'CEREBRAS_API_KEY_4',
-        ],
-    })
-    .https.onRequest(app);
+exports.api = onRequest({
+    secrets: [
+        'GROQ_API_KEY_1',
+        'GROQ_API_KEY_2',
+        'GROQ_API_KEY_3',
+        'GROQ_API_KEY_4',
+        'CEREBRAS_API_KEY_1',
+        'CEREBRAS_API_KEY_2',
+        'CEREBRAS_API_KEY_3',
+        'CEREBRAS_API_KEY_4',
+    ],
+    cors: true,
+    memory: '512MiB',
+    timeoutSeconds: 120,
+}, app);
 
 // Standalone local execution support for emulator/dev testing
 if (require.main === module) {
