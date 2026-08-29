@@ -15,6 +15,8 @@ export const ExamCountdownCard: React.FC<ExamCountdownCardProps> = ({ targetExam
     'JEE Advanced': 82,
     'JEE Mains': 46,
     'NEET (UG)': 94,
+    'CUET (UG)': 72,
+    'CLAT (UG)': 114,
     'UPSC CSE': 118,
     'CBSE Class 12': 38,
     'CBSE Class 11': 65,

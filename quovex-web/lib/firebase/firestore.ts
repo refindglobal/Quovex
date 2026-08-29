@@ -134,6 +134,28 @@ export interface QuizResultRecord {
   mistakes: QuizMistakeRecord[];
 }
 
+export interface AiMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: number;
+  attachments?: string[];
+  contextSnapshot?: Record<string, any>;
+}
+
+export interface AiConversation {
+  id: string;
+  userId: string;
+  title: string;
+  subject: string;
+  topic?: string;
+  sourceType: 'AI_TUTOR' | 'IMAGE_DOUBT' | 'NCERT_READER' | 'NOTE_EXPLAINER';
+  sourceId?: string;
+  createdAt: number;
+  updatedAt: number;
+  lastMessagePreview?: string;
+}
+
 // In-memory / LocalStorage State for Resilient Testing & Offline Mode
 const localState: {
   profile: UserProfile;
@@ -143,6 +165,8 @@ const localState: {
   cards: Record<string, Flashcard[]>;
   studyPlan: StudyPlan | null;
   quizHistory: QuizResultRecord[];
+  conversations: AiConversation[];
+  messages: Record<string, AiMessage[]>;
 } = {
   profile: { ...TEST_FALLBACK_PROFILE },
   sessions: [],
@@ -151,6 +175,8 @@ const localState: {
   cards: {},
   studyPlan: null,
   quizHistory: [],
+  conversations: [],
+  messages: {},
 };
 
 // User Profile
@@ -459,6 +485,116 @@ export async function saveQuizResult(uid: string, record: QuizResultRecord) {
   try {
     const ref = doc(db, 'users', uid, 'quiz_history', record.id);
     await setDoc(ref, record);
+  } catch (_) {}
+}
+
+// ── Persistent AI Conversations & Messages (Section 12 of spec) ────────────
+export function subscribeToAiConversations(uid: string, callback: (convs: AiConversation[]) => void) {
+  try {
+    const q = query(
+      collection(db, 'users', uid, 'ai_conversations'),
+      orderBy('updatedAt', 'desc'),
+      limit(30)
+    );
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AiConversation));
+        callback(list.length > 0 ? list : localState.conversations);
+      },
+      () => {
+        callback(localState.conversations);
+      }
+    );
+  } catch (_) {
+    callback(localState.conversations);
+    return () => {};
+  }
+}
+
+export function subscribeToAiMessages(
+  uid: string,
+  conversationId: string,
+  callback: (messages: AiMessage[]) => void
+) {
+  try {
+    const q = query(
+      collection(db, 'users', uid, 'ai_conversations', conversationId, 'messages'),
+      orderBy('createdAt', 'asc'),
+      limit(100)
+    );
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AiMessage));
+        callback(list.length > 0 ? list : (localState.messages[conversationId] || []));
+      },
+      () => {
+        callback(localState.messages[conversationId] || []);
+      }
+    );
+  } catch (_) {
+    callback(localState.messages[conversationId] || []);
+    return () => {};
+  }
+}
+
+export async function saveAiConversation(uid: string, conv: Partial<AiConversation> & { id: string }) {
+  const existingIdx = localState.conversations.findIndex(c => c.id === conv.id);
+  const updatedConv = {
+    userId: uid,
+    title: conv.title || 'Study Discussion',
+    subject: conv.subject || 'Physics',
+    sourceType: conv.sourceType || 'AI_TUTOR',
+    createdAt: conv.createdAt || Date.now(),
+    updatedAt: Date.now(),
+    lastMessagePreview: conv.lastMessagePreview || '',
+    ...conv,
+  } as AiConversation;
+
+  if (existingIdx >= 0) {
+    localState.conversations[existingIdx] = { ...localState.conversations[existingIdx], ...updatedConv };
+  } else {
+    localState.conversations = [updatedConv, ...localState.conversations];
+  }
+
+  try {
+    const ref = doc(db, 'users', uid, 'ai_conversations', conv.id);
+    await setDoc(ref, updatedConv, { merge: true });
+  } catch (_) {}
+}
+
+export async function saveAiMessage(uid: string, conversationId: string, message: AiMessage) {
+  if (!localState.messages[conversationId]) localState.messages[conversationId] = [];
+  localState.messages[conversationId] = [
+    ...localState.messages[conversationId].filter(m => m.id !== message.id),
+    message,
+  ];
+
+  // Update conversation updatedAt & lastMessagePreview
+  const conv = localState.conversations.find(c => c.id === conversationId);
+  if (conv) {
+    conv.updatedAt = message.createdAt;
+    conv.lastMessagePreview = message.content.slice(0, 100);
+  }
+
+  try {
+    const msgRef = doc(db, 'users', uid, 'ai_conversations', conversationId, 'messages', message.id);
+    await setDoc(msgRef, message, { merge: true });
+
+    const convRef = doc(db, 'users', uid, 'ai_conversations', conversationId);
+    await updateDoc(convRef, {
+      updatedAt: message.createdAt,
+      lastMessagePreview: message.content.slice(0, 100),
+    });
+  } catch (_) {}
+}
+
+export async function deleteAiConversation(uid: string, conversationId: string) {
+  localState.conversations = localState.conversations.filter(c => c.id !== conversationId);
+  delete localState.messages[conversationId];
+  try {
+    await deleteDoc(doc(db, 'users', uid, 'ai_conversations', conversationId));
   } catch (_) {}
 }
 

@@ -68,6 +68,8 @@ fun OnboardingWizardScreen(
     val examOptions = listOf(
         OnboardingCardOption("JEE Main & Advanced", "Engineering Aspirant • Physics, Chem, Math", R.drawable.badge_exam_jee, "JEE"),
         OnboardingCardOption("NEET UG Medical", "Medical Aspirant • Bio, Chem, Physics", R.drawable.badge_exam_neet, "NEET"),
+        OnboardingCardOption("CUET (UG) Target", "Central Universities Entrance • Science, Arts, Commerce", R.drawable.badge_exam_jee, "CUET"),
+        OnboardingCardOption("CLAT (UG) Law", "Law Entrance • Legal Aptitude & Reasoning", R.drawable.badge_exam_upsc, "CLAT"),
         OnboardingCardOption("CBSE Class 10/12 Boards", "95%+ Target • NCERT Mastered", R.drawable.badge_exam_cbse, "CBSE"),
         OnboardingCardOption("UPSC & Civil Services", "General Studies & Deep Focus", R.drawable.badge_exam_upsc, "UPSC")
     )

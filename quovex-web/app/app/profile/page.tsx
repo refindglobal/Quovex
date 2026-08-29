@@ -37,6 +37,8 @@ const EXAMS = [
   'JEE Advanced',
   'JEE Mains',
   'NEET (UG)',
+  'CUET (UG)',
+  'CLAT (UG)',
   'UPSC CSE',
   'CBSE Class 12',
   'CBSE Class 11',

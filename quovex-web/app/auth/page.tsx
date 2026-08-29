@@ -13,15 +13,17 @@ import { ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react';
 
 const EXAM_OPTIONS = [
   'JEE Advanced',
-  'JEE Main',
-  'NEET UG',
+  'JEE Mains',
+  'NEET (UG)',
+  'CUET (UG)',
+  'CLAT (UG)',
   'CBSE Class 12',
+  'CBSE Class 11',
   'CBSE Class 10',
   'UPSC CSE',
   'SAT / ACT',
-  'MCAT',
   'College / University',
-  'Other Exam',
+  'Other Competitive Exam',
 ];
 
 export default function AuthPage() {

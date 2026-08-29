@@ -4,6 +4,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { calculateSm2 } from '../lib/sm2';
 import { getPricingForCountry } from '../lib/pricing';
+import {
+  getAvailableClasses,
+  getSubjectsForClass,
+  getChaptersForClassAndSubject,
+  getChapterById,
+  NCERT_CATALOG,
+} from '../lib/ncertCatalog';
+import { extractJsonFromAiResponse } from '../lib/ai-gateway';
 
 describe('Quovex Web — Mathematical & Feature Parity Tests', () => {
   it('SM-2 Spaced Repetition matches Android Sm2Calculator bounds and intervals', () => {
@@ -68,7 +76,6 @@ describe('Quovex Web — Mathematical & Feature Parity Tests', () => {
         } else if (file.endsWith('.ts') || file.endsWith('.tsx') || file.endsWith('.js') || file.endsWith('.json')) {
           const content = fs.readFileSync(fullPath, 'utf8');
           for (const token of sensitiveTokens) {
-            // Ensure no hardcoded assignment of server secret exists
             const regex = new RegExp(`${token}\\s*=\\s*['"][a-zA-Z0-9_-]{10,}['"]`, 'i');
             assert.ok(
               !regex.test(content),
@@ -80,5 +87,56 @@ describe('Quovex Web — Mathematical & Feature Parity Tests', () => {
     };
 
     searchDir(path.join(__dirname, '..'));
+  });
+
+  it('NCERT Catalog Integrity: Class 6 selection contains Science and Mathematics, zero Physics leakage', () => {
+    const class6Subjects = getSubjectsForClass('Class 6');
+    assert.ok(class6Subjects.includes('Science'), 'Class 6 must have Science');
+    assert.ok(class6Subjects.includes('Mathematics'), 'Class 6 must have Mathematics');
+    assert.ok(!class6Subjects.includes('Physics'), 'Class 6 must NOT have isolated Physics subject');
+
+    const class6ScienceChapters = getChaptersForClassAndSubject('Class 6', 'Science');
+    assert.ok(class6ScienceChapters.length > 0, 'Class 6 Science must have chapters');
+
+    // Assert no Class 12 chapters are present in Class 6
+    for (const ch of class6ScienceChapters) {
+      assert.equal(ch.gradeClass, 'Class 6');
+      assert.notEqual(ch.chapterTitle, 'Electric Charges and Fields');
+      assert.notEqual(ch.chapterTitle, 'Current Electricity');
+      assert.notEqual(ch.chapterTitle, 'Electrostatic Potential and Capacitance');
+      assert.equal(ch.contentType, 'OFFICIAL_RESOURCE');
+    }
+  });
+
+  it('NCERT Catalog Integrity: Class 12 Physics contains verified electromagnetism chapters', () => {
+    const class12PhysicsChapters = getChaptersForClassAndSubject('Class 12', 'Physics');
+    const titles = class12PhysicsChapters.map((c) => c.chapterTitle);
+
+    assert.ok(titles.includes('Electric Charges and Fields'));
+    assert.ok(titles.includes('Current Electricity'));
+    assert.ok(titles.includes('Alternating Current'));
+
+    for (const ch of class12PhysicsChapters) {
+      assert.equal(ch.gradeClass, 'Class 12');
+      assert.equal(ch.subject, 'Physics');
+      assert.equal(ch.contentType, 'OFFICIAL_RESOURCE');
+      assert.ok(ch.officialSourceUrl.startsWith('https://ncert.nic.in/'));
+    }
+  });
+
+  it('AI JSON Extractor: Parses raw AI responses containing markdown code fences and LaTeX math', () => {
+    const testAiResponse = `<think>Analyzing problem...</think>\`\`\`json
+    {
+      "isSolvable": true,
+      "coreConcept": "Newton's Second Law",
+      "finalAnswer": "$$F = ma$$",
+      "steps": ["Step 1: Calculate \\\\vec{F}"]
+    }
+    \`\`\``;
+
+    const parsed = extractJsonFromAiResponse(testAiResponse);
+    assert.equal(parsed.isSolvable, true);
+    assert.equal(parsed.coreConcept, "Newton's Second Law");
+    assert.equal(parsed.finalAnswer, '$$F = ma$$');
   });
 });
