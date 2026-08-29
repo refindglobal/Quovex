@@ -104,9 +104,12 @@ async function callAiWithFailover({
     maxTokens = 2048,
     isVision = false
 }) {
+    const groqPool = getGroqKeys();
+    const cerebrasPool = getCerebrasKeys();
+
     // 1. Try Groq Primary Model (4 Keys Rotating Pool)
     const primaryModel = isVision ? 'qwen/qwen3.6-27b' : 'openai/gpt-oss-20b';
-    for (let attempt = 0; attempt < GROQ_KEYS.length; attempt++) {
+    for (let attempt = 0; attempt < (groqPool.length || 1); attempt++) {
         const groqKey = getNextGroqKey();
         if (!groqKey) break;
 
@@ -141,7 +144,7 @@ async function callAiWithFailover({
 
     // 1b. Try Groq Secondary Fallback Model (qwen/qwen3.6-27b for chat/study)
     if (!isVision) {
-        for (let attempt = 0; attempt < GROQ_KEYS.length; attempt++) {
+        for (let attempt = 0; attempt < (groqPool.length || 1); attempt++) {
             const groqKey = getNextGroqKey();
             if (!groqKey) break;
 
@@ -176,7 +179,7 @@ async function callAiWithFailover({
     }
 
     // 2. Cerebras Fallback (if Groq keys exhausted)
-    for (let attempt = 0; attempt < CEREBRAS_KEYS.length; attempt++) {
+    for (let attempt = 0; attempt < (cerebrasPool.length || 1); attempt++) {
         const cerebrasKey = getNextCerebrasKey();
         if (!cerebrasKey) break;
 
