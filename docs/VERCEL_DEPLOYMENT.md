@@ -58,9 +58,17 @@ Navigate to **Project Settings → Environment Variables** and add:
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Public (Client) | `1:784018860004:web:...` |
 | `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Public (Client) | `G-XXXXXXXXXX` |
 | `NEXT_PUBLIC_API_URL` | Public (Client) | `https://api-dopkbhqrgq-uc.a.run.app` |
+| `GROQ_API_KEY_1` | Server Secret | `SET_IN_VERCEL_DASHBOARD` (Rotated Groq Pool Key 1) |
+| `GROQ_API_KEY_2` | Server Secret | `SET_IN_VERCEL_DASHBOARD` (Rotated Groq Pool Key 2) |
+| `GROQ_API_KEY_3` | Server Secret | `SET_IN_VERCEL_DASHBOARD` (Rotated Groq Pool Key 3) |
+| `GROQ_API_KEY_4` | Server Secret | `SET_IN_VERCEL_DASHBOARD` (Rotated Groq Pool Key 4) |
+| `CEREBRAS_API_KEY_1` | Server Secret | `SET_IN_VERCEL_DASHBOARD` (Rotated Cerebras Key 1) |
+| `CEREBRAS_API_KEY_2` | Server Secret | `SET_IN_VERCEL_DASHBOARD` (Rotated Cerebras Key 2) |
+| `CEREBRAS_API_KEY_3` | Server Secret | `SET_IN_VERCEL_DASHBOARD` (Rotated Cerebras Key 3) |
+| `CEREBRAS_API_KEY_4` | Server Secret | `SET_IN_VERCEL_DASHBOARD` (Rotated Cerebras Key 4) |
 
 > [!NOTE]
-> All client variables are prefixed with `NEXT_PUBLIC_` and contain NO private server keys or secrets.
+> All client variables are prefixed with `NEXT_PUBLIC_` and contain NO private server keys or secrets. AI provider keys (`GROQ_API_KEY_*` / `CEREBRAS_API_KEY_*`) are strictly server-side environment secrets consumed only by Next.js Serverless Route Handlers (`/api/ai/*`).
 
 ### 3. Custom Domain Configuration (`quovex-web`)
 Navigate to **Project Settings → Domains**:
