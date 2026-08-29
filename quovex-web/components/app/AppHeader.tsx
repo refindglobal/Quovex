@@ -8,6 +8,8 @@ import { UserProfile } from '@/lib/firebase/auth';
 import { QuovexButton } from '../ui/QuovexButton';
 import { useTheme } from '../providers/ThemeProvider';
 
+import { ASSETS } from '@/lib/assets';
+
 interface AppHeaderProps {
   profile: UserProfile | null;
 }
@@ -17,7 +19,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ profile }) => {
   const { themeMode, setThemeMode } = useTheme();
 
   const avatarUrl = profile?.avatarId
-    ? `/assets/avatars/avatar_${profile.avatarId}.png`
+    ? ASSETS.avatars(profile.avatarId)
     : null;
 
   return (
@@ -27,7 +29,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ profile }) => {
         <Link href="/app/dashboard" className="flex items-center gap-2 lg:hidden">
           <div className="w-7 h-7 rounded-lg overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
             <img
-              src="/assets/brand/emblem.png"
+              src={ASSETS.brand.emblem}
               alt="Quovex Logo"
               className="w-5 h-5 object-contain"
             />

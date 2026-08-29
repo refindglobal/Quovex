@@ -32,6 +32,21 @@ function parseProperties(content: string): Record<string, string> {
   return result;
 }
 
+function isValidApiKey(key?: string): boolean {
+  if (!key || typeof key !== 'string') return false;
+  const trimmed = key.trim();
+  if (
+    trimmed === '' ||
+    trimmed === 'your_groq_key_here' ||
+    trimmed === 'your_cerebras_key_here' ||
+    trimmed.startsWith('TODO') ||
+    trimmed.length < 15
+  ) {
+    return false;
+  }
+  return true;
+}
+
 function loadApiKeys() {
   if (groqKeys.length > 0 && cerebrasKeys.length > 0) return;
 
@@ -40,6 +55,8 @@ function loadApiKeys() {
   const candidates = [
     path.resolve(process.cwd(), '../secrets.properties'),
     path.resolve(process.cwd(), 'secrets.properties'),
+    path.resolve(process.cwd(), '.env.local'),
+    path.resolve(process.cwd(), '../.env.local'),
     path.resolve(process.cwd(), '../firebase_backend/functions/.env'),
   ];
 
@@ -49,24 +66,28 @@ function loadApiKeys() {
         const content = fs.readFileSync(p, 'utf-8');
         const parsed = parseProperties(content);
         Object.assign(envConfig, parsed);
-        break;
       }
     } catch (_) {}
   }
 
-  groqKeys = [
+  const rawGroq = [
     process.env.GROQ_API_KEY_1 || envConfig.GROQ_API_KEY_1,
     process.env.GROQ_API_KEY_2 || envConfig.GROQ_API_KEY_2,
     process.env.GROQ_API_KEY_3 || envConfig.GROQ_API_KEY_3,
     process.env.GROQ_API_KEY_4 || envConfig.GROQ_API_KEY_4,
-  ].filter(Boolean) as string[];
+    process.env.GROQ_API_KEY || envConfig.GROQ_API_KEY,
+  ];
 
-  cerebrasKeys = [
+  const rawCerebras = [
     process.env.CEREBRAS_API_KEY_1 || envConfig.CEREBRAS_API_KEY_1,
     process.env.CEREBRAS_API_KEY_2 || envConfig.CEREBRAS_API_KEY_2,
     process.env.CEREBRAS_API_KEY_3 || envConfig.CEREBRAS_API_KEY_3,
     process.env.CEREBRAS_API_KEY_4 || envConfig.CEREBRAS_API_KEY_4,
-  ].filter(Boolean) as string[];
+    process.env.CEREBRAS_API_KEY || envConfig.CEREBRAS_API_KEY,
+  ];
+
+  groqKeys = rawGroq.filter(isValidApiKey) as string[];
+  cerebrasKeys = rawCerebras.filter(isValidApiKey) as string[];
 }
 
 let groqIdx = 0;
@@ -123,9 +144,15 @@ export async function callAiGateway({
   loadApiKeys();
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
+  if (groqKeys.length === 0 && cerebrasKeys.length === 0) {
+    throw new Error(
+      'Quovex AI Gateway: No active provider API keys configured in environment (GROQ_API_KEY / CEREBRAS_API_KEY). Please configure your rotated keys in secrets.properties or .env.local.'
+    );
+  }
+
   // 1. Try Groq Primary Model (qwen/qwen3.6-27b for vision, openai/gpt-oss-20b for text)
   const primaryGroqModel = isVision ? 'qwen/qwen3.6-27b' : 'openai/gpt-oss-20b';
-  for (let attempt = 0; attempt < Math.max(1, groqKeys.length); attempt++) {
+  for (let attempt = 0; attempt < groqKeys.length; attempt++) {
     const key = getNextGroqKey();
     if (!key) break;
 
@@ -169,7 +196,7 @@ export async function callAiGateway({
 
   // 2. Try Groq Secondary Fallback Model (qwen/qwen3.6-27b) if text
   if (!isVision) {
-    for (let attempt = 0; attempt < Math.max(1, groqKeys.length); attempt++) {
+    for (let attempt = 0; attempt < groqKeys.length; attempt++) {
       const key = getNextGroqKey();
       if (!key) break;
 
@@ -214,7 +241,7 @@ export async function callAiGateway({
 
   // 3. Try Cerebras Failover (gpt-oss-120b / gemma-4-31b)
   const cerebrasModel = isVision ? 'gemma-4-31b' : 'gpt-oss-120b';
-  for (let attempt = 0; attempt < Math.max(1, cerebrasKeys.length); attempt++) {
+  for (let attempt = 0; attempt < cerebrasKeys.length; attempt++) {
     const key = getNextCerebrasKey();
     if (!key) break;
 

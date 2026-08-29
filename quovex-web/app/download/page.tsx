@@ -21,6 +21,8 @@ import { QuovexCard } from '@/components/ui/QuovexCard';
 import { QuovexBadge } from '@/components/ui/QuovexBadge';
 import releaseMeta from '@/lib/release-metadata.json';
 
+import { ASSETS } from '@/lib/assets';
+
 export default function DownloadPage() {
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -56,7 +58,7 @@ export default function DownloadPage() {
           <Link href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0 shadow-glow">
               <img
-                src="/assets/brand/emblem.png"
+                src={ASSETS.brand.emblem}
                 alt="Quovex Logo"
                 className="w-8 h-8 object-contain"
               />

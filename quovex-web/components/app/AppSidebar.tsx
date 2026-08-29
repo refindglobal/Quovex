@@ -19,6 +19,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { signOut } from '@/lib/firebase/auth';
+import { ASSETS } from '@/lib/assets';
 
 const NAV_ITEMS = [
   { href: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -51,7 +52,7 @@ export const AppSidebar: React.FC = () => {
       <div className="p-4 border-b border-border flex items-center gap-3">
         <div className="w-8 h-8 rounded-xl overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0 shadow-sm">
           <img
-            src="/assets/brand/emblem.png"
+            src={ASSETS.brand.emblem}
             alt="Quovex Logo"
             className="w-6 h-6 object-contain"
           />

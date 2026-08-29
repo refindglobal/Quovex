@@ -9,6 +9,8 @@ import { AppHeader } from '@/components/app/AppHeader';
 import { MobileNav } from '@/components/app/MobileNav';
 import { AndroidBanner } from '@/components/ui/AndroidBanner';
 
+import { ASSETS } from '@/lib/assets';
+
 export default function AppLayout({
   children,
 }: {
@@ -45,7 +47,7 @@ export default function AppLayout({
       <div className="min-h-screen bg-background text-text-primary flex flex-col items-center justify-center gap-4 transition-colors duration-200">
         <div className="w-14 h-14 rounded-2xl overflow-hidden bg-primary/10 border border-primary/30 flex items-center justify-center p-1.5 animate-pulse shadow-glow">
           <img
-            src="/assets/brand/emblem.png"
+            src={ASSETS.brand.emblem}
             alt="Quovex Logo"
             className="w-10 h-10 object-contain"
           />
