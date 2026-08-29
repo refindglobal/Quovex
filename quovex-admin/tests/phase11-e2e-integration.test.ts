@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { contentPipeline, studioStore } from '../lib/content-studio/pipeline.ts';
-import { verifyAdminSession, hasPermission } from '../lib/auth/rbac.ts';
-import { QuovexOriginalBook } from '../types/content-studio.ts';
+import { contentPipeline, studioStore } from '../lib/content-studio/pipeline';
+import { verifyAdminSession, hasPermission } from '../lib/auth/rbac';
+import { QuovexOriginalBook } from '../lib/types/content-studio';
 
 test('Phase 11 — End-to-End Real Flow & Security Invariants', async (t) => {
   // 1. Admin Security & Role Access Verification
@@ -42,6 +42,7 @@ test('Phase 11 — End-to-End Real Flow & Security Invariants', async (t) => {
   const testBookId = `book_p11_${Date.now()}`;
   const draftBook: QuovexOriginalBook = {
     id: testBookId,
+    contentType: 'QUOVEX_ORIGINAL',
     title: "Newton's Laws — Made Simple",
     subtitle: 'Mastering Classical Dynamics for JEE',
     description: 'A rigorous, intuitive guide to forces and momentum.',
@@ -53,6 +54,10 @@ test('Phase 11 — End-to-End Real Flow & Security Invariants', async (t) => {
     exam: 'JEE Main',
     language: 'en',
     chapterCount: 2,
+    generationJobId: 'job_test_01',
+    version: 1,
+    isStaging: false,
+    versionHistory: [],
     learningObjectives: ["Master Newton's Laws", "Understand Free Body Diagrams"],
     prerequisites: ['Basic vectors'],
     difficulty: 'Intermediate',
@@ -63,6 +68,8 @@ test('Phase 11 — End-to-End Real Flow & Security Invariants', async (t) => {
         chapterNumber: 1,
         title: 'First Law & Inertia',
         summary: 'Inertia and reference frames.',
+        learningObjectives: ['Understand inertia'],
+        quickRevisionBulletPoints: ['Inertia requires zero net force.'],
         sections: [
           {
             id: 'sec_1_1',
@@ -99,6 +106,7 @@ test('Phase 11 — End-to-End Real Flow & Security Invariants', async (t) => {
       }
     ],
     approvalStatus: 'READY_FOR_REVIEW',
+    createdBy: 'admin_test',
     createdAt: Date.now(),
     updatedAt: Date.now()
   };

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, Send, CheckCircle2, Users, AlertCircle, Clock } from 'lucide-react';
 import EmptyState from '@/components/EmptyState';
+import { PushPreviewCard } from '@/components/notifications/PushPreviewCard';
 
 export default function NotificationsPage() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -69,9 +70,9 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Composer Form */}
-        <div className="lg:col-span-1 p-6 rounded-xl bg-[#111917] border border-border space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Composer Form (5 cols) */}
+        <div className="lg:col-span-4 p-6 rounded-xl bg-[#111917] border border-border space-y-4">
           <div className="flex items-center gap-2">
             <Bell className="w-4 h-4 text-primary" />
             <h2 className="text-sm font-bold text-foreground">Compose Campaign</h2>
@@ -139,7 +140,7 @@ export default function NotificationsPage() {
             <button
               type="submit"
               disabled={sending}
-              className="w-full py-2.5 rounded-lg bg-primary text-black font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-2.5 rounded-lg bg-primary text-black font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{sending ? 'Dispatching...' : 'Broadcast Notification'}</span>
@@ -147,33 +148,38 @@ export default function NotificationsPage() {
           </form>
         </div>
 
-        {/* Campaign History */}
-        <div className="lg:col-span-2 p-6 rounded-xl bg-[#111917] border border-border space-y-4">
+        {/* Live Device Preview (3 cols) */}
+        <div className="lg:col-span-3 flex justify-center">
+          <PushPreviewCard title={title} body={body} audience={audience} />
+        </div>
+
+        {/* Campaign History (5 cols) */}
+        <div className="lg:col-span-5 p-6 rounded-xl bg-[#111917] border border-border space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground">Campaign History & Delivery Logs</h2>
-            <span className="text-xs text-muted-foreground">{campaigns.length} campaigns dispatched</span>
+            <h2 className="text-sm font-bold text-foreground">Campaign History</h2>
+            <span className="text-xs text-muted-foreground">{campaigns.length} sent</span>
           </div>
 
           {campaigns.length === 0 ? (
             <EmptyState
               icon={Bell}
               title="No Notifications Dispatched Yet"
-              description="Broadcast notifications sent to student devices will appear here with delivery timestamps and audience metrics."
+              description="Broadcast notifications sent to student devices will appear here with delivery timestamps."
             />
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
               {campaigns.map((c) => (
-                <div key={c.id} className="p-4 rounded-lg bg-[#15201C] border border-border/80 space-y-2 text-xs">
+                <div key={c.id} className="p-3.5 rounded-lg bg-[#15201C] border border-border/80 space-y-1.5 text-xs">
                   <div className="flex items-center justify-between">
-                    <div className="font-bold text-foreground">{c.title}</div>
+                    <div className="font-bold text-foreground truncate max-w-[200px]">{c.title}</div>
                     <span className="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 text-[10px] font-semibold">
                       {c.status}
                     </span>
                   </div>
-                  <p className="text-muted-foreground">{c.body}</p>
-                  <div className="flex items-center justify-between text-[11px] text-muted-foreground/80 pt-1 border-t border-border/50">
+                  <p className="text-muted-foreground text-[11px] line-clamp-2">{c.body}</p>
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground/80 pt-1 border-t border-border/50">
                     <span>Audience: <strong>{c.targetAudience}</strong></span>
-                    <span>Dispatched: {new Date(c.createdAt).toLocaleTimeString()} • {c.sentBy}</span>
+                    <span>{new Date(c.createdAt).toLocaleTimeString()}</span>
                   </div>
                 </div>
               ))}

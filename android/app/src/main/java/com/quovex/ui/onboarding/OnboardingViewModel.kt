@@ -15,11 +15,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class OnboardingUiState(
-    val currentStep: Int = 0, // 0 = Profile/Avatar, 1 = Exam Target, 2 = Daily Hours, 3 = Confirmation
-    val selectedAvatarId: Int = 1,
-    val nameInput: String = "",
-    val selectedExam: String = "JEE Advanced",
-    val dailyGoalHours: Float = 4.0f,
+    val currentStep: Int = 0, // 0 = Exam, 1 = Obstacle, 2 = Commitment
+    val selectedExam: String = "JEE Main & Advanced",
+    val selectedObstacle: String = "Social Media Doomscrolling",
+    val dailyGoalHours: Float = 2.5f,
     val isSaving: Boolean = false,
     val errorMessage: String? = null
 )
@@ -34,18 +33,12 @@ class OnboardingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
-    fun selectAvatar(id: Int) = _uiState.update { it.copy(selectedAvatarId = id) }
-    fun onNameChanged(name: String) = _uiState.update { it.copy(nameInput = name, errorMessage = null) }
     fun selectExam(exam: String) = _uiState.update { it.copy(selectedExam = exam) }
+    fun selectObstacle(obstacle: String) = _uiState.update { it.copy(selectedObstacle = obstacle) }
     fun setDailyGoal(hours: Float) = _uiState.update { it.copy(dailyGoalHours = hours) }
 
     fun nextStep() {
-        val state = _uiState.value
-        if (state.currentStep == 0 && state.nameInput.trim().isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Please enter your name to personalize your study space.") }
-            return
-        }
-        if (state.currentStep < 3) {
+        if (_uiState.value.currentStep < 2) {
             _uiState.update { it.copy(currentStep = it.currentStep + 1, errorMessage = null) }
         }
     }
@@ -60,27 +53,9 @@ class OnboardingViewModel @Inject constructor(
         val state = _uiState.value
         _uiState.update { it.copy(isSaving = true, errorMessage = null) }
 
-        val uid = authService.currentUserId
-        val userProfile = UserProfile(
-            id = uid,
-            name = state.nameInput.trim().ifEmpty { "Aspirant" },
-            avatarId = state.selectedAvatarId,
-            targetExam = state.selectedExam,
-            dailyGoalHours = state.dailyGoalHours,
-            streakDays = 1,
-            xp = 250, // Welcome bonus XP
-            level = 1,
-            isOnboarded = true,
-            email = authService.currentUser?.email ?: ""
-        )
-
         viewModelScope.launch {
-            // 1. Write to Firestore
-            firestoreService.saveUserProfile(userProfile)
-
-            // 2. Save locally in UserPreferencesManager
-            userPreferencesManager.saveUserProfile(userProfile)
-
+            userPreferencesManager.setOnboardingCompleted(true)
+            userPreferencesManager.setDailyStudyTarget(state.dailyGoalHours)
             _uiState.update { it.copy(isSaving = false) }
             onSuccess()
         }

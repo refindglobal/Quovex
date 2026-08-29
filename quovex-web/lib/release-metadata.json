@@ -1,0 +1,23 @@
+{
+  "appName": "Quovex",
+  "versionName": "1.0",
+  "versionCode": 1,
+  "releaseDate": "2026-08-29",
+  "buildType": "release",
+  "minAndroid": "Android 8.0+ (API 26+)",
+  "targetAndroid": "Android 14 / 15 (API 36)",
+  "apkFileName": "quovex-1.0.0.apk",
+  "storagePath": "releases/android/quovex-1.0.0.apk",
+  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/quovex-f3104.firebasestorage.app/o/releases%2Fandroid%2Fquovex-1.0.0.apk?alt=media",
+  "features": [
+    "AI Study Tutor & Instant Visual Problem Solver",
+    "Focus Engine with Binaural Alpha Waves & App Blocker",
+    "SM-2 Spaced Repetition Flashcards & Quiz Arena",
+    "Official NCERT Classes 9-12 Digital Textbook Library",
+    "Quovex Originals High-Yield Editorial Books"
+  ],
+  "fileSizeBytes": 60938169,
+  "fileSizeFormatted": "58.1 MB",
+  "security": "Clean Release • SHA-256 Verified • Zero Server Keys in APK",
+  "sha256": "C784EA2C9014548265BA737149F0417C30CB1F7C44725A8AD0A0C6FB9613F699"
+}

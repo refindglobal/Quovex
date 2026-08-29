@@ -149,15 +149,21 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val rankBadgeRes = when (scholarInfo.rank.level) {
+                            1 -> R.drawable.ic_rank_novice
+                            2 -> R.drawable.ic_rank_apprentice
+                            3 -> R.drawable.ic_rank_strategist
+                            else -> R.drawable.ic_rank_grandmaster
+                        }
+
                         QuovexChip(
                             label = "Level ${scholarInfo.rank.level} • ${scholarInfo.rank.title}",
                             isSelected = true,
                             leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.EmojiEvents,
-                                    contentDescription = "Level",
-                                    tint = colors.onPrimary,
-                                    modifier = Modifier.size(14.dp)
+                                Image(
+                                    painter = painterResource(id = rankBadgeRes),
+                                    contentDescription = "Rank Badge",
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         )
@@ -407,7 +413,62 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(QuovexTheme.spacing.xl))
 
-            // --- 4. PREFERENCES LIST ---
+            // --- 4. THEME & APPEARANCE ---
+            QuovexSectionHeader(
+                title = "Appearance & Theme"
+            )
+
+            Spacer(modifier = Modifier.height(QuovexTheme.spacing.xs))
+
+            QuovexCard(
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = colors.surface,
+                elevation = QuovexTheme.elevation.card
+            ) {
+                Column(modifier = Modifier.padding(QuovexTheme.spacing.base)) {
+                    Text(
+                        text = "App Theme",
+                        style = QuovexTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary
+                    )
+                    Text(
+                        text = "Toggle between Cyber Dark, Clean Light, or System default",
+                        style = QuovexTheme.typography.bodySmall,
+                        color = colors.textSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.md))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(QuovexTheme.spacing.sm)
+                    ) {
+                        ThemeOptionChip(
+                            label = "🌙 Dark",
+                            isSelected = state.themeMode == com.quovex.data.local.ThemeMode.DARK,
+                            onClick = { viewModel.setThemeMode(com.quovex.data.local.ThemeMode.DARK) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        ThemeOptionChip(
+                            label = "☀️ Light",
+                            isSelected = state.themeMode == com.quovex.data.local.ThemeMode.LIGHT,
+                            onClick = { viewModel.setThemeMode(com.quovex.data.local.ThemeMode.LIGHT) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        ThemeOptionChip(
+                            label = "📱 System",
+                            isSelected = state.themeMode == com.quovex.data.local.ThemeMode.SYSTEM,
+                            onClick = { viewModel.setThemeMode(com.quovex.data.local.ThemeMode.SYSTEM) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(QuovexTheme.spacing.xl))
+
+            // --- 5. PREFERENCES LIST ---
             QuovexSectionHeader(
                 title = "Preferences"
             )
@@ -423,7 +484,7 @@ fun ProfileScreen(
                     ProfileOptionRow(
                         icon = Icons.Filled.Person,
                         title = "Account Details",
-                        subtitle = state.userProfile.email.ifEmpty { "Connected via Google / Guest" }
+                        subtitle = state.userProfile.email.ifEmpty { "Connected via Google / Password" }
                     )
                     ProfileOptionRow(
                         icon = Icons.Filled.Notifications,
@@ -542,3 +603,35 @@ private fun ProfileOptionRow(
         )
     }
 }
+
+@Composable
+private fun ThemeOptionChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = QuovexTheme.colors
+
+    Box(
+        modifier = modifier
+            .clip(QuovexTheme.shapes.medium)
+            .background(if (isSelected) colors.primaryContainer else colors.surfaceVariant)
+            .border(
+                width = if (isSelected) 1.5.dp else 1.dp,
+                color = if (isSelected) colors.primary else colors.border,
+                shape = QuovexTheme.shapes.medium
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = QuovexTheme.spacing.md),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            style = QuovexTheme.typography.labelMedium,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            color = if (isSelected) colors.primary else colors.textSecondary
+        )
+    }
+}
+

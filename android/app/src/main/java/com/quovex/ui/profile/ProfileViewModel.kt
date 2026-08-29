@@ -2,6 +2,7 @@ package com.quovex.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.quovex.data.local.ThemeMode
 import com.quovex.data.local.UserPreferencesManager
 import com.quovex.data.remote.FirebaseAuthService
 import com.quovex.data.remote.FirebaseFirestoreService
@@ -27,7 +28,8 @@ data class ProfileUiState(
     val focusScoreAverage: Int = 94,
     val isSignedOut: Boolean = false,
     val scholarLevelInfo: ScholarLevelInfo = ScholarLevelInfo(ScholarRank.NOVICE, 0L, 0L, 500L, 0f, ScholarRank.APPRENTICE),
-    val achievements: List<AchievementBadge> = emptyList()
+    val achievements: List<AchievementBadge> = emptyList(),
+    val themeMode: ThemeMode = ThemeMode.SYSTEM
 )
 
 @HiltViewModel
@@ -45,6 +47,7 @@ class ProfileViewModel @Inject constructor(
 
     init {
         loadData()
+        observeThemeMode()
     }
 
     private fun loadData() {
@@ -66,6 +69,18 @@ class ProfileViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun observeThemeMode() {
+        viewModelScope.launch {
+            userPreferencesManager.themeMode.collect { mode ->
+                _uiState.update { it.copy(themeMode = mode) }
+            }
+        }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        userPreferencesManager.setThemeMode(mode)
     }
 
     fun signOut(onSignedOut: () -> Unit) {

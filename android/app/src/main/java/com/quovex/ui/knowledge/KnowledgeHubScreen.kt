@@ -1,5 +1,6 @@
 package com.quovex.ui.knowledge
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +23,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
+import com.quovex.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
@@ -46,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.quovex.ui.components.QuovexButton
+import com.quovex.ui.components.QuovexCardSkeleton
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -279,7 +283,11 @@ fun KnowledgeHubScreen(
                 )
             }
 
-            if (uiState.materials.isEmpty()) {
+            if (uiState.isLoading) {
+                items(3) {
+                    QuovexCardSkeleton()
+                }
+            } else if (uiState.materials.isEmpty()) {
                 item {
                     EmptyKnowledgeHubState(onAddClick = onNavigateToAddMaterial)
                 }
@@ -349,22 +357,51 @@ private fun MaterialItemCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val subjectResId = when (material.subject.lowercase()) {
+                "physics" -> R.drawable.ic_subject_physics
+                "chemistry" -> R.drawable.ic_subject_chemistry
+                "mathematics", "maths" -> R.drawable.ic_subject_maths
+                "biology" -> R.drawable.ic_subject_biology
+                "history", "social science" -> R.drawable.ic_subject_history
+                "computer science", "cs" -> R.drawable.ic_subject_cs
+                else -> R.drawable.ic_subject_physics
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    color = BrandEmeraldDim.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(6.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = material.subject.ifBlank { "General" },
-                        color = BrandEmerald,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(BrandEmerald.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = subjectResId),
+                            contentDescription = material.subject,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Surface(
+                        color = BrandEmeraldDim.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = material.subject.ifBlank { "General" },
+                            color = BrandEmerald,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
 
                 Text(
@@ -466,15 +503,14 @@ private fun EmptyKnowledgeHubState(onAddClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 48.dp),
+            .padding(vertical = 36.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.Description,
-            contentDescription = null,
-            tint = TextSecondary.copy(alpha = 0.5f),
-            modifier = Modifier.size(64.dp)
+        Image(
+            painter = painterResource(id = R.drawable.ill_empty_notes_ufo),
+            contentDescription = "No Materials",
+            modifier = Modifier.size(110.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(

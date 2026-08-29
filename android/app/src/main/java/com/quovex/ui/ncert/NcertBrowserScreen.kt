@@ -1,5 +1,6 @@
 package com.quovex.ui.ncert
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +20,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
+import com.quovex.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -249,19 +252,28 @@ fun NcertBookCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Book Icon & Badge Column
+            // 3D Subject Cover Graphic Box
+            val subjectResId = when (book.subject.lowercase()) {
+                "physics" -> R.drawable.ic_subject_physics
+                "chemistry" -> R.drawable.ic_subject_chemistry
+                "mathematics", "maths" -> R.drawable.ic_subject_maths
+                "biology" -> R.drawable.ic_subject_biology
+                "history", "social science" -> R.drawable.ic_subject_history
+                "computer science", "cs" -> R.drawable.ic_subject_cs
+                else -> R.drawable.ic_subject_physics
+            }
+
             Box(
                 modifier = Modifier
                     .size(54.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(colors.primary.copy(alpha = 0.12f)),
+                    .background(colors.primaryContainer.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Bookmark,
-                    contentDescription = null,
-                    tint = colors.primary,
-                    modifier = Modifier.size(28.dp)
+                Image(
+                    painter = painterResource(id = subjectResId),
+                    contentDescription = book.subject,
+                    modifier = Modifier.size(40.dp)
                 )
             }
 

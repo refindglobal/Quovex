@@ -16,6 +16,9 @@ import javax.inject.Inject
 
 data class AuthUiState(
     val isLoading: Boolean = false,
+    val isSignUpMode: Boolean = false,
+    val emailInput: String = "",
+    val passwordInput: String = "",
     val errorMessage: String? = null
 )
 
@@ -28,10 +31,10 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    /**
-     * Auth Method: Google Sign-In ONLY (as per TECHNICAL_DEEP_DIVE.md §5)
-     * No email, no anonymous — mandatory Google account.
-     */
+    fun toggleAuthMode() = _uiState.update { it.copy(isSignUpMode = !it.isSignUpMode, errorMessage = null) }
+    fun onEmailChanged(email: String) = _uiState.update { it.copy(emailInput = email, errorMessage = null) }
+    fun onPasswordChanged(pass: String) = _uiState.update { it.copy(passwordInput = pass, errorMessage = null) }
+
     fun signInWithGoogle(context: Context, webClientId: String, onSuccess: (isNewUser: Boolean) -> Unit) {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
@@ -39,33 +42,51 @@ class AuthViewModel @Inject constructor(
             val result = authService.signInWithGoogle(context, webClientId)
 
             result.onSuccess { user ->
-                // Register FCM token immediately after sign-in
                 registerFcmToken(user.uid)
-
-                // Check if Firestore profile already exists to determine if new user
                 firestoreService.getUserProfileFlow(user.uid).collect { profile ->
                     _uiState.update { it.copy(isLoading = false) }
-                    onSuccess(profile == null) // null = new user → go to Onboarding
+                    onSuccess(profile == null)
                     return@collect
                 }
             }.onFailure { error ->
-                // Fallback to guest mode on emulator/test devices without Google Play Services
-                signInGuest(onSuccess)
+                _uiState.update { it.copy(isLoading = false, errorMessage = error.localizedMessage ?: "Google Sign-In failed") }
             }
         }
     }
 
-    fun signInGuest(onSuccess: (isNewUser: Boolean) -> Unit) {
+    fun submitEmailAuth(onSuccess: (isNewUser: Boolean) -> Unit) {
+        val state = _uiState.value
+        val email = state.emailInput.trim()
+        val password = state.passwordInput.trim()
+
+        if (email.isBlank() || password.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please enter both email and password") }
+            return
+        }
+
+        if (password.length < 6) {
+            _uiState.update { it.copy(errorMessage = "Password must be at least 6 characters") }
+            return
+        }
+
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
         viewModelScope.launch {
-            val result = authService.signInAnonymously()
-            result.onSuccess {
-                _uiState.update { it.copy(isLoading = false) }
-                onSuccess(false)
-            }.onFailure { _ ->
-                // Fallback to local guest mode so the app is accessible even when remote Anonymous Auth is restricted
-                _uiState.update { it.copy(isLoading = false) }
-                onSuccess(false)
+            val result = if (state.isSignUpMode) {
+                authService.signUpWithEmail(email, password)
+            } else {
+                authService.signInWithEmail(email, password)
+            }
+
+            result.onSuccess { user ->
+                registerFcmToken(user.uid)
+                firestoreService.getUserProfileFlow(user.uid).collect { profile ->
+                    _uiState.update { it.copy(isLoading = false) }
+                    onSuccess(state.isSignUpMode || profile == null)
+                    return@collect
+                }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isLoading = false, errorMessage = error.localizedMessage ?: "Authentication failed") }
             }
         }
     }

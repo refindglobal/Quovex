@@ -69,9 +69,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.quovex.R
 import com.quovex.domain.model.DoubtFollowUpMessage
 import com.quovex.theme.BrandEmerald
 import com.quovex.theme.BrandEmeraldDim
@@ -165,16 +167,15 @@ fun ImageDoubtScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(64.dp)
+                                .size(72.dp)
                                 .clip(CircleShape)
                                 .background(BrandEmeraldDim),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                Icons.Filled.Psychology,
-                                contentDescription = null,
-                                tint = BrandEmerald,
-                                modifier = Modifier.size(36.dp)
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_doubt_scanner_viewfinder),
+                                contentDescription = "Doubt Scanner",
+                                modifier = Modifier.size(54.dp)
                             )
                         }
                         Spacer(Modifier.height(spacing.base))

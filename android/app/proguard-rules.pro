@@ -59,4 +59,10 @@
 -keep class com.google.android.gms.ads.** { *; }
 -dontwarn com.google.android.gms.ads.**
 
+# --- PDF Rendering & Extraction (PDFBox Android & AndroidPdfViewer) ---
+-dontwarn com.gemalto.jp2.**
+-dontwarn com.tom_roush.pdfbox.**
+-keep class com.tom_roush.pdfbox.** { *; }
+-keep class com.github.barteksc.pdfviewer.** { *; }
+
 

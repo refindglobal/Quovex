@@ -1,6 +1,11 @@
 package com.quovex.ui.navigation
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Groups
@@ -17,11 +22,13 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -73,6 +80,10 @@ import com.quovex.ui.scanner.DocumentScannerViewModel
 import com.quovex.ui.timer.TimerScreen
 import com.quovex.ui.timer.TimerViewModel
 
+import com.quovex.ui.profile.ProfileSetupScreen
+import com.quovex.ui.profile.ProfileSetupViewModel
+import com.quovex.ui.splash.SplashScreen
+
 data class NavTabItem(
     val route: String,
     val label: String,
@@ -89,8 +100,7 @@ fun QuovexNavGraph(
     val currentDestination = navBackStackEntry?.destination
     val colors = QuovexTheme.colors
 
-    val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
-    val startRoute = if (!isLoggedIn) QuovexRoute.Auth.route else QuovexRoute.Dashboard.route
+    val startRoute = QuovexRoute.Splash.route
 
     val navTabs = listOf(
         NavTabItem(QuovexRoute.Dashboard.route, "Home", Icons.Filled.Home, Icons.Outlined.Home),
@@ -113,41 +123,56 @@ fun QuovexNavGraph(
         containerColor = colors.background,
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(
-                    containerColor = colors.surface,
-                    contentColor = colors.textPrimary,
-                    tonalElevation = QuovexTheme.elevation.high
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    navTabs.forEach { tab ->
-                        val isSelected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
-                        NavigationBarItem(
-                            icon = {
-                                Icon(
-                                    imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
-                                    contentDescription = tab.label
-                                )
-                            },
-                            label = {
-                                Text(tab.label, style = QuovexTheme.typography.labelSmall)
-                            },
-                            selected = isSelected,
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = colors.primary,
-                                selectedTextColor = colors.primary,
-                                indicatorColor = colors.surfaceVariant,
-                                unselectedIconColor = colors.textSecondary,
-                                unselectedTextColor = colors.textSecondary
-                            ),
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(32.dp),
+                        color = colors.surface.copy(alpha = 0.96f),
+                        border = BorderStroke(1.dp, Color(0xFF1F2E28)),
+                        shadowElevation = 16.dp
+                    ) {
+                        NavigationBar(
+                            containerColor = Color.Transparent,
+                            contentColor = colors.textPrimary,
+                            tonalElevation = 0.dp,
+                            modifier = Modifier.height(64.dp)
+                        ) {
+                            navTabs.forEach { tab ->
+                                val isSelected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
+                                NavigationBarItem(
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
+                                            contentDescription = tab.label
+                                        )
+                                    },
+                                    label = {
+                                        Text(tab.label, style = QuovexTheme.typography.labelSmall)
+                                    },
+                                    selected = isSelected,
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = colors.primary,
+                                        selectedTextColor = colors.primary,
+                                        indicatorColor = colors.surfaceVariant,
+                                        unselectedIconColor = colors.textSecondary,
+                                        unselectedTextColor = colors.textSecondary
+                                    ),
+                                    onClick = {
+                                        navController.navigate(tab.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -158,20 +183,23 @@ fun QuovexNavGraph(
             startDestination = startRoute,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // --- AUTH ---
-            composable(QuovexRoute.Auth.route) {
-                val authViewModel: AuthViewModel = hiltViewModel()
-                AuthScreen(
-                    viewModel = authViewModel,
-                    onAuthSuccess = { isNewUser ->
-                        if (isNewUser) {
-                            navController.navigate(QuovexRoute.Onboarding.route) {
-                                popUpTo(QuovexRoute.Auth.route) { inclusive = true }
-                            }
-                        } else {
-                            navController.navigate(QuovexRoute.Dashboard.route) {
-                                popUpTo(QuovexRoute.Auth.route) { inclusive = true }
-                            }
+            // --- SPLASH ---
+            composable(QuovexRoute.Splash.route) {
+                SplashScreen(
+                    userPreferencesManager = userPreferencesManager,
+                    onNavigateToOnboarding = {
+                        navController.navigate(QuovexRoute.Onboarding.route) {
+                            popUpTo(QuovexRoute.Splash.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToAuth = {
+                        navController.navigate(QuovexRoute.Auth.route) {
+                            popUpTo(QuovexRoute.Splash.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToDashboard = {
+                        navController.navigate(QuovexRoute.Dashboard.route) {
+                            popUpTo(QuovexRoute.Splash.route) { inclusive = true }
                         }
                     }
                 )
@@ -183,8 +211,40 @@ fun QuovexNavGraph(
                 OnboardingWizardScreen(
                     viewModel = onboardingViewModel,
                     onOnboardingComplete = {
-                        navController.navigate(QuovexRoute.Dashboard.route) {
+                        navController.navigate(QuovexRoute.Auth.route) {
                             popUpTo(QuovexRoute.Onboarding.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            // --- AUTH ---
+            composable(QuovexRoute.Auth.route) {
+                val authViewModel: AuthViewModel = hiltViewModel()
+                AuthScreen(
+                    viewModel = authViewModel,
+                    onAuthSuccess = { isNewUser ->
+                        if (isNewUser) {
+                            navController.navigate(QuovexRoute.ProfileSetup.route) {
+                                popUpTo(QuovexRoute.Auth.route) { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate(QuovexRoute.Dashboard.route) {
+                                popUpTo(QuovexRoute.Auth.route) { inclusive = true }
+                            }
+                        }
+                    }
+                )
+            }
+
+            // --- PROFILE SETUP (POST-REGISTRATION) ---
+            composable(QuovexRoute.ProfileSetup.route) {
+                val profileSetupViewModel: ProfileSetupViewModel = hiltViewModel()
+                ProfileSetupScreen(
+                    viewModel = profileSetupViewModel,
+                    onSetupComplete = {
+                        navController.navigate(QuovexRoute.Dashboard.route) {
+                            popUpTo(QuovexRoute.ProfileSetup.route) { inclusive = true }
                         }
                     }
                 )

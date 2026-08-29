@@ -1,0 +1,9 @@
+# Quovex — AI Student Operating System
+> The AI-powered study ecosystem for serious students worldwide.
+
+## Brand & Product Identity
+- Name: Quovex
+- Platforms: Android Native App, Web Platform (https://quovex.online)
+- Founders: Rohit & Kartikey (Noida, Uttar Pradesh, India)
+- Studio: Refind Global Studio
+- Core Purpose: Consolidates Focus Timer, Quovex AI Tutor, SM-2 Flashcards, NCERT Library, and Virtual Study Rooms into one synchronized workspace.

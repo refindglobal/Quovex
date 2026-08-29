@@ -221,10 +221,9 @@ fun DashboardScreen(
                                 isSelected = true,
                                 onClick = onStreakClick,
                                 leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.LocalFireDepartment,
+                                    Image(
+                                        painter = painterResource(id = R.drawable.ic_streak_flame_blazing),
                                         contentDescription = "Streak flame",
-                                        tint = colors.warning,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -396,9 +395,66 @@ fun DashboardScreen(
                     // ── 3B. EXAM COUNTDOWN ──────────────────────────────────────────
                     ExamCountdownCard(countdown = state.examCountdown)
 
-                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.base))
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.lg))
 
-                    // ── 3C. AI STUDY PLAN ROADMAP WIDGET ────────────────────────────
+                    // ── 3C. 3D BENTO QUICK ACTIONS ──────────────────────────────────
+                    Text(
+                        text = "QUICK ACTIONS",
+                        style = QuovexTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.primary,
+                        letterSpacing = 1.1.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.xs))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(QuovexTheme.spacing.sm)
+                    ) {
+                        BentoActionCard(
+                            title = "Focus Timer",
+                            subtitle = "Deep work mode",
+                            iconResId = R.drawable.ic_timer_stopwatch,
+                            modifier = Modifier.weight(1f),
+                            onClick = onStartTimerClick
+                        )
+
+                        BentoActionCard(
+                            title = "AI Doubts",
+                            subtitle = "Instant explanations",
+                            iconResId = R.drawable.ic_doubt_scanner_viewfinder,
+                            modifier = Modifier.weight(1f),
+                            onClick = onAiChatClick
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.sm))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(QuovexTheme.spacing.sm)
+                    ) {
+                        BentoActionCard(
+                            title = "Diagnostic Quiz",
+                            subtitle = "Target weak areas",
+                            iconResId = R.drawable.ic_diagnostic_radar,
+                            modifier = Modifier.weight(1f),
+                            onClick = onDailyDiagnosticQuizClick
+                        )
+
+                        BentoActionCard(
+                            title = "AI Companion",
+                            subtitle = "24/7 Mentor",
+                            iconResId = R.drawable.ic_ai_tutor_robot,
+                            modifier = Modifier.weight(1f),
+                            onClick = onAiChatClick
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(QuovexTheme.spacing.lg))
+
+                    // ── 3D. AI STUDY PLAN ROADMAP WIDGET ────────────────────────────
                     val activePlan = state.activeStudyPlan
                     val todayTasks = state.todayStudyTasks
 
@@ -1115,5 +1171,63 @@ private fun formatTimeAgo(timestampMillis: Long): String {
         minutes < 60 -> "${minutes}m ago"
         minutes < 1440 -> "${minutes / 60}h ago"
         else -> "${minutes / 1440}d ago"
+    }
+}
+
+@Composable
+private fun BentoActionCard(
+    title: String,
+    subtitle: String,
+    iconResId: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val colors = QuovexTheme.colors
+
+    QuovexCard(
+        modifier = modifier.clickable(onClick = onClick),
+        backgroundColor = colors.surface,
+        borderColor = colors.border,
+        elevation = QuovexTheme.elevation.card
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(QuovexTheme.spacing.base),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(QuovexTheme.shapes.medium)
+                    .background(colors.primaryContainer.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = iconResId),
+                    contentDescription = title,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(QuovexTheme.spacing.md))
+
+            Column {
+                Text(
+                    text = title,
+                    style = QuovexTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = QuovexTheme.typography.bodySmall,
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }

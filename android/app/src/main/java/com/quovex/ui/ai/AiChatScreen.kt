@@ -27,6 +27,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.painterResource
+import com.quovex.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddPhotoAlternate
@@ -127,11 +129,10 @@ fun AiChatScreen(
                             label = "Quovex AI",
                             isSelected = true,
                             leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.AutoAwesome,
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_ai_tutor_robot),
                                     contentDescription = "AI Powered",
-                                    tint = colors.onPrimary,
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         )
@@ -229,11 +230,10 @@ fun AiChatScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier.padding(bottom = QuovexTheme.spacing.sm)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.AutoAwesome,
+                                        Image(
+                                            painter = painterResource(id = R.drawable.ic_ai_tutor_robot),
                                             contentDescription = "Quovex AI",
-                                            tint = colors.primary,
-                                            modifier = Modifier.size(16.dp)
+                                            modifier = Modifier.size(20.dp)
                                         )
                                         Spacer(modifier = Modifier.width(QuovexTheme.spacing.xs))
                                         Text(
@@ -250,6 +250,24 @@ fun AiChatScreen(
                                         color = colors.textPrimary,
                                         lineHeight = 22.sp
                                     )
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = QuovexTheme.spacing.xs),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        QuovexChip(
+                                            label = "💡 Explain Simpler",
+                                            isSelected = false,
+                                            onClick = { viewModel.sendMessage("Can you explain this simpler with a real-world analogy?") }
+                                        )
+                                        QuovexChip(
+                                            label = "🎴 Flashcards",
+                                            isSelected = false,
+                                            onClick = { viewModel.sendMessage("Create 3 high-yield active recall flashcards from this explanation.") }
+                                        )
+                                    }
                                 }
                             }
                         }

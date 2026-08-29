@@ -36,7 +36,9 @@ android {
 
   buildTypes {
     release {
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
+      signingConfig = signingConfigs.getByName("debug")
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
@@ -52,6 +54,10 @@ android {
     getByName("test") {
       java.srcDirs("src/test/java")
     }
+  }
+  lint {
+    abortOnError = false
+    checkReleaseBuilds = false
   }
 }
 

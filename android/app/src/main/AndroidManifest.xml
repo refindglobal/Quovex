@@ -35,7 +35,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:windowSoftInputMode="adjustResize"
-        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Quovex">
 
         <activity
@@ -50,7 +49,7 @@
         <!-- Fullscreen Focus Distraction Blocker Overlay -->
         <activity
             android:name=".ui.blocker.BlockerOverlayActivity"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleTask"
             android:excludeFromRecents="true"
             android:theme="@style/Theme.Quovex" />
@@ -92,10 +91,10 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <!-- Google AdMob Application ID (Official Sample App ID for testing) -->
+        <!-- Google AdMob Application ID (Placeholder for Production) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-0000000000000000~0000000000" />
 
         <!-- Resolve AdServices manifest merge conflict between Firebase and Google Mobile Ads -->
         <property

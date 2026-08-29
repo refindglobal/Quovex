@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -83,6 +84,7 @@ import com.quovex.ui.components.QuovexDialog
 import com.quovex.ui.components.QuovexErrorState
 import com.quovex.ui.components.QuovexTextField
 import com.quovex.ui.components.QuovexTopAppBar
+import com.quovex.ui.components.SoundscapeWaveformVisualizer
 import com.quovex.ui.timer.components.CameraFocusPreview
 import com.quovex.ui.timer.components.DistractionShieldSheet
 import com.quovex.ui.timer.components.SoundscapeSelectorSheet
@@ -779,9 +781,12 @@ private fun ActiveSessionContent(
             ) {
                 Text(
                     text = state.formattedRemainingTime,
-                    fontSize = 42.sp,
+                    fontSize = 44.sp,
                     fontWeight = FontWeight.ExtraBold,
                     fontFamily = FontFamily.Monospace,
+                    style = TextStyle(
+                        fontFeatureSettings = "tnum"
+                    ),
                     color = colors.textPrimary,
                     letterSpacing = 1.sp
                 )
@@ -824,6 +829,15 @@ private fun ActiveSessionContent(
                         fontWeight = FontWeight.SemiBold,
                         color = if (state.soundscapeState.isPlaying) colors.primary else colors.textSecondary
                     )
+                    if (state.soundscapeState.isPlaying) {
+                        SoundscapeWaveformVisualizer(
+                            isPlaying = true,
+                            barCount = 6,
+                            maxHeight = 14.dp,
+                            barWidth = 2.dp,
+                            barSpacing = 2.dp
+                        )
+                    }
                     if (state.soundscapeState.selectedPreset.id != "none") {
                         IconButton(
                             onClick = onToggleSoundscapePlay,

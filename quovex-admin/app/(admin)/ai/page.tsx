@@ -30,13 +30,22 @@ export default function AiOperationsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">AI Operations & Key Management</h1>
           <p className="text-sm text-muted-foreground">Monitor server-side AI key rotation pool, provider latency, and automatic failovers (Zero Client Exposure).</p>
         </div>
-        <button
-          onClick={fetchKeys}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-secondary text-secondary-foreground font-medium text-xs hover:bg-secondary/80 border border-border transition-colors"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Refresh Pool</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <a
+            href="/ai/study-plans"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-black font-semibold text-xs hover:bg-primary/90 transition-colors"
+          >
+            <Bot className="w-3.5 h-3.5" />
+            <span>Study Plan Inspector</span>
+          </a>
+          <button
+            onClick={fetchKeys}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-secondary text-secondary-foreground font-medium text-xs hover:bg-secondary/80 border border-border transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Refresh Pool</span>
+          </button>
+        </div>
       </div>
 
       {/* Overview Cards */}

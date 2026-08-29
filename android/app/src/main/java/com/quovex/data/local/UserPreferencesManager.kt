@@ -6,12 +6,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+enum class ThemeMode {
+    SYSTEM,
+    DARK,
+    LIGHT
+}
+
 open class UserPreferencesManager(
     private val prefs: SharedPreferences? = null
 ) {
 
     private val _userProfile = MutableStateFlow(loadProfileFromPrefs())
     open val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
+
+    private val _themeMode = MutableStateFlow(loadThemeModeFromPrefs())
+    open val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
     private fun loadProfileFromPrefs(): UserProfile {
         val p = prefs ?: return UserProfile(
@@ -42,6 +51,21 @@ open class UserPreferencesManager(
         )
     }
 
+    private fun loadThemeModeFromPrefs(): ThemeMode {
+        val p = prefs ?: return ThemeMode.SYSTEM
+        val modeName = p.getString("theme_mode", ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name
+        return try {
+            ThemeMode.valueOf(modeName)
+        } catch (_: Exception) {
+            ThemeMode.SYSTEM
+        }
+    }
+
+    open fun setThemeMode(mode: ThemeMode) {
+        prefs?.edit()?.putString("theme_mode", mode.name)?.apply()
+        _themeMode.value = mode
+    }
+
     open fun saveUserProfile(profile: UserProfile) {
         prefs?.edit()?.apply {
             putString("user_id", profile.id)
@@ -58,6 +82,20 @@ open class UserPreferencesManager(
             apply()
         }
         _userProfile.value = profile
+    }
+
+    open fun isOnboardingCompleted(): Boolean {
+        return prefs?.getBoolean("is_onboarded", false) ?: false
+    }
+
+    open fun setOnboardingCompleted(completed: Boolean) {
+        prefs?.edit()?.putBoolean("is_onboarded", completed)?.apply()
+        _userProfile.value = _userProfile.value.copy(isOnboarded = completed)
+    }
+
+    open fun setDailyStudyTarget(hours: Float) {
+        prefs?.edit()?.putFloat("daily_goal_hours", hours)?.apply()
+        _userProfile.value = _userProfile.value.copy(dailyGoalHours = hours)
     }
 
     open fun completeOnboarding(name: String, avatarId: Int, targetExam: String, dailyGoalHours: Float) {

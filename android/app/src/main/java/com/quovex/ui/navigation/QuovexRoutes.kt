@@ -1,8 +1,10 @@
 package com.quovex.ui.navigation
 
 sealed class QuovexRoute(val route: String) {
+    object Splash : QuovexRoute("splash")
     object Auth : QuovexRoute("auth")
     object Onboarding : QuovexRoute("onboarding")
+    object ProfileSetup : QuovexRoute("profile_setup")
     object Dashboard : QuovexRoute("dashboard")
     object Timer : QuovexRoute("timer")
     object Community : QuovexRoute("community")

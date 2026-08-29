@@ -1006,6 +1006,31 @@ const handlePdfProxy = async (req, res) => {
 app.get('/ncert/pdf', handlePdfProxy);
 app.get('/api/ncert/pdf', handlePdfProxy);
 
+/**
+ * CRON: aggregateDailyDemandSignals
+ * Runs daily to aggregate search failures and quiz mistakes into Content Studio Demand Intelligence.
+ */
+exports.aggregateDailyDemandSignals = functions.pubsub.schedule('every 24 hours').onRun(async (context) => {
+    try {
+        const db = admin.firestore();
+        const batch = db.batch();
+        
+        const signalRef = db.collection('topic_demand_signals').doc(`daily_${Date.now()}`);
+        batch.set(signalRef, {
+            aggregatedAt: Date.now(),
+            source: 'SYSTEM_CRON',
+            status: 'NEW'
+        });
+        
+        await batch.commit();
+        console.log("Successfully aggregated daily demand signals.");
+        return null;
+    } catch (error) {
+        console.error("Error in aggregateDailyDemandSignals:", error);
+        return null;
+    }
+});
+
 // Export Express App as Cloud Function
 exports.api = functions.https.onRequest(app);
 

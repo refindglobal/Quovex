@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +26,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
+import com.quovex.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Pause
@@ -302,18 +305,40 @@ private fun SoundscapePresetCard(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon / Emoji Box
+            // 3D Graphic / Emoji Box
+            val soundscapeDrawable = when {
+                preset.id.contains("lofi", ignoreCase = true) || preset.title.contains("lofi", ignoreCase = true) -> R.drawable.ic_soundscape_lofi
+                preset.category == SoundscapeCategory.BINAURAL -> R.drawable.ic_soundscape_binaural
+                preset.category == SoundscapeCategory.NATURE -> R.drawable.ic_soundscape_rain
+                preset.category == SoundscapeCategory.NOISE -> R.drawable.ic_soundscape_space
+                preset.id != "none" -> R.drawable.ic_soundscape_space
+                else -> null
+            }
+
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .background(if (isSelected) colors.primary.copy(alpha = 0.15f) else colors.surfaceVariant),
+                    .background(if (isSelected) colors.primary.copy(alpha = 0.2f) else colors.surfaceVariant)
+                    .border(
+                        width = if (isSelected) 1.5.dp else 0.5.dp,
+                        color = if (isSelected) colors.primary else colors.border,
+                        shape = CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = preset.iconEmoji,
-                    fontSize = 20.sp
-                )
+                if (soundscapeDrawable != null) {
+                    Image(
+                        painter = painterResource(id = soundscapeDrawable),
+                        contentDescription = preset.title,
+                        modifier = Modifier.size(34.dp)
+                    )
+                } else {
+                    Text(
+                        text = preset.iconEmoji,
+                        fontSize = 20.sp
+                    )
+                }
             }
 
             Spacer(Modifier.width(spacing.md))

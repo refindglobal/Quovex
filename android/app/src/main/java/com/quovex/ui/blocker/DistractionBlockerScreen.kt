@@ -282,7 +282,7 @@ fun DistractionBlockerContent(
                                     color = colors.warning
                                 )
                                 Text(
-                                    text = "Quovex needs Accessibility to detect and block distracting apps during focus sessions.",
+                                    text = "Why: Needed to detect and block distracting apps during focus sessions.\nWhere: Settings > Accessibility > Installed Apps > Quovex.\nIf Denied: App blocking will fail.",
                                     style = QuovexTheme.typography.bodySmall,
                                     color = colors.textSecondary
                                 )

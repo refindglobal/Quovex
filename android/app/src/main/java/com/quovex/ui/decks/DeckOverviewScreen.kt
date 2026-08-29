@@ -1,5 +1,6 @@
 package com.quovex.ui.decks
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.res.painterResource
+import com.quovex.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.School
@@ -81,11 +84,10 @@ fun DeckOverviewScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        Icons.Filled.School,
-                        contentDescription = null,
-                        tint = colors.textSecondary,
-                        modifier = Modifier.size(64.dp)
+                    Image(
+                        painter = painterResource(id = R.drawable.ill_empty_decks_chest),
+                        contentDescription = "Empty Decks",
+                        modifier = Modifier.size(120.dp)
                     )
                     Spacer(Modifier.height(spacing.lg))
                     Text(
@@ -195,12 +197,23 @@ private fun DeckOverviewContent(
             elevation = QuovexTheme.elevation.card
         ) {
             Column(modifier = Modifier.padding(spacing.lg)) {
-                Text(
-                    "Deck Statistics",
-                    style = QuovexTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = colors.textSecondary
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "Deck Statistics",
+                        style = QuovexTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colors.textSecondary
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_deck_flashcards),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
                 Spacer(Modifier.height(spacing.lg))
 
                 Row(

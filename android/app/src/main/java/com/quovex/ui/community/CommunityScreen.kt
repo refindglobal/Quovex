@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.res.painterResource
+import com.quovex.R
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -179,10 +182,10 @@ private fun CommunityTabRow(
         horizontalArrangement = Arrangement.spacedBy(QuovexTheme.spacing.sm)
     ) {
         listOf(
-            Triple(CommunityTab.ROOMS, "Study Rooms", Icons.Filled.Groups),
-            Triple(CommunityTab.LEADERBOARD, "Leaderboard", Icons.Filled.EmojiEvents),
-            Triple(CommunityTab.BATTLES, "Battles", Icons.Filled.SportsKabaddi)
-        ).forEach { (tab, label, icon) ->
+            Triple(CommunityTab.ROOMS, "Study Rooms", R.drawable.ic_community_live_room),
+            Triple(CommunityTab.LEADERBOARD, "Leaderboard", R.drawable.ic_community_leaderboard),
+            Triple(CommunityTab.BATTLES, "Battles", R.drawable.ic_community_battle)
+        ).forEach { (tab, label, iconRes) ->
             val isSelected = selected == tab
             val bgColor by animateColorAsState(
                 targetValue = if (isSelected) colors.primaryContainer else colors.surface,
@@ -202,8 +205,12 @@ private fun CommunityTabRow(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(icon, contentDescription = label, tint = textColor, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = label,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(6.dp))
                 Text(
                     text = label,
                     color = textColor,

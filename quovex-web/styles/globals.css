@@ -1,0 +1,170 @@
+@import 'katex/dist/katex.min.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Canonical Quovex 3-Mode Theme Tokens ────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  /* Cyber Dark Theme (Default) */
+  --background: #0A0F0D;
+  --on-background: #E8F5F0;
+
+  --surface: #111917;
+  --on-surface: #E8F5F0;
+  --surface-variant: #1C2B24;
+  --on-surface-variant: #8AAFA3;
+  --surface-elevated: #16231F;
+
+  --primary: #00C896;
+  --on-primary: #0A0F0D;
+  --primary-container: #003828;
+  --on-primary-container: #5DFDCB;
+  --primary-glow: rgba(0, 200, 150, 0.2);
+
+  --secondary: #2AC49D;
+  --on-secondary: #0A0F0D;
+
+  --border: #2D4438;
+  --border-light: #1F3329;
+  --border-focus: #00C896;
+
+  --text-primary: #E8F5F0;
+  --text-secondary: #8AAFA3;
+  --text-tertiary: #567269;
+  --text-disabled: #384D45;
+
+  --success: #00C896;
+  --on-success: #0A0F0D;
+  --success-container: rgba(0, 200, 150, 0.15);
+
+  --warning: #FF9F1C;
+  --on-warning: #0A0F0D;
+  --warning-container: rgba(255, 159, 28, 0.15);
+
+  --error: #FF5252;
+  --on-error: #FFFFFF;
+  --error-container: rgba(255, 82, 82, 0.15);
+
+  --info: #2196F3;
+  --on-info: #FFFFFF;
+  --info-container: rgba(33, 150, 243, 0.15);
+
+  --divider: #1F3329;
+  --xp-gold: #FFD700;
+  --streak-fire: #FF6B35;
+
+  --glass-bg: rgba(17, 25, 23, 0.75);
+  --glass-border: rgba(0, 200, 150, 0.15);
+  --glass-elevated-bg: rgba(22, 35, 31, 0.85);
+  --glass-elevated-border: rgba(0, 200, 150, 0.25);
+  --card-shadow: 0 4px 24px rgba(0, 200, 150, 0.06);
+  --glow-shadow: 0 0 24px rgba(0, 200, 150, 0.35);
+}
+
+[data-theme="light"] {
+  /* Clean Light Mode (Matching Android LightQuovexColors) */
+  --background: #F7F9F8;
+  --on-background: #0F172A;
+
+  --surface: #FFFFFF;
+  --on-surface: #0F172A;
+  --surface-variant: #EDF2EF;
+  --on-surface-variant: #475569;
+  --surface-elevated: #F1F5F3;
+
+  --primary: #009B74;
+  --on-primary: #FFFFFF;
+  --primary-container: #C3FBE6;
+  --on-primary-container: #002116;
+  --primary-glow: rgba(0, 200, 150, 0.12);
+
+  --secondary: #008966;
+  --on-secondary: #FFFFFF;
+
+  --border: #D9E2DC;
+  --border-light: #E2E8F0;
+  --border-focus: #009B74;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
+  --text-disabled: #CBD5E1;
+
+  --success: #059669;
+  --on-success: #FFFFFF;
+  --success-container: #D1FAE5;
+
+  --warning: #D97706;
+  --on-warning: #FFFFFF;
+  --warning-container: #FEF3C7;
+
+  --error: #D32F2F;
+  --on-error: #FFFFFF;
+  --error-container: #FEE2E2;
+
+  --info: #0284C7;
+  --on-info: #FFFFFF;
+  --info-container: #E0F2FE;
+
+  --divider: #E2E8F0;
+  --xp-gold: #D97706;
+  --streak-fire: #EA580C;
+
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(217, 226, 220, 0.8);
+  --glass-elevated-bg: rgba(241, 245, 243, 0.9);
+  --glass-elevated-border: rgba(0, 155, 116, 0.2);
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --glow-shadow: 0 0 20px rgba(0, 155, 116, 0.18);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-variant);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Glassmorphic utilities using CSS variables */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-panel-elevated {
+  background: var(--glass-elevated-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-elevated-border);
+}
+
+.glow-emerald {
+  box-shadow: var(--glow-shadow);
+}
+
+.glow-emerald-lg {
+  box-shadow: 0 0 40px var(--primary-glow);
+}

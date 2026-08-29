@@ -2,6 +2,7 @@ package com.quovex.ui.streak
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
+import com.quovex.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -372,11 +375,10 @@ fun ActiveStreakHeroCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.LocalFireDepartment,
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_streak_flame_blazing),
                         contentDescription = "Active Flame",
-                        tint = Color(0xFFFF7043),
-                        modifier = Modifier.size(44.dp)
+                        modifier = Modifier.size(52.dp)
                     )
                 }
             }
@@ -457,16 +459,15 @@ fun RescueTokenModuleCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
                         .background(colors.primary.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Shield,
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_streak_freeze_shield),
                         contentDescription = "Streak Rescue",
-                        tint = colors.primary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(34.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(QuovexTheme.spacing.md))
@@ -656,7 +657,11 @@ fun CemeteryTombstoneCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "🪦", fontSize = 20.sp)
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_streak_cemetery_rune),
+                        contentDescription = "Rune Tombstone",
+                        modifier = Modifier.size(36.dp)
+                    )
                     Spacer(modifier = Modifier.width(QuovexTheme.spacing.sm))
                     Column {
                         Text(

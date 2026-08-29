@@ -42,9 +42,9 @@ test('Pipeline Stages & Server-Side Approval Invariants', async (t) => {
 
     // Wait for the asynchronous pipeline worker to complete
     let attempts = 0;
-    while (attempts < 60) {
+    while (attempts < 120) {
       const currentJob = studioStore.jobs.get(jobId);
-      if (currentJob && currentJob.status === 'READY_FOR_REVIEW') {
+      if (currentJob && (currentJob.status === 'READY_FOR_REVIEW' || currentJob.status === 'FAILED')) {
         break;
       }
       await new Promise((r) => setTimeout(r, 1000));

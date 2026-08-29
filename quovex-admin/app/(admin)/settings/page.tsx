@@ -68,11 +68,27 @@ export default function SettingsPage() {
 
           <button
             type="submit"
-            className="px-4 py-2 rounded-lg bg-primary text-black font-semibold hover:bg-primary/90 transition-colors"
+            className="px-4 py-2 rounded-lg bg-primary text-black font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
           >
             Save Settings
           </button>
         </form>
+      </div>
+
+      {/* Distraction Blocker Quick Link Card */}
+      <div className="max-w-2xl p-6 rounded-xl bg-[#111917] border border-border flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-white">Remote Distraction Blocker Config</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Configure live package blocklists synced to student devices during strict focus.
+          </p>
+        </div>
+        <a
+          href="/settings/blocker"
+          className="px-3.5 py-2 rounded-lg bg-[#192721] text-emerald-300 border border-emerald-900/50 hover:bg-[#20322B] text-xs font-semibold transition-colors"
+        >
+          Manage Blocklist →
+        </a>
       </div>
     </div>
   );

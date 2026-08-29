@@ -26,6 +26,14 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
+    // ─── OFFICIAL RELEASES (PUBLIC READ ONLY, WRITE VIA ADMIN / DEPLOY) ──
+    // Public download for verified release artifacts (e.g. releases/android/quovex-1.0.0.apk)
+    // Write/Upload is restricted to Admin SDK / Firebase CLI console only
+    match /releases/{platform}/{fileName} {
+      allow read: if true;
+      allow write: if false; // Upload via Admin SDK / deployment tooling only
+    }
+
     // ─── BLOCK EVERYTHING ELSE ────────────────────────────────────────────
     match /{allPaths=**} {
       allow read, write: if false;
