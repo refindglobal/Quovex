@@ -94,24 +94,44 @@ export default function NcertExplorerPage() {
     setSummary(null);
 
     // Formulate AI Chapter Breakdown grounded in actual chapter key concepts and formulas
-    setTimeout(() => {
-      const conceptsList = chapter.keyConcepts.map((k) => `* **${k}:** Core curriculum mastery requirement.`).join('\n');
-      const formulasSection = chapter.sampleFormulas && chapter.sampleFormulas.length > 0
-        ? `\n\n2. **Governing Mathematical Relations & Invariants:**\n${chapter.sampleFormulas.map(f => `$$${f}$$`).join('\n')}`
-        : '';
+    (async () => {
+      try {
+        const res = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `Provide an elite high-yield NCERT exam syllabus breakdown for ${chapter.gradeClass} ${chapter.subject} Chapter ${chapter.chapterNumber}: "${chapter.chapterTitle}". Include syllabus competencies, governing formulas in LaTeX, common student traps, and high-yield exam tips.`,
+            subject: chapter.subject,
+            topic: chapter.chapterTitle,
+            targetExam: 'CBSE / Competitive',
+            materialSummary: `Chapter: ${chapter.gradeClass} • ${chapter.subject} • ${chapter.chapterTitle}\nKey Concepts: ${chapter.keyConcepts.join(', ')}`,
+          }),
+        });
 
-      const generatedSummary = `### High-Yield NCERT Exam Breakdown: ${chapter.chapterTitle}\n\n` +
-        `**Official Curriculum Context:** ${chapter.gradeClass} • ${chapter.subject} • Chapter ${chapter.chapterNumber}\n\n` +
-        `1. **Core Syllabus Competencies:**\n${conceptsList}${formulasSection}\n\n` +
-        `3. **High-Yield Examination Traps & Notes ⚠️:**\n` +
-        `* Always ensure standard SI units are maintained across all derivation steps.\n` +
-        `* Pay close attention to boundary conditions and textbook definitions during theoretical assessment.\n\n` +
-        `4. **Recommended Action:**\n` +
-        `* Review all in-text examples and complete back-of-chapter NCERT exercises.`;
+        const json = await res.json();
+        if (json.success && json.response) {
+          setSummary(json.response);
+        } else {
+          // Robust conceptual overview based on canonical catalog metadata
+          const conceptsList = chapter.keyConcepts.map((k) => `* **${k}:** Core curriculum mastery requirement.`).join('\n');
+          const formulasSection = chapter.sampleFormulas && chapter.sampleFormulas.length > 0
+            ? `\n\n2. **Governing Mathematical Relations & Invariants:**\n${chapter.sampleFormulas.map(f => `$$${f}$$`).join('\n')}`
+            : '';
 
-      setSummary(generatedSummary);
-      setLoading(false);
-    }, 400);
+          setSummary(`### ${chapter.gradeClass} • ${chapter.subject}: ${chapter.chapterTitle}\n\n` +
+            `**Official Curriculum Context:** NCERT Chapter ${chapter.chapterNumber}\n\n` +
+            `1. **Core Syllabus Competencies:**\n${conceptsList}${formulasSection}\n\n` +
+            `3. **High-Yield Examination Traps & Notes ⚠️:**\n` +
+            `* Always ensure standard SI units are maintained across all derivation steps.\n` +
+            `* Pay close attention to boundary conditions and textbook definitions during theoretical assessment.`);
+        }
+      } catch (_) {
+        const conceptsList = chapter.keyConcepts.map((k) => `* **${k}:** Core curriculum mastery requirement.`).join('\n');
+        setSummary(`### ${chapter.gradeClass} • ${chapter.subject}: ${chapter.chapterTitle}\n\n1. **Core Syllabus Competencies:**\n${conceptsList}`);
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   return (

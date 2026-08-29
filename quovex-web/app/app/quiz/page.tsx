@@ -84,7 +84,7 @@ const SAMPLE_QUIZ: Question[] = [
 ];
 
 export default function DiagnosticQuizPage() {
-  const [questions] = useState<Question[]>(SAMPLE_QUIZ);
+  const [questions, setQuestions] = useState<Question[]>(SAMPLE_QUIZ);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
@@ -93,9 +93,47 @@ export default function DiagnosticQuizPage() {
   const [isFinished, setIsFinished] = useState(false);
   const [isGeneratingRemedial, setIsGeneratingRemedial] = useState(false);
   const [remedialGenerated, setRemedialGenerated] = useState(false);
+  const [isAiGeneratingQuiz, setIsAiGeneratingQuiz] = useState(false);
+  const [customSubject, setCustomSubject] = useState('Physics');
+  const [customTopic, setCustomTopic] = useState('Laws of Motion & Friction');
 
   const currentUser = getCurrentUser();
-  const currentQ = questions[currentIndex];
+  const currentQ = questions[currentIndex] || questions[0];
+
+  const handleGenerateCustomQuiz = async () => {
+    if (isAiGeneratingQuiz) return;
+    setIsAiGeneratingQuiz(true);
+
+    try {
+      const res = await fetch('/api/ai/quiz/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: customSubject,
+          topic: customTopic,
+          count: 5,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success || !json.data?.questions || json.data.questions.length === 0) {
+        throw new Error(json.error || 'Failed to generate custom AI quiz.');
+      }
+
+      setQuestions(json.data.questions);
+      setCurrentIndex(0);
+      setSelectedOption(null);
+      setIsAnswered(false);
+      setScore(0);
+      setMistakes([]);
+      setIsFinished(false);
+      setRemedialGenerated(false);
+    } catch (err: any) {
+      alert(err.message || 'AI Quiz Creator is temporarily busy.');
+    } finally {
+      setIsAiGeneratingQuiz(false);
+    }
+  };
 
   const handleSelectOption = (index: number) => {
     if (isAnswered) return;
@@ -190,19 +228,55 @@ export default function DiagnosticQuizPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-20">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2.5">
               <HelpCircle className="w-7 h-7 text-primary" />
-              Daily Diagnostic MCQ Quiz
+              Diagnostic MCQ Quiz
             </h1>
             <QuovexBadge variant="fire" size="sm">Adaptive</QuovexBadge>
           </div>
           <p className="text-xs sm:text-sm text-text-secondary mt-1">
-            5 multi-disciplinary questions targeting exam traps & misconception remedies.
+            Exam trap identification with automated remedial spaced repetition generation.
           </p>
         </div>
+      </div>
+
+      {/* Dynamic AI Quiz Generator Bar */}
+      <div className="p-3 sm:p-4 rounded-2xl bg-surface border border-border flex flex-wrap items-center justify-between gap-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 flex-1">
+          <span className="text-xs font-bold text-text-secondary">Custom AI Quiz:</span>
+          <select
+            value={customSubject}
+            onChange={(e) => setCustomSubject(e.target.value)}
+            disabled={isAiGeneratingQuiz}
+            className="bg-surface-variant border border-border rounded-xl px-2.5 py-1.5 text-xs text-text-primary font-bold focus:outline-none focus:border-primary cursor-pointer"
+          >
+            {['Physics', 'Chemistry', 'Mathematics', 'Biology'].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+
+          <input
+            type="text"
+            value={customTopic}
+            onChange={(e) => setCustomTopic(e.target.value)}
+            placeholder="Topic (e.g., Optics, Organic Chemistry, Integrals)..."
+            disabled={isAiGeneratingQuiz}
+            className="flex-1 min-w-[180px] bg-surface-variant border border-border rounded-xl px-3 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-primary"
+          />
+        </div>
+
+        <QuovexButton
+          size="sm"
+          variant="primary"
+          onClick={handleGenerateCustomQuiz}
+          isLoading={isAiGeneratingQuiz}
+          leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+        >
+          {isAiGeneratingQuiz ? 'Creating with AI...' : 'Generate 5 MCQs'}
+        </QuovexButton>
       </div>
 
       {!isFinished ? (

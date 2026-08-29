@@ -53,95 +53,42 @@ export default function StudyPlannerPage() {
 
     setIsGenerating(true);
     const targetExam = profile?.targetExam || 'JEE Advanced';
+    const dailyHours = profile?.dailyGoalHours || 3;
 
-    setTimeout(async () => {
-      const newPlanId = `plan_${Date.now()}`;
-      const generatedTasks: StudyPlanTask[] = [
-        {
-          id: `task_${Date.now()}_1`,
-          dayNumber: 1,
-          dayName: 'Monday',
-          title: `${targetExam}: High-Yield Core Derivations`,
-          subject: 'Physics',
-          durationMinutes: 60,
-          isCompleted: false,
-          priority: 'HIGH',
-          category: 'Core Derivation',
-        },
-        {
-          id: `task_${Date.now()}_2`,
-          dayNumber: 1,
-          dayName: 'Monday',
-          title: 'Electrochemistry: Nernst equation numerical practice',
-          subject: 'Chemistry',
-          durationMinutes: 45,
-          isCompleted: false,
-          priority: 'HIGH',
-          category: 'Numerical',
-        },
-        {
-          id: `task_${Date.now()}_3`,
-          dayNumber: 2,
-          dayName: 'Tuesday',
-          title: 'Definite Integrals & Area under curve shortcuts',
-          subject: 'Mathematics',
-          durationMinutes: 90,
-          isCompleted: false,
-          priority: 'HIGH',
-          category: 'Problem Solving',
-        },
-        {
-          id: `task_${Date.now()}_4`,
-          dayNumber: 3,
-          dayName: 'Wednesday',
-          title: 'Thermodynamics & Heat engine cycle questions',
-          subject: 'Physics',
-          durationMinutes: 50,
-          isCompleted: false,
-          priority: 'MEDIUM',
-          category: 'Revision',
-        },
-        {
-          id: `task_${Date.now()}_5`,
-          dayNumber: 4,
-          dayName: 'Thursday',
-          title: 'Organic Reaction Mechanisms & Reagents map',
-          subject: 'Chemistry',
-          durationMinutes: 60,
-          isCompleted: false,
-          priority: 'HIGH',
-          category: 'Active Recall',
-        },
-        {
-          id: `task_${Date.now()}_6`,
-          dayNumber: 5,
-          dayName: 'Friday',
-          title: 'Diagnostic Quiz & Remedial Flashcard Synthesis',
-          subject: 'All Subjects',
-          durationMinutes: 60,
-          isCompleted: false,
-          priority: 'HIGH',
-          category: 'Assessment',
-        },
-        {
-          id: `task_${Date.now()}_7`,
-          dayNumber: 6,
-          dayName: 'Saturday',
-          title: 'Spaced Repetition Review Queue & Mock Test',
-          subject: 'Multi-Disciplinary',
-          durationMinutes: 120,
-          isCompleted: false,
-          priority: 'HIGH',
-          category: 'Spaced Repetition',
-        },
-      ];
+    try {
+      const res = await fetch('/api/ai/plan/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetExam,
+          dailyHours,
+          subjects: ['Physics', 'Chemistry', 'Mathematics'],
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success || !json.data) {
+        throw new Error(json.error || 'Failed to generate study plan.');
+      }
+
+      const generatedTasks: StudyPlanTask[] = (json.data.tasks || []).map((t: any, idx: number) => ({
+        id: `task_${Date.now()}_${idx + 1}`,
+        dayNumber: t.dayNumber || idx + 1,
+        dayName: t.dayName || `Day ${idx + 1}`,
+        title: t.title,
+        subject: t.subject || 'General',
+        durationMinutes: t.durationMinutes || 60,
+        isCompleted: false,
+        priority: t.priority || 'HIGH',
+        category: t.category || 'Core Focus',
+      }));
 
       const plan: StudyPlan = {
-        id: newPlanId,
+        id: `plan_${Date.now()}`,
         userId: currentUser.uid,
         title: `AI Roadmap: ${targetExam}`,
         targetExam,
-        dailyGoalHours: profile?.dailyGoalHours || 4,
+        dailyGoalHours: dailyHours,
         totalWeeks: 12,
         status: 'ACTIVE',
         tasks: generatedTasks,
@@ -150,8 +97,12 @@ export default function StudyPlannerPage() {
       };
 
       await saveStudyPlan(currentUser.uid, plan);
+    } catch (err: any) {
+      console.error('Study Plan Generation Error:', err);
+      alert(err.message || 'AI Plan generation is temporarily busy. Please try again.');
+    } finally {
       setIsGenerating(false);
-    }, 1100);
+    }
   };
 
   const tasks = studyPlan?.tasks || [];
